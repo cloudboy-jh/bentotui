@@ -1,4 +1,3 @@
-[Image 1]
 ![Image 1](./bentotui-readme-logo.png)
 
 # BentoTUI
