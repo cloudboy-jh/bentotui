@@ -3,8 +3,8 @@ package app
 import (
 	"github.com/cloudboy-jh/bentotui/router"
 	"github.com/cloudboy-jh/bentotui/shell"
-	"github.com/cloudboy-jh/bentotui/statusbar"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/components/footer"
 )
 
 // Deprecated: use package shell directly for new code.
@@ -19,8 +19,8 @@ func WithTheme(t theme.Theme) Option { return shell.WithTheme(t) }
 
 func WithPages(routes ...router.Route) Option { return shell.WithPages(routes...) }
 
-func WithStatusBar(v bool) Option { return shell.WithStatusBar(v) }
+func WithFooterBar(v bool) Option { return shell.WithFooterBar(v) }
 
 func WithFullScreen(v bool) Option { return shell.WithFullScreen(v) }
 
-func WithStatus(model *statusbar.Model) Option { return shell.WithStatus(model) }
+func WithFooter(model *footer.Model) Option { return shell.WithFooter(model) }

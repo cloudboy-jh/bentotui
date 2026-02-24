@@ -16,7 +16,7 @@ import "github.com/cloudboy-jh/bentotui"
 
 ### Implementation Update (Current)
 
-- v0.1 foundation is now implemented in code (`app`, `router`, `layout`, `focus`, `theme`, `dialog`, `statusbar`, `panel`)
+- v0.1 foundation is now implemented in code (`app`, `router`, `layout`, `focus`, `theme`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`)
 - Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
 - Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
 - Dialogs are rendered through a layer/canvas composition path and centered in the app shell
@@ -128,7 +128,7 @@ Each level decides to handle, forward, or ignore. When a dialog is open, it capt
 ### Core
 
 #### `app` — Application Shell
-The root model that bootstraps everything. Manages lifecycle, router, dialog manager, and status bar. The shell renders full-size themed surfaces and uses Lip Gloss v2 canvas layers for overlay composition.
+The root model that bootstraps everything. Manages lifecycle, router, dialog manager, and footer bar. The shell renders full-size themed surfaces and uses Lip Gloss v2 canvas layers for overlay composition.
 
 ```go
 app := bentotui.New(
@@ -137,7 +137,7 @@ app := bentotui.New(
         bentotui.Page("home", newHomePage),
         bentotui.Page("settings", newSettingsPage),
     ),
-    bentotui.WithStatusBar(true),
+    bentotui.WithFooterBar(true),
 )
 
 p := tea.NewProgram(app)
@@ -235,7 +235,7 @@ theme := theme.Preset("catppuccin-mocha")
 
 ### Components
 
-#### `dialog` — Modal Overlay System
+#### `ui/components/dialog` — Modal Overlay System
 Modal dialogs that capture input and render above content via lipgloss layers.
 
 ```go
@@ -292,18 +292,18 @@ picker := picker.New(
 )
 ```
 
-#### `statusbar` — Context-Aware Status Bar
-Bottom bar showing keybinding hints, status messages, and contextual info.
+#### `ui/components/footer` — Context-Aware Footer Bar
+Bottom layer showing keybinding hints, status messages, and contextual info.
 
 ```go
-statusbar := statusbar.New(
-    statusbar.Left("~/projects/porter:main"),
-    statusbar.Right("v1.2.10"),
-    statusbar.HelpFrom(focusedComponent), // auto-generates from Bindings()
+footer := footer.New(
+    footer.Left("~/projects/porter:main"),
+    footer.Right("v1.2.10"),
+    footer.HelpFrom(focusedComponent), // auto-generates from Bindings()
 )
 ```
 
-#### `panel` — Bordered Content Panel
+#### `ui/components/panel` — Bordered Content Panel
 A themed surface container with optional title, focused border state, and content sizing.
 
 ```go
@@ -369,7 +369,7 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 | Add/edit/import overlays | `dialog` |
 | Init wizard | `dialog` (multi-step) |
 | Project tab navigation | `focus` |
-| Keybinding help bar | `statusbar` |
+| Keybinding help bar | `ui/components/footer` |
 | Catppuccin/Dracula/Osaka Jade themes | `theme` |
 
 ### Internal Harness (Current)
@@ -410,7 +410,7 @@ The minimum surface to ship and build Veil on:
 - [x] `focus` — focus ring with tab cycling
 - [x] `theme` — color system with presets + semantic surface tokens
 - [x] `dialog` — modal overlay with confirm/custom
-- [x] `statusbar` — keybinding help + themed status surface
+- [x] `ui/components/footer` — keybinding help + themed footer surface
 - [x] `panel` — themed bordered content container with focus state
 
 **Not in v0.1:**

@@ -1,4 +1,4 @@
-package statusbar
+package footer
 
 import (
 	"strings"
@@ -7,9 +7,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
 type Option func(*Model)

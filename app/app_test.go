@@ -5,9 +5,9 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/dialog"
 	"github.com/cloudboy-jh/bentotui/router"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 )
 
 type testPage struct {

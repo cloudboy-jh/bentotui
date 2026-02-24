@@ -7,7 +7,7 @@ import (
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/layout"
-	"github.com/cloudboy-jh/bentotui/panel"
+	"github.com/cloudboy-jh/bentotui/ui/components/panel"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 		bentotui.WithPages(
 			bentotui.Page("home", func() core.Page { return newHomePage() }),
 		),
-		bentotui.WithStatusBar(true),
+		bentotui.WithFooterBar(true),
 	)
 
 	p := tea.NewProgram(app)

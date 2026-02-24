@@ -16,9 +16,9 @@ Implemented today:
 - page routing with lazy page creation (`router`)
 - fixed/flex split layouts (`layout`)
 - focus ring (`focus`)
-- dialog manager (`dialog`)
-- status bar (`statusbar`)
-- panel surfaces (`panel`)
+- dialog manager (`ui/components/dialog`)
+- footer bar (`ui/components/footer`)
+- panel surfaces (`ui/components/panel`)
 - semantic theme presets (`theme`)
 
 ## Install
@@ -39,7 +39,7 @@ import (
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/layout"
-	"github.com/cloudboy-jh/bentotui/panel"
+	"github.com/cloudboy-jh/bentotui/ui/components/panel"
 )
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 		bentotui.WithPages(
 			bentotui.Page("home", func() core.Page { return newHomePage() }),
 		),
-		bentotui.WithStatusBar(true),
+		bentotui.WithFooterBar(true),
 	)
 
 	p := tea.NewProgram(app)

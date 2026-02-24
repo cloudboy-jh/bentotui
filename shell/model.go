@@ -8,41 +8,40 @@ import (
 	"charm.land/lipgloss/v2"
 	uv "github.com/charmbracelet/ultraviolet"
 	"github.com/charmbracelet/ultraviolet/screen"
-	dialogcmp "github.com/cloudboy-jh/bentotui/components/dialog"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/dialog"
 	"github.com/cloudboy-jh/bentotui/router"
-	"github.com/cloudboy-jh/bentotui/statusbar"
 	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/components/footer"
 )
 
 type Option func(*Model)
 
 type Model struct {
-	router        *router.Model
-	dialogs       *dialog.Manager
-	status        *statusbar.Model
-	theme         theme.Theme
-	showStatusBar bool
-	fullScreen    bool
-	width         int
-	height        int
+	router     *router.Model
+	dialogs    *dialog.Manager
+	footer     *footer.Model
+	theme      theme.Theme
+	showFooter bool
+	fullScreen bool
+	width      int
+	height     int
 }
 
 func New(opts ...Option) *Model {
 	m := &Model{
-		router:        router.New(),
-		dialogs:       dialog.New(),
-		status:        statusbar.New(),
-		theme:         theme.CurrentTheme(),
-		showStatusBar: true,
-		fullScreen:    true,
+		router:     router.New(),
+		dialogs:    dialog.New(),
+		footer:     footer.New(),
+		theme:      theme.CurrentTheme(),
+		showFooter: true,
+		fullScreen: true,
 	}
 	for _, opt := range opts {
 		opt(m)
 	}
-	m.status.SetTheme(m.theme)
+	m.footer.SetTheme(m.theme)
 	m.dialogs.SetTheme(m.theme)
 	return m
 }
@@ -50,7 +49,7 @@ func New(opts ...Option) *Model {
 func WithTheme(t theme.Theme) Option {
 	return func(m *Model) {
 		m.theme = t
-		m.status.SetTheme(t)
+		m.footer.SetTheme(t)
 		m.dialogs.SetTheme(t)
 	}
 }
@@ -61,25 +60,25 @@ func WithPages(routes ...router.Route) Option {
 	}
 }
 
-func WithStatusBar(v bool) Option {
-	return func(m *Model) { m.showStatusBar = v }
+func WithFooterBar(v bool) Option {
+	return func(m *Model) { m.showFooter = v }
 }
 
 func WithFullScreen(v bool) Option {
 	return func(m *Model) { m.fullScreen = v }
 }
 
-func WithStatus(model *statusbar.Model) Option {
+func WithFooter(model *footer.Model) Option {
 	return func(m *Model) {
 		if model != nil {
-			m.status = model
-			m.status.SetTheme(m.theme)
+			m.footer = model
+			m.footer.SetTheme(m.theme)
 		}
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.router.Init(), m.dialogs.Init(), m.status.Init())
+	return tea.Batch(m.router.Init(), m.dialogs.Init(), m.footer.Init())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -94,7 +93,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case theme.ThemeChangedMsg:
 		m.theme = v.Theme
-		m.status.SetTheme(v.Theme)
+		m.footer.SetTheme(v.Theme)
 		m.dialogs.SetTheme(v.Theme)
 		forwardTheme = true
 	}
@@ -110,9 +109,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, pageCmd = m.router.Update(msg)
 	}
 
-	_, statusCmd := m.status.Update(msg)
+	_, footerCmd := m.footer.Update(msg)
 
-	return m, tea.Batch(dialogCmd, pageCmd, statusCmd)
+	return m, tea.Batch(dialogCmd, pageCmd, footerCmd)
 }
 
 func (m *Model) View() tea.View {
@@ -146,7 +145,7 @@ func (m *Model) syncViewport(width, height int) {
 	m.width = width
 	m.height = height
 	bodyHeight := height
-	if m.showStatusBar {
+	if m.showFooter {
 		bodyHeight--
 	}
 	if bodyHeight < 0 {
@@ -154,7 +153,7 @@ func (m *Model) syncViewport(width, height int) {
 	}
 	m.router.SetSize(width, bodyHeight)
 	m.dialogs.SetSize(width, height)
-	m.status.SetSize(width, 1)
+	m.footer.SetSize(width, 1)
 }
 
 func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
@@ -167,7 +166,7 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 	}
 
 	bodyHeight := h
-	if m.showStatusBar {
+	if m.showFooter {
 		bodyHeight--
 	}
 	if bodyHeight < 0 {
@@ -182,10 +181,10 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 		lipgloss.NewLayer(core.ViewLayer(bodyView)).ID("body").X(area.Min.X).Y(area.Min.Y).Z(1),
 	}
 
-	if m.showStatusBar {
+	if m.showFooter {
 		layers = append(layers,
-			lipgloss.NewLayer(core.ViewLayer(m.status.View())).
-				ID("status").
+			lipgloss.NewLayer(core.ViewLayer(m.footer.View())).
+				ID("footer").
 				X(area.Min.X).
 				Y(area.Min.Y+bodyHeight).
 				Z(2),
@@ -216,7 +215,7 @@ func max(a, b int) int {
 }
 
 func openThemeDialogCmd(width, height int) tea.Cmd {
-	picker := dialogcmp.NewThemePicker()
+	picker := dialog.NewThemePicker()
 	picker.SetSize(width, height)
 	return func() tea.Msg {
 		return dialog.Open(dialog.Custom{

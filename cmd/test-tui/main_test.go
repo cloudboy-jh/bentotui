@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/cloudboy-jh/bentotui/dialog"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 )
 
 func keyPress(text string) tea.Msg {

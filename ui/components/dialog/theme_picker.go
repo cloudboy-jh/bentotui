@@ -1,4 +1,4 @@
-package dialogcmp
+package dialog
 
 import (
 	"fmt"
@@ -7,9 +7,8 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/dialog"
-	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
 type ThemePicker struct {
@@ -53,7 +52,7 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch keyMsg.String() {
 	case "esc":
-		return p, func() tea.Msg { return dialog.Close() }
+		return p, func() tea.Msg { return Close() }
 	case "up", "k":
 		if p.selected > 0 {
 			p.selected--
@@ -76,7 +75,7 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.themeName = name
 		return p, tea.Batch(
 			func() tea.Msg { return theme.ThemeChangedMsg{Name: name, Theme: t} },
-			func() tea.Msg { return dialog.Close() },
+			func() tea.Msg { return Close() },
 		)
 	}
 
@@ -97,12 +96,12 @@ func (p *ThemePicker) View() tea.View {
 	if len(p.filtered) == 0 {
 		rows = append(rows, lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render("No matching themes"))
 	} else {
-		maxRows := max(5, p.height-10)
+		maxRows := maxInt(5, p.height-10)
 		start := 0
 		if p.selected >= maxRows {
 			start = p.selected - maxRows + 1
 		}
-		end := min(len(p.filtered), start+maxRows)
+		end := minInt(len(p.filtered), start+maxRows)
 		for i := start; i < end; i++ {
 			name := p.filtered[i]
 			selected := i == p.selected
@@ -111,7 +110,7 @@ func (p *ThemePicker) View() tea.View {
 				marker = sys.CurrentMarker().Render("●")
 			}
 			line := fmt.Sprintf("%s %s", marker, name)
-			rows = append(rows, sys.ListItem(selected).Width(max(28, p.width-8)).Render(line))
+			rows = append(rows, sys.ListItem(selected).Width(maxInt(28, p.width-8)).Render(line))
 		}
 	}
 
@@ -136,7 +135,7 @@ func (p *ThemePicker) syncStyles() {
 	s.Blurred = s.Focused
 	s.Cursor.Color = lipgloss.Color(t.Accent)
 	p.search.SetStyles(s)
-	p.search.SetWidth(max(16, p.width-12))
+	p.search.SetWidth(maxInt(16, p.width-12))
 }
 
 func (p *ThemePicker) refilter() {
@@ -205,14 +204,14 @@ func pick(values ...string) string {
 	return ""
 }
 
-func max(a, b int) int {
+func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

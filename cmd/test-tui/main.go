@@ -12,31 +12,31 @@ import (
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/app"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/dialog"
 	"github.com/cloudboy-jh/bentotui/focus"
 	"github.com/cloudboy-jh/bentotui/layout"
-	"github.com/cloudboy-jh/bentotui/panel"
-	"github.com/cloudboy-jh/bentotui/statusbar"
-	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/components/footer"
+	"github.com/cloudboy-jh/bentotui/ui/components/panel"
+	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
 var actionLabels = []string{"Theme Picker", "Custom Dialog", "Confirm Dialog"}
 
 func main() {
 	t := theme.CurrentTheme()
-	status := statusbar.New(
-		statusbar.Left("BentoTUI theme harness"),
-		statusbar.Right("tab:focus  <-/->:action  enter:submit/run  /:theme  d:dialog  x:confirm  q:quit"),
+	ft := footer.New(
+		footer.Left("BentoTUI theme harness"),
+		footer.Right("tab:focus  <-/->:action  enter:submit/run  /:theme  d:dialog  x:confirm  q:quit"),
 	)
 
 	m := bentotui.New(
 		bentotui.WithTheme(t),
-		app.WithStatus(status),
+		app.WithFooter(ft),
 		bentotui.WithPages(
 			bentotui.Page("harness", func() core.Page { return newHarnessPage(t) }),
 		),
-		bentotui.WithStatusBar(true),
+		bentotui.WithFooterBar(true),
 		bentotui.WithFullScreen(true),
 	)
 

@@ -62,7 +62,7 @@ Exit criteria:
   - width fitting and clipping helpers
 - Move panel frame/title/body rendering into composable internal units
 - Unify dialog frame rendering through shared modal frame helpers
-- Standardize statusbar segment layout with shared fit policies
+- Standardize footer segment layout with shared fit policies
 
 Exit criteria:
 
@@ -88,6 +88,6 @@ Exit criteria:
 
 1. Add renderer regression tests for full-frame paint guarantees.
 2. Add layout slot paint tests for fixed/flex remainder behavior.
-3. Add statusbar truncation tests for narrow widths.
+3. Add footer truncation tests for narrow widths.
 4. Finalize default theme set (`catppuccin-mocha`, `dracula`, `osaka-jade`) and startup/persistence policy.
 5. Keep `cmd/test-tui` as the canonical color/focus validation harness.
