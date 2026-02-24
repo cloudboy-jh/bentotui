@@ -1,25 +1,24 @@
-![Image 1](./bentotui-readme-logo.png)
+![BentoTUI logo](./bentotui-readme-logo.png)
 
 # BentoTUI
 
-The application framework for Bubble Tea.
+BentoTUI is an application framework on top of Bubble Tea for building production-grade TUIs with a structured shell, layered rendering, and reusable UI components.
 
-BentoTUI sits between low-level Bubble Tea primitives and shipped terminal apps. It gives you a reusable app skeleton for routing, layout, focus, dialogs, status surfaces, and theming.
+## What BentoTUI provides
 
-## Status
+- app shell with deterministic layer order (body -> footer -> overlays)
+- page router with lazy page factories
+- fixed/flex split layout system
+- focus ring manager for keyboard navigation
+- modal dialog manager and theme picker flow
+- semantic theme system (currently `catppuccin-mocha`, `dracula`, `osaka-jade`)
+- UI component layer under `ui/components/*`
 
-BentoTUI is in active v0.1 development.
+## Current package layout
 
-Implemented today:
-
-- app shell (`app`)
-- page routing with lazy page creation (`router`)
-- fixed/flex split layouts (`layout`)
-- focus ring (`focus`)
-- dialog manager (`ui/components/dialog`)
-- footer bar (`ui/components/footer`)
-- panel surfaces (`ui/components/panel`)
-- semantic theme presets (`theme`)
+- runtime/framework: `app`, `shell`, `router`, `layout`, `focus`, `surface`, `core`, `theme`
+- UI components: `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`
+- style layer: `ui/styles`
 
 ## Install
 
@@ -27,7 +26,7 @@ Implemented today:
 go get github.com/cloudboy-jh/bentotui
 ```
 
-## Quick Start
+## Quick start
 
 ```go
 package main
@@ -39,18 +38,20 @@ import (
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/layout"
+	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/panel"
 )
 
 func main() {
-	app := bentotui.New(
+	m := bentotui.New(
+		bentotui.WithTheme(theme.Preset("catppuccin-mocha")),
 		bentotui.WithPages(
 			bentotui.Page("home", func() core.Page { return newHomePage() }),
 		),
 		bentotui.WithFooterBar(true),
 	)
 
-	p := tea.NewProgram(app)
+	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("run failed: %v\n", err)
 	}
@@ -73,20 +74,16 @@ func newHomePage() *homePage {
 }
 
 func (p *homePage) Init() tea.Cmd { return nil }
-
 func (p *homePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	_, cmd := p.root.Update(msg)
 	return p, cmd
 }
-
 func (p *homePage) View() tea.View { return p.root.View() }
-
 func (p *homePage) SetSize(w, h int) {
 	p.width = w
 	p.height = h
 	p.root.SetSize(w, h)
 }
-
 func (p *homePage) GetSize() (int, int) { return p.width, p.height }
 func (p *homePage) Title() string       { return "Home" }
 
@@ -97,28 +94,28 @@ func (s staticText) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return s, nil }
 func (s staticText) View() tea.View                          { return tea.NewView(string(s)) }
 ```
 
-Fullscreen mode is enabled by default. Disable it with:
+Note: full-screen mode is enabled by default. Disable it with `bentotui.WithFullScreen(false)`.
 
-```go
-bentotui.WithFullScreen(false)
-```
+## Internal harness
 
-## Internal Harness
-
-Use the internal harness to validate rendering and interaction behavior:
+Run the framework harness:
 
 ```bash
 go run ./cmd/test-tui
 ```
 
-## Docs
+It validates shell layering, focus behavior, modal overlays, theme switching, and component rendering.
 
-- Main spec: `project-docs/bentotui-main-spec.md`
-- Rendering system design (ADR-0001): `project-docs/rendering-system-design.md`
-- Research notes: `project-docs/tui-framework-research.md`
+## Documentation
+
+- spec: `project-docs/bentotui-main-spec.md`
+- rendering ADR: `project-docs/rendering-system-design.md`
+- implementation roadmap: `project-docs/next-steps.md`
+- framework research: `project-docs/tui-framework-research.md`
 
 ## Development
 
 ```bash
 go test ./...
+go vet ./...
 ```
