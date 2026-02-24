@@ -5,7 +5,9 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 type Option func(*Model)
@@ -14,12 +16,13 @@ type Model struct {
 	left   string
 	right  string
 	help   core.Bindable
+	theme  theme.Theme
 	width  int
 	height int
 }
 
 func New(opts ...Option) *Model {
-	m := &Model{}
+	m := &Model{theme: theme.Preset("amber")}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -46,18 +49,19 @@ func (m *Model) View() tea.View {
 	help := m.helpText()
 	left := strings.TrimSpace(strings.Join([]string{m.left, help}, "  "))
 	if m.width == 0 {
-		return tea.NewView(left)
+		return tea.NewView(lipgloss.NewStyle().
+			Foreground(lipgloss.Color(m.theme.StatusText)).
+			Background(lipgloss.Color(m.theme.StatusBG)).
+			Render(left))
 	}
-	rightWidth := len(m.right)
+	right := fitWidth(m.right, max(0, m.width))
+	rightWidth := lipgloss.Width(right)
+	if rightWidth >= m.width {
+		return tea.NewView(m.renderLine(right))
+	}
 	leftWidth := max(0, m.width-rightWidth-1)
-	leftBlock := left
-	if len(leftBlock) > leftWidth {
-		leftBlock = leftBlock[:leftWidth]
-	}
-	if len(leftBlock) < leftWidth {
-		leftBlock += strings.Repeat(" ", leftWidth-len(leftBlock))
-	}
-	return tea.NewView(leftBlock + " " + m.right)
+	leftBlock := fitWidth(left, leftWidth)
+	return tea.NewView(m.renderLine(leftBlock + " " + right))
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -67,6 +71,10 @@ func (m *Model) SetSize(width, height int) {
 
 func (m *Model) GetSize() (width, height int) {
 	return m.width, m.height
+}
+
+func (m *Model) SetTheme(t theme.Theme) {
+	m.theme = t
 }
 
 func (m *Model) helpText() string {
@@ -86,6 +94,26 @@ func (m *Model) helpText() string {
 		parts = append(parts, key.NewBinding(key.WithKeys(h.Key), key.WithHelp(h.Key, h.Desc)).Help().Key+": "+h.Desc)
 	}
 	return strings.Join(parts, " • ")
+}
+
+func (m *Model) renderLine(text string) string {
+	style := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(m.theme.StatusText)).
+		Background(lipgloss.Color(m.theme.StatusBG))
+	if m.width == 0 {
+		return style.Render(text)
+	}
+	style = style.Width(max(0, m.width))
+	text = fitWidth(text, m.width)
+	return style.Render(text)
+}
+
+func fitWidth(s string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	s = lipgloss.NewStyle().MaxWidth(width).Render(s)
+	return lipgloss.PlaceHorizontal(width, lipgloss.Left, s)
 }
 
 func max(a, b int) int {

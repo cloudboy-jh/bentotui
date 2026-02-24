@@ -14,6 +14,14 @@ Charm gives you bricks. BentoTUI gives you rooms.
 import "github.com/cloudboy-jh/bentotui"
 ```
 
+### Implementation Update (Current)
+
+- v0.1 foundation is now implemented in code (`app`, `router`, `layout`, `focus`, `theme`, `dialog`, `statusbar`, `panel`)
+- Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
+- Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
+- Dialogs are rendered through a layer/canvas composition path and centered in the app shell
+- Internal harness app added at `cmd/test-tui` for daily framework regression checks
+
 ---
 
 ## What This Is
@@ -120,7 +128,7 @@ Each level decides to handle, forward, or ignore. When a dialog is open, it capt
 ### Core
 
 #### `app` — Application Shell
-The root model that bootstraps everything. Manages the lifecycle, holds the router, dialog manager, and status bar.
+The root model that bootstraps everything. Manages lifecycle, router, dialog manager, and status bar. The shell renders full-size themed surfaces and uses Lip Gloss v2 canvas layers for overlay composition.
 
 ```go
 app := bentotui.New(
@@ -177,13 +185,9 @@ layout := layout.Horizontal(
         layout.Fixed(5, editor),
     ),
 )
-
-// Responsive breakpoints
-layout := layout.Responsive(
-    layout.Above(120, fullLayout),
-    layout.Below(120, compactLayout),
-)
 ```
+
+Responsive helpers are still planned at framework level. Current compact-mode behavior is exercised in `cmd/test-tui`.
 
 #### `focus` — Focus Management
 Handles focus cycling between components, visual indicators, and input routing.
@@ -191,7 +195,10 @@ Handles focus cycling between components, visual indicators, and input routing.
 ```go
 focus := focus.New(
     focus.Ring(editor, messages, sidebar),
-    focus.Keys(key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next panel"))),
+    focus.Keys(
+        key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "next panel")),
+        key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev panel")),
+    ),
 )
 
 // Focus state affects rendering
@@ -201,7 +208,7 @@ if panel.IsFocused() {
 ```
 
 #### `theme` — Color System
-Coordinated color definitions with dark/light support and presets.
+Coordinated color definitions with presets and semantic surface tokens for shell/component rendering.
 
 ```go
 theme := theme.New(
@@ -216,6 +223,10 @@ theme := theme.New(
 
 // Or use a preset
 theme := theme.Preset("amber")
+
+// Theme also carries surface tokens used by panel/status/dialog rendering:
+// Surface, SurfaceMuted, Border, BorderFocused, TitleText, TitleBG,
+// StatusText, StatusBG, DialogText, DialogBG, DialogBorder, Scrim.
 ```
 
 ### Components
@@ -227,7 +238,7 @@ Modal dialogs that capture input and render above content via lipgloss layers.
 // Open a dialog via message
 func confirmDelete() tea.Msg {
     return dialog.Open(dialog.Confirm{
-        Title:   "Delete secret?",
+        DialogTitle: "Delete secret?",
         Message: "This cannot be undone.",
         OnConfirm: func() tea.Msg { return deleteMsg{} },
     })
@@ -236,10 +247,10 @@ func confirmDelete() tea.Msg {
 // Custom dialog content
 func modelPicker() tea.Msg {
     return dialog.Open(dialog.Custom{
-        Title:   "Select model",
-        Content: myPickerComponent,
-        Width:   60,
-        Height:  20,
+        DialogTitle: "Select model",
+        Content:     myPickerComponent,
+        Width:       60,
+        Height:      20,
     })
 }
 ```
@@ -289,12 +300,12 @@ statusbar := statusbar.New(
 ```
 
 #### `panel` — Bordered Content Panel
-A container with optional title, border, and scroll support.
+A themed surface container with optional title, focused border state, and content sizing.
 
 ```go
 panel := panel.New(
+    panel.Theme(theme.Preset("amber")),
     panel.Title("Messages"),
-    panel.Border(lipgloss.RoundedBorder()),
     panel.Content(viewport),
     panel.Scrollable(true),
 )
@@ -332,9 +343,9 @@ BentoTUI builds on Bubble Tea v2 (beta) and Lip Gloss v2 (beta). This is a forwa
 go 1.23+
 
 require (
-    github.com/charmbracelet/bubbletea/v2
-    github.com/charmbracelet/bubbles/v2
-    github.com/charmbracelet/lipgloss/v2
+    charm.land/bubbletea/v2
+    charm.land/bubbles/v2
+    charm.land/lipgloss/v2
 )
 ```
 
@@ -357,6 +368,24 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 | Keybinding help bar | `statusbar` |
 | Violet/amber/emerald color scheme | `theme` |
 
+### Internal Harness (Current)
+
+`cmd/test-tui` is the active internal validation surface for framework behavior and rendering quality.
+
+Run it with:
+
+```bash
+go run ./cmd/test-tui
+```
+
+It currently validates:
+
+- page routing (`home`/`inspect`)
+- fixed/flex split composition and nested layouts
+- focus cycling (`tab`, `shift+tab`) and focused panel borders
+- dialog overlay behavior from multiple pages
+- compact-mode layout fallback for smaller terminal sizes
+
 ### Ecosystem Apps (Planned)
 
 | Tool | Description | Key BentoTUI Modules |
@@ -371,14 +400,14 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 
 The minimum surface to ship and build Veil on:
 
-- [ ] `app` — application shell with lifecycle
-- [ ] `router` — page switching with lazy load
-- [ ] `layout` — horizontal/vertical splits with fixed/flex
-- [ ] `focus` — focus ring with tab cycling
-- [ ] `theme` — color system with presets
-- [ ] `dialog` — modal overlay with confirm/custom
-- [ ] `statusbar` — keybinding help + status messages
-- [ ] `panel` — bordered content container
+- [x] `app` — application shell with lifecycle
+- [x] `router` — page switching with lazy load
+- [x] `layout` — horizontal/vertical splits with fixed/flex
+- [x] `focus` — focus ring with tab cycling
+- [x] `theme` — color system with presets + semantic surface tokens
+- [x] `dialog` — modal overlay with confirm/custom
+- [x] `statusbar` — keybinding help + themed status surface
+- [x] `panel` — themed bordered content container with focus state
 
 **Not in v0.1:**
 - Command palette (v0.2)

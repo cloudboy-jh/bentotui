@@ -1,9 +1,8 @@
 package app
 
 import (
-	"strings"
-
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/dialog"
 	"github.com/cloudboy-jh/bentotui/router"
@@ -34,11 +33,15 @@ func New(opts ...Option) *Model {
 	for _, opt := range opts {
 		opt(m)
 	}
+	m.status.SetTheme(m.theme)
 	return m
 }
 
 func WithTheme(t theme.Theme) Option {
-	return func(m *Model) { m.theme = t }
+	return func(m *Model) {
+		m.theme = t
+		m.status.SetTheme(t)
+	}
 }
 
 func WithPages(routes ...router.Route) Option {
@@ -55,6 +58,7 @@ func WithStatus(model *statusbar.Model) Option {
 	return func(m *Model) {
 		if model != nil {
 			m.status = model
+			m.status.SetTheme(m.theme)
 		}
 	}
 }
@@ -94,13 +98,34 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() tea.View {
-	body := core.ViewString(m.router.View())
+	bodyHeight := m.height
 	if m.showStatusBar {
-		body = strings.Join([]string{body, core.ViewString(m.status.View())}, "\n")
+		bodyHeight--
 	}
+	if bodyHeight < 0 {
+		bodyHeight = 0
+	}
+	body := lipgloss.NewStyle().
+		Width(max(0, m.width)).
+		Height(bodyHeight).
+		Background(lipgloss.Color(m.theme.Background)).
+		Foreground(lipgloss.Color(m.theme.Text)).
+		Render(core.ViewString(m.router.View()))
+
+	if m.showStatusBar {
+		body = lipgloss.JoinVertical(lipgloss.Top, body, core.ViewString(m.status.View()))
+	}
+
 	if m.dialogs.IsOpen() {
-		return tea.NewView(strings.Join([]string{body, core.ViewString(m.dialogs.View())}, "\n"))
+		dlg := core.ViewString(m.dialogs.View())
+		dlgW, dlgH := lipgloss.Size(dlg)
+		canvas := lipgloss.NewCanvas(
+			lipgloss.NewLayer(body).ID("base").X(0).Y(0).Z(0),
+			lipgloss.NewLayer(dlg).ID("dialog").X(max(0, (m.width-dlgW)/2)).Y(max(0, (m.height-dlgH)/2)).Z(1),
+		)
+		return tea.NewView(canvas.Render())
 	}
+
 	return tea.NewView(body)
 }
 
@@ -110,4 +135,11 @@ func (m *Model) Router() *router.Model {
 
 func (m *Model) Dialogs() *dialog.Manager {
 	return m.dialogs
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

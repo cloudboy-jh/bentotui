@@ -45,7 +45,14 @@ func New(opts ...Option) *Manager {
 func (m *Manager) Init() tea.Cmd { return nil }
 
 func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	_ = msg
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch {
+		case key.Matches(keyMsg, m.next):
+			m.Next()
+		case key.Matches(keyMsg, m.prev):
+			m.Prev()
+		}
+	}
 	return m, nil
 }
 

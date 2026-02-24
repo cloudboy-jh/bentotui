@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 type Dialog interface {
@@ -48,6 +50,16 @@ func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	if m.active != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "esc", "enter":
+				m.active = nil
+				return m, nil
+			}
+		}
+	}
+
 	if m.active == nil {
 		return m, nil
 	}
@@ -63,7 +75,7 @@ func (m *Manager) View() tea.View {
 		return tea.NewView("")
 	}
 	view := core.ViewString(m.active.View())
-	return tea.NewView("\n" + view)
+	return tea.NewView(view)
 }
 
 func (m *Manager) SetSize(width, height int) {
@@ -80,6 +92,7 @@ type Confirm struct {
 	DialogTitle string
 	Message     string
 	OnConfirm   func() tea.Msg
+	theme       theme.Theme
 	width       int
 	height      int
 }
@@ -96,6 +109,10 @@ func (c Confirm) View() tea.View {
 	if strings.TrimSpace(text) == "" {
 		text = "Confirm?"
 	}
+	t := c.theme
+	if t.Accent == "" {
+		t = theme.Preset("amber")
+	}
 	content := strings.Join([]string{
 		c.DialogTitle,
 		"",
@@ -103,7 +120,15 @@ func (c Confirm) View() tea.View {
 		"",
 		"Press Enter to confirm, Esc to cancel",
 	}, "\n")
-	return tea.NewView(content)
+	view := lipgloss.NewStyle().
+		Width(max(42, c.width/2)).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(t.DialogBorder)).
+		Background(lipgloss.Color(t.DialogBG)).
+		Foreground(lipgloss.Color(t.DialogText)).
+		Padding(1, 2).
+		Render(content)
+	return tea.NewView(view)
 }
 
 func (c Confirm) SetSize(width, height int) {
@@ -118,6 +143,7 @@ type Custom struct {
 	Content     core.Component
 	Width       int
 	Height      int
+	theme       theme.Theme
 }
 
 func (c Custom) Init() tea.Cmd {
@@ -139,6 +165,10 @@ func (c Custom) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (c Custom) View() tea.View {
+	t := c.theme
+	if t.Accent == "" {
+		t = theme.Preset("amber")
+	}
 	body := ""
 	if c.Content != nil {
 		body = core.ViewString(c.Content.View())
@@ -146,7 +176,16 @@ func (c Custom) View() tea.View {
 	if c.DialogTitle != "" {
 		body = c.DialogTitle + "\n\n" + body
 	}
-	return tea.NewView(body)
+	view := lipgloss.NewStyle().
+		Width(max(42, c.Width)).
+		Height(max(10, c.Height)).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(t.DialogBorder)).
+		Background(lipgloss.Color(t.DialogBG)).
+		Foreground(lipgloss.Color(t.DialogText)).
+		Padding(1, 2).
+		Render(body)
+	return tea.NewView(view)
 }
 
 func (c Custom) SetSize(width, height int) {
@@ -162,3 +201,10 @@ func (c Custom) SetSize(width, height int) {
 }
 
 func (c Custom) Title() string { return c.DialogTitle }
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}

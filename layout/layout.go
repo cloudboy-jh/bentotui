@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
 )
 
@@ -176,39 +177,5 @@ func max(a, b int) int {
 }
 
 func joinHorizontal(parts ...string) string {
-	if len(parts) == 0 {
-		return ""
-	}
-	lines := make([][]string, len(parts))
-	widths := make([]int, len(parts))
-	maxLines := 0
-	for i, p := range parts {
-		split := strings.Split(p, "\n")
-		lines[i] = split
-		if len(split) > maxLines {
-			maxLines = len(split)
-		}
-		for _, line := range split {
-			if len(line) > widths[i] {
-				widths[i] = len(line)
-			}
-		}
-	}
-
-	rows := make([]string, maxLines)
-	for y := 0; y < maxLines; y++ {
-		var b strings.Builder
-		for i := range lines {
-			line := ""
-			if y < len(lines[i]) {
-				line = lines[i][y]
-			}
-			b.WriteString(line)
-			if pad := widths[i] - len(line); pad > 0 {
-				b.WriteString(strings.Repeat(" ", pad))
-			}
-		}
-		rows[y] = b.String()
-	}
-	return strings.Join(rows, "\n")
+	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
 }
