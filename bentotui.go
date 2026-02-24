@@ -23,6 +23,10 @@ func WithStatusBar(v bool) app.Option {
 	return app.WithStatusBar(v)
 }
 
+func WithFullScreen(v bool) app.Option {
+	return app.WithFullScreen(v)
+}
+
 func Page(name string, factory func() core.Page) router.Route {
 	return router.Page(name, factory)
 }

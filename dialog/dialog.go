@@ -26,18 +26,34 @@ func Close() tea.Msg             { return CloseMsg{} }
 
 type Manager struct {
 	active Dialog
+	theme  theme.Theme
 	width  int
 	height int
 }
 
-func New() *Manager { return &Manager{} }
+func New() *Manager { return &Manager{theme: theme.Preset("amber")} }
 
 func (m *Manager) Init() tea.Cmd { return nil }
 
 func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch v := msg.(type) {
 	case OpenMsg:
-		m.active = v.Dialog
+		switch d := v.Dialog.(type) {
+		case Confirm:
+			d.theme = m.theme
+			m.active = d
+		case *Confirm:
+			d.theme = m.theme
+			m.active = d
+		case Custom:
+			d.theme = m.theme
+			m.active = d
+		case *Custom:
+			d.theme = m.theme
+			m.active = d
+		default:
+			m.active = v.Dialog
+		}
 		if m.active != nil {
 			m.active.SetSize(m.width, m.height)
 		}
@@ -53,9 +69,27 @@ func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.active != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			switch keyMsg.String() {
-			case "esc", "enter":
+			case "esc":
 				m.active = nil
 				return m, nil
+			case "enter":
+				switch active := m.active.(type) {
+				case Confirm:
+					m.active = nil
+					if active.OnConfirm != nil {
+						return m, func() tea.Msg { return active.OnConfirm() }
+					}
+					return m, nil
+				case *Confirm:
+					m.active = nil
+					if active != nil && active.OnConfirm != nil {
+						return m, func() tea.Msg { return active.OnConfirm() }
+					}
+					return m, nil
+				default:
+					m.active = nil
+					return m, nil
+				}
 			}
 		}
 	}
@@ -87,6 +121,10 @@ func (m *Manager) SetSize(width, height int) {
 }
 
 func (m *Manager) IsOpen() bool { return m.active != nil }
+
+func (m *Manager) SetTheme(t theme.Theme) {
+	m.theme = t
+}
 
 type Confirm struct {
 	DialogTitle string
@@ -120,14 +158,7 @@ func (c Confirm) View() tea.View {
 		"",
 		"Press Enter to confirm, Esc to cancel",
 	}, "\n")
-	view := lipgloss.NewStyle().
-		Width(max(42, c.width/2)).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(t.DialogBorder)).
-		Background(lipgloss.Color(t.DialogBG)).
-		Foreground(lipgloss.Color(t.DialogText)).
-		Padding(1, 2).
-		Render(content)
+	view := renderDialogFrame(content, max(42, c.width/2), 0, t)
 	return tea.NewView(view)
 }
 
@@ -176,15 +207,7 @@ func (c Custom) View() tea.View {
 	if c.DialogTitle != "" {
 		body = c.DialogTitle + "\n\n" + body
 	}
-	view := lipgloss.NewStyle().
-		Width(max(42, c.Width)).
-		Height(max(10, c.Height)).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(t.DialogBorder)).
-		Background(lipgloss.Color(t.DialogBG)).
-		Foreground(lipgloss.Color(t.DialogText)).
-		Padding(1, 2).
-		Render(body)
+	view := renderDialogFrame(body, max(42, c.Width), max(10, c.Height), t)
 	return tea.NewView(view)
 }
 
@@ -207,4 +230,18 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func renderDialogFrame(content string, width, height int, t theme.Theme) string {
+	style := lipgloss.NewStyle().
+		Width(width).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(t.DialogBorder)).
+		Background(lipgloss.Color(t.DialogBG)).
+		Foreground(lipgloss.Color(t.DialogText)).
+		Padding(1, 2)
+	if height > 0 {
+		style = style.Height(height)
+	}
+	return style.Render(content)
 }

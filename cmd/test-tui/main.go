@@ -28,7 +28,7 @@ func main() {
 	t := theme.Preset("amber")
 	status := statusbar.New(
 		statusbar.Left("BentoTUI internal control room"),
-		statusbar.Right("1 Home  2 Inspect  Tab Focus  O Dialog  Q Quit"),
+		statusbar.Right("1:Home  2:Inspect  Tab:Focus  O:Dialog  Q:Quit"),
 	)
 
 	m := bentotui.New(
@@ -39,6 +39,7 @@ func main() {
 			bentotui.Page("inspect", func() core.Page { return newInspectPage(t) }),
 		),
 		bentotui.WithStatusBar(true),
+		bentotui.WithFullScreen(true),
 	)
 
 	p := tea.NewProgram(m)
@@ -61,8 +62,6 @@ func (b *textBlock) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (b *textBlock) View() tea.View { return tea.NewView(b.text) }
 
 type homePage struct {
-	theme theme.Theme
-
 	root                                             *layout.Split
 	headerPanel, controlsPanel, statePanel, logPanel *panel.Model
 	notesPanel                                       *panel.Model
@@ -78,7 +77,6 @@ type homePage struct {
 
 func newHomePage(t theme.Theme) *homePage {
 	p := &homePage{
-		theme:        t,
 		headerText:   newTextBlock(""),
 		controlsText: newTextBlock(""),
 		stateText:    newTextBlock(""),
@@ -168,7 +166,7 @@ func (p *homePage) rebuildLayout() {
 			layout.Flex(1, p.logPanel),
 		)
 		p.root = layout.Vertical(
-			layout.Fixed(4, p.headerPanel),
+			layout.Fixed(5, p.headerPanel),
 			layout.Flex(1, main),
 		)
 		p.focus = focus.New(focus.Ring(p.statePanel, p.logPanel))
@@ -183,7 +181,7 @@ func (p *homePage) rebuildLayout() {
 		)
 		main := layout.Horizontal(layout.Fixed(40, left), layout.Flex(1, right))
 		p.root = layout.Vertical(
-			layout.Fixed(4, p.headerPanel),
+			layout.Fixed(5, p.headerPanel),
 			layout.Flex(1, main),
 		)
 		p.focus = focus.New(focus.Ring(p.statePanel, p.logPanel, p.notesPanel))
@@ -200,6 +198,7 @@ func (p *homePage) refresh() {
 	}
 	p.headerText.SetText(strings.Join([]string{
 		fmt.Sprintf("Route: home  |  Mode: %s", mode),
+		fmt.Sprintf("Viewport: %dx%d", p.width, p.height),
 		"Use Tab / Shift+Tab to cycle focus panels.",
 	}, "\n"))
 
@@ -259,8 +258,6 @@ func (p *homePage) focusName() string {
 }
 
 type inspectPage struct {
-	theme theme.Theme
-
 	root                                           *layout.Split
 	headerPanel, summaryPanel, checkPanel          *panel.Model
 	resultPanel                                    *panel.Model
@@ -275,7 +272,6 @@ type inspectPage struct {
 
 func newInspectPage(t theme.Theme) *inspectPage {
 	p := &inspectPage{
-		theme:       t,
 		headerText:  newTextBlock(""),
 		summaryText: newTextBlock(""),
 		checkText:   newTextBlock(""),
@@ -355,14 +351,14 @@ func (p *inspectPage) rebuildLayout() {
 			layout.Flex(1, p.resultPanel),
 		)
 		p.root = layout.Vertical(
-			layout.Fixed(4, p.headerPanel),
+			layout.Fixed(5, p.headerPanel),
 			layout.Flex(1, main),
 		)
 	} else {
 		right := layout.Vertical(layout.Fixed(10, p.checkPanel), layout.Flex(1, p.resultPanel))
 		main := layout.Horizontal(layout.Flex(2, p.summaryPanel), layout.Flex(1, right))
 		p.root = layout.Vertical(
-			layout.Fixed(4, p.headerPanel),
+			layout.Fixed(5, p.headerPanel),
 			layout.Flex(1, main),
 		)
 	}
@@ -379,6 +375,7 @@ func (p *inspectPage) refresh() {
 	}
 	p.headerText.SetText(strings.Join([]string{
 		fmt.Sprintf("Route: inspect  |  Mode: %s", mode),
+		fmt.Sprintf("Viewport: %dx%d", p.width, p.height),
 		"Inspect route validates split + focus + overlay behavior.",
 	}, "\n"))
 

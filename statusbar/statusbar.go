@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -109,11 +110,7 @@ func (m *Model) renderLine(text string) string {
 }
 
 func fitWidth(s string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-	s = lipgloss.NewStyle().MaxWidth(width).Render(s)
-	return lipgloss.PlaceHorizontal(width, lipgloss.Left, s)
+	return surface.FitWidth(s, width)
 }
 
 func max(a, b int) int {

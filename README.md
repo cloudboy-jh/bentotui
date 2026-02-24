@@ -4,34 +4,22 @@
 
 The application framework for Bubble Tea.
 
-BentoTUI sits between low-level Bubble Tea primitives and shipped terminal apps. It gives you reusable app patterns: page routing, panel layouts, focus orchestration, dialog handling, and status surfaces.
+BentoTUI sits between low-level Bubble Tea primitives and shipped terminal apps. It gives you a reusable app skeleton for routing, layout, focus, dialogs, status surfaces, and theming.
 
-## Current Status
+## Status
 
-This repository is in early v0.1 scaffolding.
+BentoTUI is in active v0.1 development.
 
 Implemented today:
 
-- `app` shell for root composition and message flow
-- `router` with lazy page factories and page caching
-- `layout` with fixed/flex horizontal and vertical splits
-- `focus` ring manager foundations
-- `theme` presets and option-based overrides
-- `dialog` manager with `Confirm` and `Custom` models
-- `statusbar` and `panel` primitives
-- `cmd/demo` starter app
-
-## Why BentoTUI
-
-Bubble Tea gives you great primitives. Production apps still have to rebuild the same architectural layer every time:
-
-- multi-panel layout math
-- focus routing across components
-- page switching and app shell composition
-- modal/dialog input capture patterns
-- status/help surface wiring
-
-BentoTUI packages those patterns in composable Go packages so your app code can stay focused on domain logic.
+- app shell (`app`)
+- page routing with lazy page creation (`router`)
+- fixed/flex split layouts (`layout`)
+- focus ring (`focus`)
+- dialog manager (`dialog`)
+- status bar (`statusbar`)
+- panel surfaces (`panel`)
+- semantic theme presets (`theme`)
 
 ## Install
 
@@ -109,40 +97,28 @@ func (s staticText) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return s, nil }
 func (s staticText) View() tea.View                          { return tea.NewView(string(s)) }
 ```
 
-## Run the Demo
+Fullscreen mode is enabled by default. Disable it with:
 
-```bash
-go run ./cmd/demo
+```go
+bentotui.WithFullScreen(false)
 ```
 
-## Package Overview
+## Internal Harness
 
-- `app`: root shell and top-level routing/status/dialog coordination
-- `router`: page registration, lazy creation, active page switching
-- `layout`: fixed/flex split containers for horizontal/vertical composition
-- `focus`: focus ring helper and focus cycling model
-- `dialog`: modal manager and dialog message contracts
-- `statusbar`: contextual status line and key help surface
-- `panel`: bordered container for child content
-- `theme`: theme presets and custom token options
-- `core`: shared interfaces and common messages
+Use the internal harness to validate rendering and interaction behavior:
 
-## Roadmap
+```bash
+go run ./cmd/test-tui
+```
 
-Near-term goals:
+## Docs
 
-- command palette
-- searchable grouped picker
-- richer dialog overlay compositing
-- responsive breakpoint helpers
-- expanded docs and examples
+- Main spec: `project-docs/bentotui-main-spec.md`
+- Rendering system design (ADR-0001): `project-docs/rendering-system-design.md`
+- Research notes: `project-docs/tui-framework-research.md`
 
 ## Development
 
 ```bash
 go test ./...
 ```
-
-## License
-
-TBD

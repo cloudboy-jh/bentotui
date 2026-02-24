@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -70,12 +71,12 @@ func (m *Model) View() tea.View {
 	if m.content != nil {
 		body = core.ViewString(m.content.View())
 	}
-	outerWidth := max(20, m.width)
-	if m.width <= 0 {
+	outerWidth := m.width
+	if outerWidth <= 0 {
 		outerWidth = max(30, maxLineWidth(body)+4)
 	}
-	outerHeight := max(5, m.height)
-	if m.height <= 0 {
+	outerHeight := m.height
+	if outerHeight <= 0 {
 		outerHeight = max(8, len(strings.Split(body, "\n"))+4)
 	}
 
@@ -91,10 +92,10 @@ func (m *Model) View() tea.View {
 	for len(rows) < innerHeight {
 		idx := len(rows) - contentStart
 		if idx >= 0 && idx < len(contentRows) {
-			rows = append(rows, fitWidth(contentRows[idx], innerWidth))
+			rows = append(rows, padContentRow(contentRows[idx], innerWidth))
 			continue
 		}
-		rows = append(rows, fitWidth("", innerWidth))
+		rows = append(rows, padContentRow("", innerWidth))
 	}
 
 	borderColor := m.theme.Border
@@ -104,7 +105,7 @@ func (m *Model) View() tea.View {
 	boxStyle := lipgloss.NewStyle().
 		Width(outerWidth).
 		Height(outerHeight).
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color(borderColor)).
 		Background(lipgloss.Color(m.theme.Surface)).
 		Foreground(lipgloss.Color(m.theme.Text))
@@ -115,8 +116,13 @@ func (m *Model) View() tea.View {
 func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
+	contentWidth := max(0, width-4)
+	contentHeight := max(0, height-2)
+	if m.title != "" {
+		contentHeight = max(0, contentHeight-1)
+	}
 	if s, ok := m.content.(core.Sizeable); ok {
-		s.SetSize(max(0, width-2), max(0, height-2))
+		s.SetSize(contentWidth, contentHeight)
 	}
 }
 
@@ -147,11 +153,20 @@ func renderTitleRow(title string, width int, t theme.Theme) string {
 }
 
 func fitWidth(s string, width int) string {
-	if width <= 0 {
+	return surface.FitWidth(s, width)
+}
+
+func padContentRow(s string, innerWidth int) string {
+	if innerWidth <= 0 {
 		return ""
 	}
-	s = lipgloss.NewStyle().MaxWidth(width).Render(s)
-	return lipgloss.PlaceHorizontal(width, lipgloss.Left, s)
+	if innerWidth == 1 {
+		return " "
+	}
+	if innerWidth == 2 {
+		return "  "
+	}
+	return " " + fitWidth(s, innerWidth-2) + " "
 }
 
 func maxLineWidth(s string) int {

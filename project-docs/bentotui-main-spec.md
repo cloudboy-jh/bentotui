@@ -140,7 +140,11 @@ app := bentotui.New(
     bentotui.WithStatusBar(true),
 )
 
-p := tea.NewProgram(app, tea.WithAltScreen())
+p := tea.NewProgram(app)
+
+// Full-screen app mode is enabled by default.
+// Opt out for inline mode:
+// bentotui.WithFullScreen(false)
 ```
 
 #### `router` — Page System
@@ -429,6 +433,8 @@ The minimum surface to ship and build Veil on:
 
 ## References
 
+- [Rendering System Design (ADR-0001)](./rendering-system-design.md)
+- [Implementation Next Steps](./next-steps.md)
 - [TUI Framework Research Doc](./tui-framework-research.md)
 - [Crush TUI Architecture (DeepWiki)](https://deepwiki.com/charmbracelet/crush/5.1-tui-architecture)
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea)

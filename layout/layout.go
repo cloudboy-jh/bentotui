@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/surface"
 )
 
 type Kind int
@@ -71,14 +72,51 @@ func (s *Split) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (s *Split) View() tea.View {
-	parts := make([]string, 0, len(s.items))
-	for _, item := range s.items {
-		parts = append(parts, core.ViewString(item.child.View()))
+	if len(s.items) == 0 {
+		return tea.NewView("")
 	}
+
+	if s.width <= 0 || s.height <= 0 {
+		parts := make([]string, 0, len(s.items))
+		for _, item := range s.items {
+			parts = append(parts, core.ViewString(item.child.View()))
+		}
+		if s.horizontal {
+			return tea.NewView(joinHorizontal(parts...))
+		}
+		return tea.NewView(lipgloss.JoinVertical(lipgloss.Top, parts...))
+	}
+
+	allocs := s.allocations()
+	layers := make([]*lipgloss.Layer, 0, len(s.items))
 	if s.horizontal {
-		return tea.NewView(joinHorizontal(parts...))
+		x := 0
+		for i, item := range s.items {
+			w := max(0, allocs[i])
+			slot := surface.Region(core.ViewString(item.child.View()), w, max(0, s.height), "", "")
+			layer := lipgloss.NewLayer(slot).
+				X(x).
+				Y(0).
+				Z(i)
+			layers = append(layers, layer)
+			x += w
+		}
+		return tea.NewView(lipgloss.NewCanvas(layers...))
 	}
-	return tea.NewView(strings.Join(parts, "\n"))
+
+	y := 0
+	for i, item := range s.items {
+		h := max(0, allocs[i])
+		slot := surface.Region(core.ViewString(item.child.View()), max(0, s.width), h, "", "")
+		layer := lipgloss.NewLayer(slot).
+			X(0).
+			Y(y).
+			Z(i)
+		layers = append(layers, layer)
+		y += h
+	}
+
+	return tea.NewView(lipgloss.NewCanvas(layers...))
 }
 
 func (s *Split) SetSize(width, height int) {
