@@ -5,6 +5,9 @@ type Theme struct {
 	Text       string
 	Muted      string
 	Background string
+	PanelBG    string
+	ElementBG  string
+	ModalBG    string
 	Success    string
 	Warning    string
 	Error      string
@@ -12,7 +15,12 @@ type Theme struct {
 	Surface       string
 	SurfaceMuted  string
 	Border        string
+	BorderSubtle  string
 	BorderFocused string
+	SelectionBG   string
+	SelectionText string
+	InputBG       string
+	InputBorder   string
 	TitleText     string
 	TitleBG       string
 	StatusText    string
@@ -23,10 +31,17 @@ type Theme struct {
 	Scrim         string
 }
 
+const (
+	DefaultName         = "catppuccin-mocha"
+	CatppuccinMochaName = "catppuccin-mocha"
+	DraculaName         = "dracula"
+	OsakaJadeName       = "osaka-jade"
+)
+
 type Option func(*Theme)
 
 func New(opts ...Option) Theme {
-	t := Preset("amber")
+	t := Preset(DefaultName)
 	for _, opt := range opts {
 		opt(&t)
 	}
@@ -35,73 +50,101 @@ func New(opts ...Option) Theme {
 
 func Preset(name string) Theme {
 	switch name {
-	case "emerald":
+	case OsakaJadeName:
 		return Theme{
-			Accent:        "#10B981",
-			Text:          "#ECFDF5",
-			Muted:         "#6EE7B7",
-			Background:    "#052E1C",
-			Success:       "#22C55E",
-			Warning:       "#F59E0B",
-			Error:         "#EF4444",
-			Surface:       "#083122",
-			SurfaceMuted:  "#0D3E2C",
-			Border:        "#1D6A4E",
-			BorderFocused: "#34D399",
-			TitleText:     "#ECFDF5",
-			TitleBG:       "#0F513A",
-			StatusText:    "#ECFDF5",
-			StatusBG:      "#0F513A",
-			DialogText:    "#ECFDF5",
-			DialogBG:      "#083122",
-			DialogBorder:  "#34D399",
-			Scrim:         "#031A11",
+			Accent:        "#38C2A3",
+			Text:          "#D5EFE9",
+			Muted:         "#86B8AC",
+			Background:    "#071B1A",
+			PanelBG:       "#0C2322",
+			ElementBG:     "#13302E",
+			ModalBG:       "#0F2927",
+			Success:       "#56D39B",
+			Warning:       "#F4C16D",
+			Error:         "#F26A6A",
+			Surface:       "#0D2A28",
+			SurfaceMuted:  "#123833",
+			Border:        "#2F6E63",
+			BorderSubtle:  "#244F48",
+			BorderFocused: "#5DE0BF",
+			SelectionBG:   "#1B5049",
+			SelectionText: "#E3FBF5",
+			InputBG:       "#13322E",
+			InputBorder:   "#3E8C80",
+			TitleText:     "#071B1A",
+			TitleBG:       "#38C2A3",
+			StatusText:    "#D5EFE9",
+			StatusBG:      "#0B2422",
+			DialogText:    "#D5EFE9",
+			DialogBG:      "#102F2B",
+			DialogBorder:  "#5DE0BF",
+			Scrim:         "#031211",
 		}
-	case "violet":
+	case DraculaName:
 		return Theme{
-			Accent:        "#8B5CF6",
-			Text:          "#F5F3FF",
-			Muted:         "#C4B5FD",
-			Background:    "#1E1B4B",
-			Success:       "#10B981",
-			Warning:       "#F59E0B",
-			Error:         "#EF4444",
-			Surface:       "#241F61",
-			SurfaceMuted:  "#2D2774",
-			Border:        "#4C3FA4",
-			BorderFocused: "#A78BFA",
-			TitleText:     "#F5F3FF",
-			TitleBG:       "#372E84",
-			StatusText:    "#F5F3FF",
-			StatusBG:      "#372E84",
-			DialogText:    "#F5F3FF",
-			DialogBG:      "#241F61",
-			DialogBorder:  "#A78BFA",
-			Scrim:         "#151235",
+			Accent:        "#FF79C6",
+			Text:          "#F8F8F2",
+			Muted:         "#B2BEDC",
+			Background:    "#282A36",
+			PanelBG:       "#303341",
+			ElementBG:     "#3B3E4D",
+			ModalBG:       "#2C3040",
+			Success:       "#50FA7B",
+			Warning:       "#FFB86C",
+			Error:         "#FF5555",
+			Surface:       "#343746",
+			SurfaceMuted:  "#44475A",
+			Border:        "#6272A4",
+			BorderSubtle:  "#4F5C88",
+			BorderFocused: "#FF79C6",
+			SelectionBG:   "#BD93F9",
+			SelectionText: "#1E1F29",
+			InputBG:       "#3A3D4C",
+			InputBorder:   "#BD93F9",
+			TitleText:     "#282A36",
+			TitleBG:       "#BD93F9",
+			StatusText:    "#F8F8F2",
+			StatusBG:      "#1F2230",
+			DialogText:    "#F8F8F2",
+			DialogBG:      "#2F3343",
+			DialogBorder:  "#FF79C6",
+			Scrim:         "#161821",
 		}
 	default:
 		return Theme{
-			Accent:        "#D9A35B",
-			Text:          "#E6EDF3",
-			Muted:         "#8B97A8",
-			Background:    "#0D1117",
-			Success:       "#10B981",
-			Warning:       "#F59E0B",
-			Error:         "#EF4444",
-			Surface:       "#161B22",
-			SurfaceMuted:  "#1C2430",
-			Border:        "#2D3642",
-			BorderFocused: "#D9A35B",
-			TitleText:     "#0D1117",
-			TitleBG:       "#D9A35B",
-			StatusText:    "#E6EDF3",
-			StatusBG:      "#1B202A",
-			DialogText:    "#E6EDF3",
-			DialogBG:      "#161B22",
-			DialogBorder:  "#D9A35B",
-			Scrim:         "#0A0E14",
+			Accent:        "#89B4FA",
+			Text:          "#CDD6F4",
+			Muted:         "#BAC2DE",
+			Background:    "#181825",
+			PanelBG:       "#24273A",
+			ElementBG:     "#313244",
+			ModalBG:       "#1E1E2E",
+			Success:       "#A6E3A1",
+			Warning:       "#F9E2AF",
+			Error:         "#F38BA8",
+			Surface:       "#313244",
+			SurfaceMuted:  "#45475A",
+			Border:        "#585B70",
+			BorderSubtle:  "#45475A",
+			BorderFocused: "#89B4FA",
+			SelectionBG:   "#89B4FA",
+			SelectionText: "#1E1E2E",
+			InputBG:       "#2B2C3F",
+			InputBorder:   "#74C7EC",
+			TitleText:     "#1E1E2E",
+			TitleBG:       "#89B4FA",
+			StatusText:    "#CDD6F4",
+			StatusBG:      "#11111B",
+			DialogText:    "#CDD6F4",
+			DialogBG:      "#313244",
+			DialogBorder:  "#89B4FA",
+			Scrim:         "#0F0F17",
 		}
 	}
+}
+
+func AvailableThemes() []string {
+	return []string{CatppuccinMochaName, DraculaName, OsakaJadeName}
 }
 
 func Accent(v string) Option     { return func(t *Theme) { t.Accent = v } }

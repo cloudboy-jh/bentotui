@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -31,7 +32,7 @@ type Manager struct {
 	height int
 }
 
-func New() *Manager { return &Manager{theme: theme.Preset("amber")} }
+func New() *Manager { return &Manager{theme: theme.Preset(theme.DefaultName)} }
 
 func (m *Manager) Init() tea.Cmd { return nil }
 
@@ -149,16 +150,10 @@ func (c Confirm) View() tea.View {
 	}
 	t := c.theme
 	if t.Accent == "" {
-		t = theme.Preset("amber")
+		t = theme.Preset(theme.DefaultName)
 	}
-	content := strings.Join([]string{
-		c.DialogTitle,
-		"",
-		text,
-		"",
-		"Press Enter to confirm, Esc to cancel",
-	}, "\n")
-	view := renderDialogFrame(content, max(42, c.width/2), 0, t)
+	content := strings.Join([]string{text, "", "Enter confirm  Esc cancel"}, "\n")
+	view := renderDialogFrame(c.DialogTitle, content, max(48, c.width/2), 0, t)
 	return tea.NewView(view)
 }
 
@@ -198,16 +193,13 @@ func (c Custom) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (c Custom) View() tea.View {
 	t := c.theme
 	if t.Accent == "" {
-		t = theme.Preset("amber")
+		t = theme.Preset(theme.DefaultName)
 	}
 	body := ""
 	if c.Content != nil {
 		body = core.ViewString(c.Content.View())
 	}
-	if c.DialogTitle != "" {
-		body = c.DialogTitle + "\n\n" + body
-	}
-	view := renderDialogFrame(body, max(42, c.Width), max(10, c.Height), t)
+	view := renderDialogFrame(c.DialogTitle, body, max(50, c.Width), max(12, c.Height), t)
 	return tea.NewView(view)
 }
 
@@ -232,16 +224,34 @@ func max(a, b int) int {
 	return b
 }
 
-func renderDialogFrame(content string, width, height int, t theme.Theme) string {
-	style := lipgloss.NewStyle().
-		Width(width).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(t.DialogBorder)).
-		Background(lipgloss.Color(t.DialogBG)).
-		Foreground(lipgloss.Color(t.DialogText)).
-		Padding(1, 2)
+func renderDialogFrame(title, content string, width, height int, t theme.Theme) string {
+	sys := styles.New(t)
+	headerTitle := title
+	if strings.TrimSpace(headerTitle) == "" {
+		headerTitle = "Dialog"
+	}
+	headerWidth := max(0, width-6)
+	header := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		sys.DialogHeader().Render(surfaceFit(headerTitle, max(0, headerWidth-6))),
+		sys.DialogEscHint().Render(lipgloss.PlaceHorizontal(6, lipgloss.Right, "esc")),
+	)
+	body := strings.TrimRight(content, "\n")
+	if body == "" {
+		body = " "
+	}
+	joined := strings.Join([]string{header, "", body}, "\n")
+	style := sys.DialogFrame().Width(width)
 	if height > 0 {
 		style = style.Height(height)
 	}
-	return style.Render(content)
+	return style.Render(joined)
+}
+
+func surfaceFit(s string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	s = lipgloss.NewStyle().MaxWidth(width).Render(s)
+	return lipgloss.PlaceHorizontal(width, lipgloss.Left, s)
 }

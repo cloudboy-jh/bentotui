@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
@@ -23,7 +24,7 @@ type Model struct {
 }
 
 func New(opts ...Option) *Model {
-	m := &Model{theme: theme.Preset("amber")}
+	m := &Model{theme: theme.Preset(theme.DefaultName)}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -50,10 +51,7 @@ func (m *Model) View() tea.View {
 	help := m.helpText()
 	left := strings.TrimSpace(strings.Join([]string{m.left, help}, "  "))
 	if m.width == 0 {
-		return tea.NewView(lipgloss.NewStyle().
-			Foreground(lipgloss.Color(m.theme.StatusText)).
-			Background(lipgloss.Color(m.theme.StatusBG)).
-			Render(left))
+		return tea.NewView(styles.New(m.theme).StatusBar().Render(left))
 	}
 	right := fitWidth(m.right, max(0, m.width))
 	rightWidth := lipgloss.Width(right)
@@ -98,9 +96,7 @@ func (m *Model) helpText() string {
 }
 
 func (m *Model) renderLine(text string) string {
-	style := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(m.theme.StatusText)).
-		Background(lipgloss.Color(m.theme.StatusBG))
+	style := styles.New(m.theme).StatusBar()
 	if m.width == 0 {
 		return style.Render(text)
 	}

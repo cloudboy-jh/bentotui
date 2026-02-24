@@ -5,7 +5,43 @@ Date: 2026-02-24
 
 This plan follows ADR-0001 in `project-docs/rendering-system-design.md`.
 
-## Phase 1: Lock Renderer Correctness
+## Phase A: Paint Baseline (Color Blocking)
+
+- Ensure every shell/layout/component slot paints a full rectangular area each frame
+- Remove rendering paths that flatten child ANSI styling into a single foreground pass
+- Verify no transparent seams remain during route switch, resize, or overlay open/close
+
+Exit criteria:
+
+- no visible bleed-through of previous terminal buffer content
+- panel/dialog/status surfaces read as solid blocks, not wireframes
+
+## Phase B: Theme and Surface Language (Primary)
+
+- Finalize v0.1 built-in presets and startup default policy:
+  - `catppuccin-mocha` (default)
+  - `dracula`
+  - `osaka-jade`
+- Tune semantic token ladder (`Background`, `Surface`, `SurfaceMuted`) for clear depth
+- Strengthen component token contrast (`Border`, `BorderFocused`, `TitleBG`, `StatusBG`, `DialogBG`)
+
+Exit criteria:
+
+- clear visual hierarchy in harness at a glance
+- focused panels are unmistakable during tab cycling
+- theme switching and restart persistence stable
+
+## Phase C: Focus Visibility Pass
+
+- Increase focused title/border delta while keeping non-focused panels quiet
+- Validate focus cues in both wide and compact layouts
+- Add tests that assert focus-cycling causes visible state changes
+
+Exit criteria:
+
+- no ambiguity about focused target after a single `tab` press
+
+## Phase D: Lock Renderer Correctness
 
 - Ensure root renderer remains update-safe (`Update` mutates state, `View` renders state)
 - Keep deterministic z-order in app shell (`shell -> body -> status -> scrim -> dialog`)
@@ -18,7 +54,7 @@ Exit criteria:
 - no startup ghost frame
 - `go test ./...` and `go vet ./...` clean
 
-## Phase 2: Componentize Surface Rendering
+## Phase E: Componentize Surface Rendering
 
 - Expand `surface` package as shared primitive layer:
   - fill blocks
@@ -33,19 +69,7 @@ Exit criteria:
 - no duplicated low-level width/fill helpers across modules
 - panel/dialog/status all consume shared surface utilities
 
-## Phase 3: Restore Solid UI Language
-
-- Replace wireframe-heavy borders with tonal surfaces and deliberate hierarchy
-- Keep focus accents high-contrast while reducing non-focused border noise
-- Normalize spacing rhythm across header, panels, statusbar, and dialogs
-- Preserve clear readability on both dark and transparent terminals
-
-Exit criteria:
-
-- harness (`cmd/test-tui`) has clear visual depth and consistent component language
-- no regressions in interaction (`1/2/o/q`, tab focus cycle, dialog close)
-
-## Phase 4: Docs and Examples
+## Phase F: Docs and Examples
 
 - Add a dedicated "Build a real app shell" guide to main spec
 - Add examples for:
@@ -65,5 +89,5 @@ Exit criteria:
 1. Add renderer regression tests for full-frame paint guarantees.
 2. Add layout slot paint tests for fixed/flex remainder behavior.
 3. Add statusbar truncation tests for narrow widths.
-4. Tune panel theme tokens for non-wireframe solid surfaces.
-5. Build one polished `cmd/test-tui` theme profile for demos.
+4. Finalize default theme set (`catppuccin-mocha`, `dracula`, `osaka-jade`) and startup/persistence policy.
+5. Keep `cmd/test-tui` as the canonical color/focus validation harness.

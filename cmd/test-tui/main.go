@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/app"
 	"github.com/cloudboy-jh/bentotui/core"
@@ -14,29 +16,25 @@ import (
 	"github.com/cloudboy-jh/bentotui/focus"
 	"github.com/cloudboy-jh/bentotui/layout"
 	"github.com/cloudboy-jh/bentotui/panel"
-	"github.com/cloudboy-jh/bentotui/router"
 	"github.com/cloudboy-jh/bentotui/statusbar"
+	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const (
-	compactWidthBreakpoint  = 116
-	compactHeightBreakpoint = 34
-)
+var actionLabels = []string{"Theme Picker", "Custom Dialog", "Confirm Dialog"}
 
 func main() {
-	t := theme.Preset("amber")
+	t := theme.CurrentTheme()
 	status := statusbar.New(
-		statusbar.Left("BentoTUI internal control room"),
-		statusbar.Right("1:Home  2:Inspect  Tab:Focus  O:Dialog  Q:Quit"),
+		statusbar.Left("BentoTUI theme harness"),
+		statusbar.Right("tab:focus  <-/->:action  enter:submit/run  /:theme  d:dialog  x:confirm  q:quit"),
 	)
 
 	m := bentotui.New(
 		bentotui.WithTheme(t),
 		app.WithStatus(status),
 		bentotui.WithPages(
-			bentotui.Page("home", func() core.Page { return newHomePage(t) }),
-			bentotui.Page("inspect", func() core.Page { return newInspectPage(t) }),
+			bentotui.Page("harness", func() core.Page { return newHarnessPage(t) }),
 		),
 		bentotui.WithStatusBar(true),
 		bentotui.WithFullScreen(true),
@@ -48,9 +46,7 @@ func main() {
 	}
 }
 
-type textBlock struct {
-	text string
-}
+type textBlock struct{ text string }
 
 func newTextBlock(text string) *textBlock { return &textBlock{text: text} }
 func (b *textBlock) SetText(text string)  { b.text = text }
@@ -61,357 +57,345 @@ func (b *textBlock) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (b *textBlock) View() tea.View { return tea.NewView(b.text) }
 
-type homePage struct {
-	root                                             *layout.Split
-	headerPanel, controlsPanel, statePanel, logPanel *panel.Model
-	notesPanel                                       *panel.Model
-	headerText, controlsText, stateText, logText     *textBlock
-	notesText                                        *textBlock
-	focus                                            *focus.Manager
+type harnessEventMsg struct{ text string }
 
-	compact       bool
-	width, height int
-	counter       int
-	logs          []string
+type harnessPage struct {
+	root *layout.Split
+
+	headerPanel  *panel.Model
+	mainPanel    *panel.Model
+	actionsPanel *panel.Model
+
+	headerText  *textBlock
+	mainText    *textBlock
+	actionsText *textBlock
+
+	focus *focus.Manager
+	input textinput.Model
+
+	theme     theme.Theme
+	themeName string
+	width     int
+	height    int
+	startedAt time.Time
+	events    []string
+	actionIdx int
 }
 
-func newHomePage(t theme.Theme) *homePage {
-	p := &homePage{
-		headerText:   newTextBlock(""),
-		controlsText: newTextBlock(""),
-		stateText:    newTextBlock(""),
-		logText:      newTextBlock(""),
-		notesText:    newTextBlock(""),
-	}
-	p.headerPanel = panel.New(panel.Theme(t), panel.Title("Session"), panel.Content(p.headerText))
-	p.controlsPanel = panel.New(panel.Theme(t), panel.Title("Controls"), panel.Content(p.controlsText))
-	p.statePanel = panel.New(panel.Theme(t), panel.Title("State"), panel.Content(p.stateText))
-	p.logPanel = panel.New(panel.Theme(t), panel.Title("Activity"), panel.Content(p.logText))
-	p.notesPanel = panel.New(panel.Theme(t), panel.Title("Notes"), panel.Content(p.notesText))
-	p.rebuildLayout()
-	p.refresh()
-	return p
-}
+func newHarnessPage(t theme.Theme) *harnessPage {
+	in := textinput.New()
+	in.Prompt = "> "
+	in.Placeholder = "Type text, /theme, /dialog, or /confirm"
+	in.ShowSuggestions = true
+	in.SetSuggestions([]string{"/theme", "/dialog", "/confirm"})
+	in.SetStyles(inputStyles(t))
 
-func (p *homePage) Init() tea.Cmd { return nil }
-
-func (p *homePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch v := msg.(type) {
-	case tea.KeyMsg:
-		switch v.String() {
-		case "q", "ctrl+c":
-			return p, tea.Quit
-		case "1":
-			return p, func() tea.Msg { return router.Navigate("home") }
-		case "2":
-			return p, func() tea.Msg { return router.Navigate("inspect") }
-		case "+", "=":
-			p.counter++
-			p.log("counter incremented")
-		case "-", "_":
-			p.counter--
-			p.log("counter decremented")
-		case "r":
-			p.counter = 0
-			p.log("counter reset")
-		case "o":
-			return p, func() tea.Msg {
-				return dialog.Open(dialog.Custom{
-					DialogTitle: "Control Room Overlay",
-					Content:     newTextBlock("Overlay layer is active on Home.\nPress Enter or Esc to close."),
-					Width:       56,
-					Height:      8,
-				})
-			}
-		}
-	}
-
-	if p.focus != nil {
-		_, _ = p.focus.Update(msg)
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && key.Matches(keyMsg, p.focus.Bindings()...) {
-			p.log("focus moved")
-		}
-	}
-
-	p.refresh()
-	_, cmd := p.root.Update(msg)
-	return p, cmd
-}
-
-func (p *homePage) View() tea.View { return p.root.View() }
-
-func (p *homePage) SetSize(width, height int) {
-	p.width, p.height = width, height
-	p.updateCompact()
-	p.root.SetSize(width, height)
-}
-
-func (p *homePage) GetSize() (int, int) { return p.width, p.height }
-func (p *homePage) Title() string       { return "Home" }
-
-func (p *homePage) updateCompact() {
-	next := p.width < compactWidthBreakpoint || p.height < compactHeightBreakpoint
-	if next == p.compact {
-		return
-	}
-	p.compact = next
-	p.rebuildLayout()
-}
-
-func (p *homePage) rebuildLayout() {
-	if p.compact {
-		main := layout.Vertical(
-			layout.Fixed(8, p.controlsPanel),
-			layout.Fixed(7, p.statePanel),
-			layout.Flex(1, p.logPanel),
-		)
-		p.root = layout.Vertical(
-			layout.Fixed(5, p.headerPanel),
-			layout.Flex(1, main),
-		)
-		p.focus = focus.New(focus.Ring(p.statePanel, p.logPanel))
-	} else {
-		left := layout.Vertical(
-			layout.Fixed(10, p.controlsPanel),
-			layout.Flex(1, p.logPanel),
-		)
-		right := layout.Vertical(
-			layout.Fixed(9, p.statePanel),
-			layout.Flex(1, p.notesPanel),
-		)
-		main := layout.Horizontal(layout.Fixed(40, left), layout.Flex(1, right))
-		p.root = layout.Vertical(
-			layout.Fixed(5, p.headerPanel),
-			layout.Flex(1, main),
-		)
-		p.focus = focus.New(focus.Ring(p.statePanel, p.logPanel, p.notesPanel))
-	}
-	if p.width > 0 && p.height > 0 {
-		p.root.SetSize(p.width, p.height)
-	}
-}
-
-func (p *homePage) refresh() {
-	mode := "wide"
-	if p.compact {
-		mode = "compact"
-	}
-	p.headerText.SetText(strings.Join([]string{
-		fmt.Sprintf("Route: home  |  Mode: %s", mode),
-		fmt.Sprintf("Viewport: %dx%d", p.width, p.height),
-		"Use Tab / Shift+Tab to cycle focus panels.",
-	}, "\n"))
-
-	p.controlsText.SetText(strings.Join([]string{
-		"1: home",
-		"2: inspect",
-		"tab: next pane",
-		"shift+tab: prev pane",
-		"+: increment",
-		"-: decrement",
-		"r: reset",
-		"o: dialog",
-		"q: quit",
-	}, "\n"))
-
-	p.stateText.SetText(strings.Join([]string{
-		fmt.Sprintf("Counter: %d", p.counter),
-		fmt.Sprintf("Events: %d", len(p.logs)),
-		fmt.Sprintf("Focus: %s", p.focusName()),
-		fmt.Sprintf("Time: %s", time.Now().Format("15:04:05")),
-	}, "\n"))
-
-	p.notesText.SetText(strings.Join([]string{
-		"Solid-surface validation:",
-		"- focus borders",
-		"- router + cache",
-		"- dialog overlay",
-		"- compact behavior",
-	}, "\n"))
-
-	if len(p.logs) == 0 {
-		p.logText.SetText("No events yet.")
-	} else {
-		p.logText.SetText(strings.Join(p.logs, "\n"))
-	}
-}
-
-func (p *homePage) log(s string) {
-	entry := fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), s)
-	p.logs = append([]string{entry}, p.logs...)
-	if len(p.logs) > 18 {
-		p.logs = p.logs[:18]
-	}
-}
-
-func (p *homePage) focusName() string {
-	switch p.focus.Focused() {
-	case p.statePanel:
-		return "state"
-	case p.logPanel:
-		return "activity"
-	case p.notesPanel:
-		return "notes"
-	default:
-		return "unknown"
-	}
-}
-
-type inspectPage struct {
-	root                                           *layout.Split
-	headerPanel, summaryPanel, checkPanel          *panel.Model
-	resultPanel                                    *panel.Model
-	headerText, summaryText, checkText, resultText *textBlock
-	focus                                          *focus.Manager
-
-	compact       bool
-	width, height int
-	runs          int
-	lastResult    string
-}
-
-func newInspectPage(t theme.Theme) *inspectPage {
-	p := &inspectPage{
+	p := &harnessPage{
 		headerText:  newTextBlock(""),
-		summaryText: newTextBlock(""),
-		checkText:   newTextBlock(""),
-		resultText:  newTextBlock(""),
-		lastResult:  "ready",
+		mainText:    newTextBlock(""),
+		actionsText: newTextBlock(""),
+		input:       in,
+		theme:       t,
+		themeName:   theme.CurrentThemeName(),
+		startedAt:   time.Now(),
 	}
-	p.headerPanel = panel.New(panel.Theme(t), panel.Title("Session"), panel.Content(p.headerText))
-	p.summaryPanel = panel.New(panel.Theme(t), panel.Title("Inspection"), panel.Content(p.summaryText))
-	p.checkPanel = panel.New(panel.Theme(t), panel.Title("Checks"), panel.Content(p.checkText))
-	p.resultPanel = panel.New(panel.Theme(t), panel.Title("Latest Result"), panel.Content(p.resultText))
+
+	p.headerPanel = panel.New(panel.Theme(t), panel.Title("Header"), panel.Content(p.headerText))
+	p.mainPanel = panel.New(panel.Theme(t), panel.Title("Main"), panel.Content(p.mainText))
+	p.actionsPanel = panel.New(panel.Theme(t), panel.Title("Dialog Test Actions"), panel.Content(p.actionsText))
+
 	p.rebuildLayout()
+	p.syncInputFocus()
 	p.refresh()
 	return p
 }
 
-func (p *inspectPage) Init() tea.Cmd { return nil }
+func (p *harnessPage) Init() tea.Cmd {
+	return p.syncInputFocus()
+}
 
-func (p *inspectPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch v := msg.(type) {
+	case theme.ThemeChangedMsg:
+		p.themeName = v.Name
+		p.applyTheme(v.Theme)
+		p.log("theme switched to " + v.Name)
+	case harnessEventMsg:
+		if strings.TrimSpace(v.text) != "" {
+			p.log(v.text)
+		}
 	case tea.KeyMsg:
+		if key.Matches(v, p.focus.Bindings()...) {
+			_, _ = p.focus.Update(v)
+			cmd := p.syncInputFocus()
+			p.log("focus moved to " + p.focusName())
+			p.refresh()
+			return p, cmd
+		}
+
 		switch v.String() {
 		case "q", "ctrl+c":
 			return p, tea.Quit
-		case "1":
-			return p, func() tea.Msg { return router.Navigate("home") }
-		case "2":
-			return p, func() tea.Msg { return router.Navigate("inspect") }
-		case "o":
-			return p, func() tea.Msg {
-				return dialog.Open(dialog.Custom{
-					DialogTitle: "Inspect Overlay",
-					Content:     newTextBlock("Overlay works on Inspect too."),
-					Width:       48,
-					Height:      8,
-				})
-			}
-		case "c":
-			p.runs++
-			p.lastResult = fmt.Sprintf("check run #%d at %s", p.runs, time.Now().Format("15:04:05"))
+		case "d":
+			p.log("opened custom dialog via hotkey")
+			p.refresh()
+			return p, openCustomDialogCmd()
+		case "x":
+			p.log("opened confirm dialog via hotkey")
+			p.refresh()
+			return p, openConfirmDialogCmd()
 		}
+
+		if p.focusOnActions() {
+			switch v.String() {
+			case "left", "h":
+				p.actionIdx = (p.actionIdx + len(actionLabels) - 1) % len(actionLabels)
+			case "right", "l":
+				p.actionIdx = (p.actionIdx + 1) % len(actionLabels)
+			case "enter":
+				p.log("ran action: " + strings.ToLower(actionLabels[p.actionIdx]))
+				p.refresh()
+				return p, p.runSelectedActionCmd()
+			}
+			p.refresh()
+			return p, nil
+		}
+
+		if v.String() == "/" && strings.TrimSpace(p.input.Value()) == "" {
+			p.log("opened theme picker via / hotkey")
+			p.refresh()
+			return p, openThemePickerCmd()
+		}
+
+		if v.String() == "enter" {
+			cmd := p.submitInput()
+			p.refresh()
+			return p, cmd
+		}
+
+		updated, cmd := p.input.Update(v)
+		p.input = updated
+		p.refresh()
+		return p, cmd
 	}
 
-	if p.focus != nil {
-		_, _ = p.focus.Update(msg)
-	}
-
+	_, layoutCmd := p.root.Update(msg)
 	p.refresh()
-	_, cmd := p.root.Update(msg)
-	return p, cmd
+	return p, layoutCmd
 }
 
-func (p *inspectPage) View() tea.View { return p.root.View() }
+func (p *harnessPage) View() tea.View { return p.root.View() }
 
-func (p *inspectPage) SetSize(width, height int) {
-	p.width, p.height = width, height
-	p.updateCompact()
+func (p *harnessPage) SetSize(width, height int) {
+	p.width = width
+	p.height = height
 	p.root.SetSize(width, height)
+	p.updateInputWidth()
+	p.refresh()
 }
 
-func (p *inspectPage) GetSize() (int, int) { return p.width, p.height }
-func (p *inspectPage) Title() string       { return "Inspect" }
+func (p *harnessPage) GetSize() (int, int) { return p.width, p.height }
+func (p *harnessPage) Title() string       { return "Harness" }
 
-func (p *inspectPage) updateCompact() {
-	next := p.width < compactWidthBreakpoint || p.height < compactHeightBreakpoint
-	if next == p.compact {
-		return
-	}
-	p.compact = next
-	p.rebuildLayout()
-}
-
-func (p *inspectPage) rebuildLayout() {
-	if p.compact {
-		main := layout.Vertical(
-			layout.Fixed(11, p.summaryPanel),
-			layout.Fixed(8, p.checkPanel),
-			layout.Flex(1, p.resultPanel),
-		)
-		p.root = layout.Vertical(
-			layout.Fixed(5, p.headerPanel),
-			layout.Flex(1, main),
-		)
-	} else {
-		right := layout.Vertical(layout.Fixed(10, p.checkPanel), layout.Flex(1, p.resultPanel))
-		main := layout.Horizontal(layout.Flex(2, p.summaryPanel), layout.Flex(1, right))
-		p.root = layout.Vertical(
-			layout.Fixed(5, p.headerPanel),
-			layout.Flex(1, main),
-		)
-	}
-	p.focus = focus.New(focus.Ring(p.summaryPanel, p.checkPanel, p.resultPanel))
+func (p *harnessPage) rebuildLayout() {
+	p.root = layout.Vertical(
+		layout.Fixed(6, p.headerPanel),
+		layout.Flex(1, p.mainPanel),
+		layout.Fixed(7, p.actionsPanel),
+	)
+	p.focus = focus.New(focus.Ring(p.mainPanel, p.actionsPanel))
 	if p.width > 0 && p.height > 0 {
 		p.root.SetSize(p.width, p.height)
+		p.updateInputWidth()
 	}
 }
 
-func (p *inspectPage) refresh() {
-	mode := "wide"
-	if p.compact {
-		mode = "compact"
-	}
-	p.headerText.SetText(strings.Join([]string{
-		fmt.Sprintf("Route: inspect  |  Mode: %s", mode),
-		fmt.Sprintf("Viewport: %dx%d", p.width, p.height),
-		"Inspect route validates split + focus + overlay behavior.",
-	}, "\n"))
-
-	p.summaryText.SetText(strings.Join([]string{
-		fmt.Sprintf("Manual checks: %d", p.runs),
-		fmt.Sprintf("Focus: %s", p.focusName()),
-		"",
-		"Validation list:",
-		"- router caching",
-		"- split sizing",
-		"- focused borders",
-		"- compact layout",
-		"- overlay composition",
-	}, "\n"))
-
-	p.checkText.SetText(strings.Join([]string{
-		"1: home",
-		"2: inspect",
-		"tab: focus cycle",
-		"c: run check",
-		"o: dialog",
-		"q: quit",
-	}, "\n"))
-
-	p.resultText.SetText(strings.Join([]string{"Last result:", p.lastResult}, "\n"))
+func (p *harnessPage) applyTheme(t theme.Theme) {
+	p.theme = t
+	p.headerPanel.SetTheme(t)
+	p.mainPanel.SetTheme(t)
+	p.actionsPanel.SetTheme(t)
+	p.input.SetStyles(inputStyles(t))
 }
 
-func (p *inspectPage) focusName() string {
-	switch p.focus.Focused() {
-	case p.summaryPanel:
-		return "inspection"
-	case p.checkPanel:
-		return "checks"
-	case p.resultPanel:
-		return "result"
+func (p *harnessPage) syncInputFocus() tea.Cmd {
+	if p.focusOnActions() {
+		p.input.Blur()
+		return nil
+	}
+	return p.input.Focus()
+}
+
+func (p *harnessPage) focusOnActions() bool {
+	if p.focus == nil {
+		return false
+	}
+	return p.focus.Focused() == p.actionsPanel
+}
+
+func (p *harnessPage) focusName() string {
+	if p.focusOnActions() {
+		return "actions"
+	}
+	return "input"
+}
+
+func (p *harnessPage) runSelectedActionCmd() tea.Cmd {
+	switch p.actionIdx {
+	case 0:
+		return openThemePickerCmd()
+	case 1:
+		return openCustomDialogCmd()
 	default:
-		return "unknown"
+		return openConfirmDialogCmd()
 	}
+}
+
+func (p *harnessPage) submitInput() tea.Cmd {
+	text := strings.TrimSpace(p.input.Value())
+	if text == "" {
+		return nil
+	}
+	p.input.SetValue("")
+
+	switch text {
+	case "/", "/theme":
+		p.log("command accepted: /theme")
+		return openThemePickerCmd()
+	case "/dialog":
+		p.log("command accepted: /dialog")
+		return openCustomDialogCmd()
+	case "/confirm":
+		p.log("command accepted: /confirm")
+		return openConfirmDialogCmd()
+	default:
+		p.log("submitted: " + text)
+		return nil
+	}
+}
+
+func (p *harnessPage) updateInputWidth() {
+	panelWidth, _ := p.mainPanel.GetSize()
+	p.input.SetWidth(max(20, panelWidth-8))
+}
+
+func (p *harnessPage) refresh() {
+	headerLines := []string{
+		"Primitive-first validation harness",
+		fmt.Sprintf("Theme: %s", p.themeName),
+		fmt.Sprintf("Focus: %s   Viewport: %dx%d   Uptime: %s", p.focusName(), p.width, p.height, time.Since(p.startedAt).Round(time.Second)),
+	}
+	p.headerText.SetText(strings.Join(headerLines, "\n"))
+
+	mainLines := []string{
+		"Prompt",
+		inputSurface(p.input.View(), p.theme),
+		"",
+		"Commands: /theme  /dialog  /confirm",
+		"",
+		"Recent Events:",
+	}
+	if len(p.events) == 0 {
+		mainLines = append(mainLines, "- none yet")
+	} else {
+		mainLines = append(mainLines, p.events...)
+	}
+	p.mainText.SetText(strings.Join(mainLines, "\n"))
+
+	actionLines := []string{
+		p.renderActionButtons(),
+		"",
+		"Tab switches focus between input and actions.",
+		"Left/Right selects action. Enter runs selected action.",
+		"Hotkeys: /  d  x  q",
+	}
+	p.actionsText.SetText(strings.Join(actionLines, "\n"))
+}
+
+func (p *harnessPage) renderActionButtons() string {
+	sys := styles.New(p.theme)
+
+	buttons := make([]string, 0, len(actionLabels))
+	for i, label := range actionLabels {
+		buttons = append(buttons, sys.ActionButton(i == p.actionIdx).Render(label))
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Left, buttons...)
+}
+
+func inputSurface(view string, t theme.Theme) string {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(pick(t.InputBG, t.ElementBG, t.SurfaceMuted))).
+		Foreground(lipgloss.Color(t.Text)).
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color(pick(t.InputBorder, t.BorderFocused, t.Border))).
+		Padding(0, 1).
+		Render(view)
+}
+
+func (p *harnessPage) log(s string) {
+	entry := fmt.Sprintf("- [%s] %s", time.Now().Format("15:04:05"), s)
+	p.events = append([]string{entry}, p.events...)
+	if len(p.events) > 10 {
+		p.events = p.events[:10]
+	}
+}
+
+func openThemePickerCmd() tea.Cmd {
+	return func() tea.Msg { return theme.OpenThemePicker() }
+}
+
+func openCustomDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return dialog.Open(dialog.Custom{
+			DialogTitle: "Custom Dialog",
+			Content:     newTextBlock("Custom dialog rendering is healthy.\nPress Enter or Esc to close."),
+			Width:       62,
+			Height:      9,
+		})
+	}
+}
+
+func openConfirmDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return dialog.Open(dialog.Confirm{
+			DialogTitle: "Confirm Action",
+			Message:     "Press Enter to emit a confirm event.",
+			OnConfirm: func() tea.Msg {
+				return harnessEventMsg{text: "confirm accepted"}
+			},
+		})
+	}
+}
+
+func inputStyles(t theme.Theme) textinput.Styles {
+	s := textinput.DefaultStyles(true)
+	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.BorderFocused)).Bold(true)
+	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text))
+	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
+	s.Focused.Suggestion = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Accent))
+
+	s.Blurred.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
+	s.Blurred.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text))
+	s.Blurred.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
+	s.Blurred.Suggestion = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
+
+	s.Cursor.Color = lipgloss.Color(t.BorderFocused)
+	s.Cursor.Blink = true
+	return s
+}
+
+func pick(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

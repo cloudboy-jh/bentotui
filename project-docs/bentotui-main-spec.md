@@ -226,7 +226,7 @@ theme := theme.New(
 )
 
 // Or use a preset
-theme := theme.Preset("amber")
+theme := theme.Preset("catppuccin-mocha")
 
 // Theme also carries surface tokens used by panel/status/dialog rendering:
 // Surface, SurfaceMuted, Border, BorderFocused, TitleText, TitleBG,
@@ -308,7 +308,7 @@ A themed surface container with optional title, focused border state, and conten
 
 ```go
 panel := panel.New(
-    panel.Theme(theme.Preset("amber")),
+    panel.Theme(theme.Preset("catppuccin-mocha")),
     panel.Title("Messages"),
     panel.Content(viewport),
     panel.Scrollable(true),
@@ -370,7 +370,7 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 | Init wizard | `dialog` (multi-step) |
 | Project tab navigation | `focus` |
 | Keybinding help bar | `statusbar` |
-| Violet/amber/emerald color scheme | `theme` |
+| Catppuccin/Dracula/Osaka Jade themes | `theme` |
 
 ### Internal Harness (Current)
 
@@ -384,11 +384,11 @@ go run ./cmd/test-tui
 
 It currently validates:
 
-- page routing (`home`/`inspect`)
-- fixed/flex split composition and nested layouts
-- focus cycling (`tab`, `shift+tab`) and focused panel borders
-- dialog overlay behavior from multiple pages
-- compact-mode layout fallback for smaller terminal sizes
+- single-page shell composition (`header` + `main input` + `footer`)
+- theme switching (`/` or `/theme`) with live repaint + persistence
+- dialog overlays via hotkeys and slash commands (`d`, `x`, `/dialog`, `/confirm`)
+- focus handling between input and action controls (`tab`, `shift+tab`)
+- primitive-first rendering behavior on fullscreen alt-screen
 
 ### Ecosystem Apps (Planned)
 

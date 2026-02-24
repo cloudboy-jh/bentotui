@@ -6,7 +6,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/surface"
 )
 
 type Kind int
@@ -93,8 +92,7 @@ func (s *Split) View() tea.View {
 		x := 0
 		for i, item := range s.items {
 			w := max(0, allocs[i])
-			slot := surface.Region(core.ViewString(item.child.View()), w, max(0, s.height), "", "")
-			layer := lipgloss.NewLayer(slot).
+			layer := lipgloss.NewLayer(core.ViewLayer(item.child.View())).
 				X(x).
 				Y(0).
 				Z(i)
@@ -107,8 +105,7 @@ func (s *Split) View() tea.View {
 	y := 0
 	for i, item := range s.items {
 		h := max(0, allocs[i])
-		slot := surface.Region(core.ViewString(item.child.View()), max(0, s.width), h, "", "")
-		layer := lipgloss.NewLayer(slot).
+		layer := lipgloss.NewLayer(core.ViewLayer(item.child.View())).
 			X(0).
 			Y(y).
 			Z(i)

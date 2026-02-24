@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
@@ -23,7 +24,7 @@ type Model struct {
 }
 
 func New(opts ...Option) *Model {
-	m := &Model{theme: theme.Preset("amber")}
+	m := &Model{theme: theme.Preset(theme.DefaultName)}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -67,6 +68,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() tea.View {
+	sys := styles.New(m.theme)
 	body := ""
 	if m.content != nil {
 		body = core.ViewString(m.content.View())
@@ -86,7 +88,7 @@ func (m *Model) View() tea.View {
 	contentRows := strings.Split(body, "\n")
 	contentStart := 0
 	if m.title != "" && innerHeight > 0 {
-		rows = append(rows, renderTitleRow(m.title, innerWidth, m.theme))
+		rows = append(rows, renderTitleRow(m.title, innerWidth, m.theme, m.focused))
 		contentStart = 1
 	}
 	for len(rows) < innerHeight {
@@ -98,17 +100,9 @@ func (m *Model) View() tea.View {
 		rows = append(rows, padContentRow("", innerWidth))
 	}
 
-	borderColor := m.theme.Border
-	if m.focused {
-		borderColor = m.theme.BorderFocused
-	}
-	boxStyle := lipgloss.NewStyle().
+	boxStyle := sys.PanelFrame(m.focused).
 		Width(outerWidth).
-		Height(outerHeight).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color(borderColor)).
-		Background(lipgloss.Color(m.theme.Surface)).
-		Foreground(lipgloss.Color(m.theme.Text))
+		Height(outerHeight)
 
 	return tea.NewView(boxStyle.Render(strings.Join(rows, "\n")))
 }
@@ -128,28 +122,23 @@ func (m *Model) SetSize(width, height int) {
 
 func (m *Model) GetSize() (width, height int) { return m.width, m.height }
 
+func (m *Model) SetTheme(t theme.Theme) { m.theme = t }
+
 func (m *Model) Focus() { m.focused = true }
 
 func (m *Model) Blur() { m.focused = false }
 
 func (m *Model) IsFocused() bool { return m.focused }
 
-func renderTitleRow(title string, width int, t theme.Theme) string {
+func renderTitleRow(title string, width int, t theme.Theme, focused bool) string {
 	if width <= 0 {
 		return ""
 	}
-	badge := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(t.TitleText)).
-		Background(lipgloss.Color(t.TitleBG)).
-		Bold(true).
-		Padding(0, 1).
-		Render(title)
-	base := lipgloss.NewStyle().
+	sys := styles.New(t)
+	badge := sys.PanelTitleChip(focused).Render(title)
+	return sys.PanelTitleBar(focused).
 		Width(width).
-		Foreground(lipgloss.Color(t.Muted)).
-		Background(lipgloss.Color(t.SurfaceMuted)).
 		Render(lipgloss.PlaceHorizontal(width, lipgloss.Left, badge))
-	return base
 }
 
 func fitWidth(s string, width int) string {
