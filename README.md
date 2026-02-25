@@ -2,6 +2,9 @@
 
 # BentoTUI
 
+> [!WARNING]
+> In early production.
+
 [![Go Version](https://img.shields.io/badge/go-1.23%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
 [![Status](https://img.shields.io/badge/status-v0.1%20active-6D5EF3)](#status)

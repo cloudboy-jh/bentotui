@@ -77,3 +77,28 @@ func TestConfirmDialogEnterClosesAndConfirms(t *testing.T) {
 		t.Fatal("expected confirm dialog to close on enter")
 	}
 }
+
+func TestCustomDialogSizeClampsWithinViewport(t *testing.T) {
+	m := New()
+	_, _ = m.Update(tea.WindowSizeMsg{Width: 40, Height: 12})
+
+	picker := NewThemePicker()
+	_, _ = m.Update(Open(Custom{
+		DialogTitle: "Theme",
+		Content:     picker,
+		Width:       120,
+		Height:      60,
+	}))
+
+	if !m.IsOpen() {
+		t.Fatal("expected dialog to be open")
+	}
+
+	w, h := picker.GetSize()
+	if w <= 0 || h <= 0 {
+		t.Fatalf("expected positive picker bounds, got %dx%d", w, h)
+	}
+	if w > 36 || h > 8 {
+		t.Fatalf("expected picker bounds clamped to viewport, got %dx%d", w, h)
+	}
+}

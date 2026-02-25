@@ -293,6 +293,7 @@ func (p *harnessPage) refresh() {
 	mainLines := []string{
 		"Prompt",
 		inputSurface(p.input.View(), p.theme),
+		sectionDivider(max(24, p.width-6), p.theme),
 		"",
 		"Commands: /theme  /dialog  /confirm",
 		"",
@@ -306,6 +307,7 @@ func (p *harnessPage) refresh() {
 	p.mainText.SetText(strings.Join(mainLines, "\n"))
 
 	actionLines := []string{
+		sectionDivider(max(24, p.width-6), p.theme),
 		p.renderActionButtons(),
 		"",
 		"Tab switches focus between input and actions.",
@@ -330,10 +332,16 @@ func inputSurface(view string, t theme.Theme) string {
 	return lipgloss.NewStyle().
 		Background(lipgloss.Color(pick(t.InputBG, t.ElementBG, t.SurfaceMuted))).
 		Foreground(lipgloss.Color(t.Text)).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color(pick(t.InputBorder, t.BorderFocused, t.Border))).
 		Padding(0, 1).
 		Render(view)
+}
+
+func sectionDivider(width int, t theme.Theme) string {
+	if width <= 0 {
+		return ""
+	}
+	line := strings.Repeat("-", width)
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.BorderSubtle, t.Muted))).Render(line)
 }
 
 func (p *harnessPage) log(s string) {

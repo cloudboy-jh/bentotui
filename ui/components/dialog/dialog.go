@@ -207,8 +207,12 @@ func (c Custom) SetSize(width, height int) {
 	if c.Height == 0 {
 		c.Height = height / 2
 	}
-	c.Width = clamp(c.Width, 36, max(36, width-4))
-	c.Height = clamp(c.Height, 10, max(10, height-4))
+	maxWidth := max(20, width-4)
+	maxHeight := max(8, height-4)
+	minWidth := min(36, maxWidth)
+	minHeight := min(12, maxHeight)
+	c.Width = clamp(c.Width, minWidth, maxWidth)
+	c.Height = clamp(c.Height, minHeight, maxHeight)
 	if s, ok := c.Content.(core.Sizeable); ok {
 		s.SetSize(max(1, c.Width-4), max(1, c.Height-4))
 	}
@@ -277,4 +281,11 @@ func clamp(v, minV, maxV int) int {
 		return maxV
 	}
 	return v
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
