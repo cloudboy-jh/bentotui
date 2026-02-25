@@ -1,0 +1,69 @@
+# BentoTUI Framework Progress Update
+
+Date: 2026-02-25
+Status: Active (early production)
+
+## Current State
+
+BentoTUI has moved from a rough harness into a structured framework baseline with a clear runtime/UI split:
+
+- runtime/core: `shell`, `router`, `layout`, `focus`, `surface`, `theme`, `core`
+- UI layer: `ui/components/*`
+- style layer: `ui/styles`
+
+This separation is now documented and enforced through:
+
+- `project-docs/component-system-reference.md`
+- `project-docs/next-steps.md`
+- `project-docs/framework-roadmap.md`
+
+## Shipped Progress
+
+- Footer-first shell API is in place (`WithFooterBar`, `WithFooter`).
+- Dialog system is stabilized for routing and bounds behavior.
+- Theme picker flow is functional and deterministic.
+- Theme set is locked to:
+  - `catppuccin-mocha` (default)
+  - `dracula`
+  - `osaka-jade`
+- Theme persistence and reload behavior are active.
+- Test harness command flow is now command-string based:
+  - type `/theme`, `/dialog`, `/confirm` in input, run on Enter
+  - `/` no longer auto-opens a modal
+- README and changelog discipline are in place (`CHANGELOG.md`, early-production warning tag).
+
+## Architecture Direction (Locked)
+
+- No ad hoc components.
+- Contract-first component behavior (`SetSize`/`GetSize`, bounded rendering, deterministic key routing).
+- Visual direction: flat, minimal, solid card surfaces with low chrome.
+- Dialog layering remains deterministic:
+  - `body -> footer -> scrim -> dialog`
+
+## Current Gaps
+
+- Footer still uses plain hint text rather than structured action chips.
+- Focus manager needs a clearer API/state contract and stronger test coverage.
+- Visual polish is improved but not fully normalized across all components/themes.
+
+## Next Priorities
+
+1. Footer action model and deterministic truncation contract.
+2. Focus manager hardening (`SetRing`, `SetIndex`, `FocusBy`, events, wrap/enable behavior).
+3. Shared UI primitives (modal frame, input surface, list row, footer action chip).
+4. Broader regression coverage (dialog bounds, footer rendering, key routing).
+
+## Validation Snapshot
+
+Recent framework passes are consistently validated with:
+
+- `go test ./...`
+- `go vet ./...`
+
+## Reference Docs
+
+- Main spec: `project-docs/bentotui-main-spec.md`
+- Next execution list: `project-docs/next-steps.md`
+- Component contract: `project-docs/component-system-reference.md`
+- Framework roadmap: `project-docs/framework-roadmap.md`
+- Rendering ADR: `project-docs/rendering-system-design.md`
