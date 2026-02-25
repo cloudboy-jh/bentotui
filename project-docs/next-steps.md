@@ -1,60 +1,69 @@
 # BentoTUI Next Steps
 
 Status: Active
-Date: 2026-02-24
+Date: 2026-02-25
 
-This plan follows ADR-0001 in `project-docs/rendering-system-design.md` and `project-docs/component-system-reference.md`.
+This list is intentionally component-focused and execution-oriented.
+Use this with `project-docs/component-system-reference.md`.
 
-## Active Work
+## 1. Footer Statusline Contract
 
-1. Footer action model (replace plain hint strings)
-- [ ] Add structured footer actions (`key`, `label`, `variant`, `enabled`).
-- [ ] Add footer API for explicit action lists.
-- [ ] Render action chips/buttons in footer (not freeform text).
+- [ ] Keep footer as one continuous strip (height = 1 always).
+- [ ] Enforce segment ownership: `left | actions | right`.
+- [ ] Remove freeform footer hint strings as primary API.
 
-2. Footer layout and truncation contract
-- [ ] Lock segment roles: `left`, `actions`, `right`.
-- [ ] Define deterministic truncation priority at narrow widths.
-- [ ] Stabilize behavior for width=0 and resize transitions.
+## 2. Footer Action Model
 
-3. Focus manager hardening (`focus/focus.go`)
-- [ ] Add explicit ring/index control APIs (`SetRing`, `SetIndex`, `FocusBy`).
-- [ ] Add enabled/wrap behavior and safe nil handling.
-- [ ] Emit deterministic focus-changed events/messages.
+- [ ] Add structured action schema: `key`, `label`, `variant`, `enabled`.
+- [ ] Add explicit footer API for action arrays.
+- [ ] Render actions as first-class inline chips/buttons.
 
-4. Component sizing contract enforcement
-- [ ] Ensure all UI components use `SetSize`/`GetSize` consistently.
-- [ ] Enforce clipping within assigned bounds.
-- [ ] Remove viewport-coupled rendering logic from components.
+## 3. Footer Truncation Rules
 
-5. Shared UI primitives
-- [ ] Extract shared modal frame primitive.
-- [ ] Extract shared input surface primitive.
-- [ ] Extract shared list/row selection primitive.
-- [ ] Extract shared footer action chip primitive.
+- [ ] Lock deterministic truncation priority: `right > left > actions`.
+- [ ] Add action collapse policy: full chip -> key only -> drop from end.
+- [ ] Guarantee no wrapping in narrow widths.
 
-6. Visual system normalization
-- [ ] Keep solid card surfaces with no border chrome.
-- [ ] Keep only subtle section separators where necessary.
-- [ ] Ensure focus visibility uses row/text contrast, not border outlines.
+## 4. Focus Manager API Hardening (`focus/focus.go`)
 
-7. Dialog and picker regression coverage
-- [ ] Add/maintain tests for modal bounds on wide/narrow terminals.
-- [ ] Add tests for `enter` apply/close ordering.
-- [ ] Add tests for custom-dialog key routing (`enter` not swallowed).
+- [ ] Add explicit APIs: `SetRing`, `SetIndex`, `FocusBy`.
+- [ ] Add `enabled` and `wrap` controls.
+- [ ] Handle empty/nil ring entries safely.
 
-8. Footer regression coverage
-- [ ] Add tests for action rendering order.
-- [ ] Add tests for truncation behavior and tiny-width fallback.
-- [ ] Add tests for disabled/muted action rendering.
+## 5. Focus Event Contract
 
-9. Harness refinement (`cmd/test-tui`)
-- [ ] Keep command-entry flow (`/theme`, `/dialog`, `/confirm`) on Enter.
-- [ ] Keep focus behavior deterministic between input/actions.
-- [ ] Use harness as canonical visual regression surface across themes.
+- [ ] Add `FocusChangedMsg {from, to}`.
+- [ ] Emit focus changes deterministically from manager.
+- [ ] Wire footer to consume focus change state.
 
-10. Docs and examples sync
-- [ ] Add "Build a real app shell" guide to main spec.
-- [ ] Add examples for routing, focus, dialog flows, fullscreen vs inline.
-- [ ] Keep README concise; move implementation detail to `project-docs`.
-- [ ] Keep `CHANGELOG.md` updated as milestones land.
+## 6. Shared UI Primitives
+
+- [ ] Extract footer action chip primitive.
+- [ ] Extract reusable list row primitive.
+- [ ] Extract reusable input surface primitive.
+- [ ] Keep modal frame primitive shared and bounded.
+
+## 7. Theme Picker UX Refinement
+
+- [ ] Add hover preview on selection move (no commit yet).
+- [ ] Commit on `enter`, revert preview on `esc`.
+- [ ] Keep picker bounded and clipping-safe in all terminal sizes.
+
+## 8. Command Palette Component
+
+- [ ] Add command palette dialog component.
+- [ ] Route `/` to command-entry/palette workflow (as finalized behavior).
+- [ ] Keep `/theme`, `/dialog`, `/confirm` command paths consistent.
+
+## 9. Component Regression Coverage
+
+- [ ] Footer tests: layout/order/truncation/no-wrap.
+- [ ] Focus tests: ring updates/wrap/index/events.
+- [ ] Dialog tests: custom enter routing + bounds stability.
+- [ ] Theme picker tests: preview/apply/revert behavior.
+
+## 10. Harness + Docs Sync
+
+- [ ] Update `cmd/test-tui` to consume structured footer actions.
+- [ ] Keep `project-docs/component-system-reference.md` aligned.
+- [ ] Keep `project-docs/framework-roadmap.md` and `CHANGELOG.md` updated.
