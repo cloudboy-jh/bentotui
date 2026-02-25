@@ -19,8 +19,8 @@ import "github.com/cloudboy-jh/bentotui"
 
 ### Implementation Update (Current)
 
-- v0.1 foundation is implemented in code (`shell`, `router`, `layout`, `focus`, `theme`, `surface`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`)
-- Public facade package `bentotui` remains the recommended app entrypoint; `app` currently aliases `shell` for compatibility
+- v0.1 foundation is implemented in code (`core/shell`, `core/router`, `core/layout`, `core/focus`, `core/theme`, `core/surface`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`)
+- Public facade package `bentotui` remains the recommended app entrypoint; `app` currently aliases `core/shell` for compatibility
 - Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
 - Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
 - Dialogs are rendered through a layer/canvas composition path and centered in the app shell

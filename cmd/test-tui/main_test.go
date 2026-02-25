@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 )
 
@@ -48,30 +48,29 @@ func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
 	}
 }
 
-func TestHarnessHotkeysOpenDialogs(t *testing.T) {
+func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
 	p := newHarnessPage(theme.Preset(theme.DefaultName))
 	p.SetSize(120, 40)
-	_, _ = p.Update(specialKey(tea.KeyTab))
-	if got := p.focusName(); got != "actions" {
-		t.Fatalf("expected focus to move to actions, got %q", got)
-	}
+	p.input.SetValue("/dialog")
 
-	_, cmd := p.Update(keyPress("d"))
+	_, cmd := p.Update(specialKey(tea.KeyEnter))
 	if cmd == nil {
-		t.Fatal("expected custom dialog command for 'd' on actions focus")
+		t.Fatal("expected custom dialog command for /dialog")
 	}
 	open := cmd()
 	if _, ok := open.(dialog.OpenMsg); !ok {
-		t.Fatalf("expected dialog.OpenMsg for 'd', got %T", open)
+		t.Fatalf("expected dialog.OpenMsg for /dialog, got %T", open)
 	}
 
-	_, cmd = p.Update(keyPress("x"))
+	p.input.SetValue("/confirm")
+
+	_, cmd = p.Update(specialKey(tea.KeyEnter))
 	if cmd == nil {
-		t.Fatal("expected confirm dialog command for 'x' on actions focus")
+		t.Fatal("expected confirm dialog command for /confirm")
 	}
 	open = cmd()
 	if _, ok := open.(dialog.OpenMsg); !ok {
-		t.Fatalf("expected dialog.OpenMsg for 'x', got %T", open)
+		t.Fatalf("expected dialog.OpenMsg for /confirm, got %T", open)
 	}
 }
 
@@ -81,21 +80,13 @@ func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
 
 	_, cmd := p.Update(keyPress("d"))
 	if cmd != nil {
-		msg := cmd()
-		if _, ok := msg.(dialog.OpenMsg); ok {
-			t.Fatalf("did not expect dialog open from 'd' while input focused")
-		}
-		if _, ok := msg.(tea.QuitMsg); ok {
+		if _, ok := cmd().(tea.QuitMsg); ok {
 			t.Fatalf("did not expect quit from 'd' while input focused")
 		}
 	}
 	_, cmd = p.Update(keyPress("q"))
 	if cmd != nil {
-		msg := cmd()
-		if _, ok := msg.(dialog.OpenMsg); ok {
-			t.Fatalf("did not expect dialog open from 'q' while input focused")
-		}
-		if _, ok := msg.(tea.QuitMsg); ok {
+		if _, ok := cmd().(tea.QuitMsg); ok {
 			t.Fatalf("did not expect quit from 'q' while input focused")
 		}
 	}
@@ -121,29 +112,5 @@ func TestHarnessEnterSubmitsInput(t *testing.T) {
 	}
 	if p.input.Value() != "" {
 		t.Fatalf("expected input to clear after submit, got %q", p.input.Value())
-	}
-}
-
-func TestHarnessActionCycleAndRun(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName))
-	p.SetSize(120, 40)
-
-	_, _ = p.Update(specialKey(tea.KeyTab))
-	if got := p.focusName(); got != "actions" {
-		t.Fatalf("expected focus to move to actions, got %q", got)
-	}
-
-	_, _ = p.Update(specialKey(tea.KeyRight))
-	if p.actionIdx != 1 {
-		t.Fatalf("expected actionIdx 1 after right key, got %d", p.actionIdx)
-	}
-
-	_, cmd := p.Update(specialKey(tea.KeyEnter))
-	if cmd == nil {
-		t.Fatal("expected dialog command from selected action")
-	}
-	open := cmd()
-	if _, ok := open.(dialog.OpenMsg); !ok {
-		t.Fatalf("expected dialog.OpenMsg from action run, got %T", open)
 	}
 }

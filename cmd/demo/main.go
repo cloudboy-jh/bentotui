@@ -6,7 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/layout"
+	"github.com/cloudboy-jh/bentotui/core/layout"
 	"github.com/cloudboy-jh/bentotui/ui/components/panel"
 )
 

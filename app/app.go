@@ -1,16 +1,16 @@
 package app
 
 import (
-	"github.com/cloudboy-jh/bentotui/router"
-	"github.com/cloudboy-jh/bentotui/shell"
-	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/core/router"
+	"github.com/cloudboy-jh/bentotui/core/shell"
+	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/footer"
 )
 
-// Deprecated: use package shell directly for new code.
+// Deprecated: use package core/shell directly for new code.
 type Model = shell.Model
 
-// Deprecated: use package shell directly for new code.
+// Deprecated: use package core/shell directly for new code.
 type Option = shell.Option
 
 func New(opts ...Option) *Model { return shell.New(opts...) }

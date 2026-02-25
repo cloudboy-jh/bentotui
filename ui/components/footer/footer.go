@@ -7,20 +7,37 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/surface"
-	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/core/surface"
+	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
 type Option func(*Model)
 
+type ActionVariant string
+
+const (
+	ActionNormal  ActionVariant = "normal"
+	ActionPrimary ActionVariant = "primary"
+	ActionMuted   ActionVariant = "muted"
+	ActionDanger  ActionVariant = "danger"
+)
+
+type Action struct {
+	Key     string
+	Label   string
+	Variant ActionVariant
+	Enabled bool
+}
+
 type Model struct {
-	left   string
-	right  string
-	help   core.Bindable
-	theme  theme.Theme
-	width  int
-	height int
+	left    string
+	right   string
+	help    core.Bindable
+	actions []Action
+	theme   theme.Theme
+	width   int
+	height  int
 }
 
 func New(opts ...Option) *Model {
@@ -33,6 +50,11 @@ func New(opts ...Option) *Model {
 
 func Left(v string) Option  { return func(m *Model) { m.left = v } }
 func Right(v string) Option { return func(m *Model) { m.right = v } }
+func Actions(actions ...Action) Option {
+	return func(m *Model) {
+		m.actions = append([]Action(nil), actions...)
+	}
+}
 func HelpFrom(b core.Bindable) Option {
 	return func(m *Model) { m.help = b }
 }
@@ -50,17 +72,37 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() tea.View {
 	help := m.helpText()
 	left := strings.TrimSpace(strings.Join([]string{m.left, help}, "  "))
+	actions := m.renderActions(-1, false)
 	if m.width == 0 {
-		return tea.NewView(styles.New(m.theme).StatusBar().Render(left))
+		line := strings.TrimSpace(strings.Join(nonEmpty(left, actions, m.right), "  "))
+		return tea.NewView(styles.New(m.theme).StatusBar().Render(line))
 	}
 	right := fitWidth(m.right, max(0, m.width))
 	rightWidth := lipgloss.Width(right)
 	if rightWidth >= m.width {
 		return tea.NewView(m.renderLine(right))
 	}
-	leftWidth := max(0, m.width-rightWidth-1)
-	leftBlock := fitWidth(left, leftWidth)
-	return tea.NewView(m.renderLine(leftBlock + " " + right))
+
+	leftArea := max(0, m.width-rightWidth-1)
+	leftBlock := ""
+	actionBlock := ""
+	if left != "" {
+		leftBlock = fitWidth(left, leftArea)
+		leftArea -= lipgloss.Width(leftBlock)
+	}
+	if leftArea > 0 {
+		if leftBlock != "" {
+			leftArea--
+		}
+		actionBlock = m.renderActions(leftArea, false)
+		if actionBlock == "" {
+			actionBlock = m.renderActions(leftArea, true)
+		}
+	}
+
+	leftSide := strings.TrimSpace(strings.Join(nonEmpty(leftBlock, actionBlock), " "))
+	line := strings.TrimSpace(strings.Join(nonEmpty(leftSide, right), " "))
+	return tea.NewView(m.renderLine(line))
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -103,6 +145,50 @@ func (m *Model) renderLine(text string) string {
 	style = style.Width(max(0, m.width))
 	text = fitWidth(text, m.width)
 	return style.Render(text)
+}
+
+func (m *Model) renderActions(width int, keyOnly bool) string {
+	if len(m.actions) == 0 {
+		return ""
+	}
+	sys := styles.New(m.theme)
+	rendered := make([]string, 0, len(m.actions))
+	used := 0
+	for _, a := range m.actions {
+		if strings.TrimSpace(a.Key) == "" {
+			continue
+		}
+		enabled := a.Enabled
+		keyPart := sys.FooterActionKey(string(a.Variant), enabled).Render(a.Key)
+		chip := keyPart
+		if !keyOnly && strings.TrimSpace(a.Label) != "" {
+			chip = keyPart + " " + sys.FooterActionLabel(string(a.Variant), enabled).Render(a.Label)
+		}
+
+		if width >= 0 {
+			w := lipgloss.Width(chip)
+			sep := 0
+			if len(rendered) > 0 {
+				sep = 1
+			}
+			if used+sep+w > width {
+				break
+			}
+			used += sep + w
+		}
+		rendered = append(rendered, chip)
+	}
+	return strings.Join(rendered, " ")
+}
+
+func nonEmpty(parts ...string) []string {
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if strings.TrimSpace(p) != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func fitWidth(s string, width int) string {

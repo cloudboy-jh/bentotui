@@ -129,7 +129,7 @@ Key files:
 
 ## Local Files to Anchor Changes
 
-- `shell/model.go`
+- `core/shell/model.go`
 - `ui/components/dialog/dialog.go`
 - `ui/components/dialog/theme_picker.go`
 - `ui/components/footer/footer.go`

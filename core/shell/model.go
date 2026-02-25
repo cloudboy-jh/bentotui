@@ -9,9 +9,9 @@ import (
 	uv "github.com/charmbracelet/ultraviolet"
 	"github.com/charmbracelet/ultraviolet/screen"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/router"
-	"github.com/cloudboy-jh/bentotui/surface"
-	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/core/router"
+	"github.com/cloudboy-jh/bentotui/core/surface"
+	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 	"github.com/cloudboy-jh/bentotui/ui/components/footer"
 )

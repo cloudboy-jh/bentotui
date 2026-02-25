@@ -24,7 +24,7 @@ Use this with `project-docs/component-system-reference.md`.
 - [ ] Add action collapse policy: full chip -> key only -> drop from end.
 - [ ] Guarantee no wrapping in narrow widths.
 
-## 4. Focus Manager API Hardening (`focus/focus.go`)
+## 4. Focus Manager API Hardening (`core/focus/focus.go`)
 
 - [ ] Add explicit APIs: `SetRing`, `SetIndex`, `FocusBy`.
 - [ ] Add `enabled` and `wrap` controls.

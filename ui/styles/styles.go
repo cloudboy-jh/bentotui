@@ -2,7 +2,7 @@ package styles
 
 import (
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/core/theme"
 )
 
 type System struct {
@@ -49,6 +49,21 @@ func (s System) StatusBar() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(s.Theme.StatusText)).
 		Background(lipgloss.Color(s.Theme.StatusBG))
+}
+
+func (s System) FooterActionKey(variant string, enabled bool) lipgloss.Style {
+	fg, bg := s.footerActionColors(variant, enabled, true)
+	return lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color(fg)).
+		Background(lipgloss.Color(bg))
+}
+
+func (s System) FooterActionLabel(variant string, enabled bool) lipgloss.Style {
+	fg, bg := s.footerActionColors(variant, enabled, false)
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color(fg)).
+		Background(lipgloss.Color(bg))
 }
 
 func (s System) DialogFrame() lipgloss.Style {
@@ -105,4 +120,33 @@ func pick(v, fallback string) string {
 		return fallback
 	}
 	return v
+}
+
+func (s System) footerActionColors(variant string, enabled bool, keyPart bool) (fg string, bg string) {
+	if !enabled {
+		return pick(s.Theme.Muted, s.Theme.Text), pick(s.Theme.SurfaceMuted, s.Theme.PanelBG)
+	}
+
+	switch variant {
+	case "primary":
+		if keyPart {
+			return pick(s.Theme.SelectionText, s.Theme.Background), pick(s.Theme.SelectionBG, s.Theme.Accent)
+		}
+		return pick(s.Theme.Text, s.Theme.Text), pick(s.Theme.ElementBG, s.Theme.SurfaceMuted)
+	case "danger":
+		if keyPart {
+			return pick(s.Theme.Background, s.Theme.Text), pick(s.Theme.Error, s.Theme.Accent)
+		}
+		return pick(s.Theme.Text, s.Theme.Text), pick(s.Theme.ElementBG, s.Theme.SurfaceMuted)
+	case "muted":
+		if keyPart {
+			return pick(s.Theme.Muted, s.Theme.Text), pick(s.Theme.SurfaceMuted, s.Theme.PanelBG)
+		}
+		return pick(s.Theme.Muted, s.Theme.Text), pick(s.Theme.SurfaceMuted, s.Theme.PanelBG)
+	default:
+		if keyPart {
+			return pick(s.Theme.SelectionText, s.Theme.Background), pick(s.Theme.BorderFocused, s.Theme.Accent)
+		}
+		return pick(s.Theme.Text, s.Theme.Text), pick(s.Theme.ElementBG, s.Theme.SurfaceMuted)
+	}
 }
