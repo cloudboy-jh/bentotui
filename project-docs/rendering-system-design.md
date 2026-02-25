@@ -117,7 +117,7 @@ Decision:
    - Every allocated layout region paints its own background before content.
 
 5. Deterministic layering
-   - Exact order: `shell-bg -> body-bg -> body-content -> status -> scrim -> dialog`.
+   - Exact order: `shell-bg -> body-bg -> body-content -> footer -> scrim -> dialog`.
 
 6. No lossy conversion in core path
    - Core render path must not rely on `fmt.Sprint(layer)` semantics.
@@ -151,11 +151,11 @@ Root view must set:
 Each frame:
 
 1. Read `w,h` from draw area.
-2. Sync router/status/dialog sizes from `w,h`.
+2. Sync router/footer/dialog sizes from `w,h`.
 3. Paint full shell background (`w x h`).
 4. Paint body background (`w x bodyH`).
 5. Draw body content inside body region.
-6. Draw status region.
+6. Draw footer region.
 7. If dialog open: draw scrim and centered dialog last.
 
 No partial frame paths are allowed.
@@ -182,7 +182,7 @@ Components provide content; they do not own frame paint.
 
 - `SetSize(w,h)` is authoritative allocation input.
 - `View()` returns content for allocated region.
-- Panels/status/dialog may style surfaces, but root/layout guarantee region paint.
+- Panels/footer/dialog may style surfaces, but root/layout guarantee region paint.
 
 ---
 
@@ -222,7 +222,7 @@ A rendering change is complete only when all are true:
 3. Dialogs always overlay (never side-by-side artifacts).
 4. Blur/transparency terminals render continuous surfaces.
 5. Resize stress loops (grow/shrink/maximize/restore) stay artifact-free.
-6. Status bar spans full width always.
+6. Footer bar spans full width always.
 7. `go test ./...` passes.
 
 ---
@@ -247,20 +247,20 @@ Scenarios:
 
 ## 14. Implementation phases
 
-Phase A: Rendering correctness only
+Phase 1: Rendering correctness only
 
 - root draw contract
 - layout region anchoring
 - overlay ordering
 - fullscreen defaults and metadata
 
-Phase B: Visual parity polish
+Phase 2: Visual parity polish
 
 - spacing rhythm
 - border density
 - tonal hierarchy refinements
 
-No visual polish work should bypass Phase A requirements.
+No visual polish work should bypass Phase 1 requirements.
 
 ---
 

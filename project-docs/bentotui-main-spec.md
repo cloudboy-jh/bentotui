@@ -1,5 +1,8 @@
 # BentoTUI — Main Spec
 
+Status: Active
+Date: 2026-02-24
+
 > 🍱 The application framework for Bubble Tea. Compartmentalized layouts, composable components, shipped apps.
 
 ---
@@ -16,7 +19,8 @@ import "github.com/cloudboy-jh/bentotui"
 
 ### Implementation Update (Current)
 
-- v0.1 foundation is now implemented in code (`app`, `router`, `layout`, `focus`, `theme`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`)
+- v0.1 foundation is implemented in code (`shell`, `router`, `layout`, `focus`, `theme`, `surface`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`)
+- Public facade package `bentotui` remains the recommended app entrypoint; `app` currently aliases `shell` for compatibility
 - Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
 - Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
 - Dialogs are rendered through a layer/canvas composition path and centered in the app shell
@@ -58,7 +62,7 @@ lipgloss.Layer     →    Dialog/overlay system   →   Modals
 bubbles/*          →    Enhanced components     →   Domain widgets
 (nothing)          →    Focus management        →   Navigation
 (nothing)          →    Command palette         →   App commands
-(nothing)          →    Status bar              →   Context help
+(nothing)          →    Footer bar              →   Context help
 ```
 
 ### Component Model
@@ -111,12 +115,11 @@ App
 │   ├── Page A
 │   │   ├── Panel (focused) ← receives input
 │   │   ├── Panel
-│   │   └── StatusBar
 │   └── Page B
 │       └── ...
 ├── DialogManager ← captures input when active
 │   └── Active Dialog
-└── Palette ← captures input when open
+└── FooterBar
 ```
 
 Each level decides to handle, forward, or ignore. When a dialog is open, it captures all input. When closed, input flows to the focused component in the active page.
@@ -127,8 +130,10 @@ Each level decides to handle, forward, or ignore. When a dialog is open, it capt
 
 ### Core
 
-#### `app` — Application Shell
+#### `shell` — Application Shell (Primary)
 The root model that bootstraps everything. Manages lifecycle, router, dialog manager, and footer bar. The shell renders full-size themed surfaces and uses Lip Gloss v2 canvas layers for overlay composition.
+
+`app` remains available as a compatibility alias over `shell`.
 
 ```go
 app := bentotui.New(
@@ -228,7 +233,7 @@ theme := theme.New(
 // Or use a preset
 theme := theme.Preset("catppuccin-mocha")
 
-// Theme also carries surface tokens used by panel/status/dialog rendering:
+// Theme also carries surface tokens used by panel/footer/dialog rendering:
 // Surface, SurfaceMuted, Border, BorderFocused, TitleText, TitleBG,
 // StatusText, StatusBG, DialogText, DialogBG, DialogBorder, Scrim.
 ```
@@ -259,7 +264,7 @@ func modelPicker() tea.Msg {
 }
 ```
 
-#### `palette` — Command Palette
+#### `palette` — Command Palette (Planned, v0.2)
 Slash-command / fuzzy-search command palette overlay.
 
 ```go
@@ -274,7 +279,7 @@ palette := palette.New(
 // User types "/" → palette opens → fuzzy filter → select → execute
 ```
 
-#### `picker` — Searchable Grouped Picker
+#### `picker` — Searchable Grouped Picker (Planned, v0.2)
 A list picker with sections, search, selection highlighting, and keyboard hints. The model picker from OpenCode/Crush, extracted.
 
 ```go
@@ -315,15 +320,15 @@ panel := panel.New(
 )
 ```
 
-### Utilities
+### Utilities (Planned)
 
-#### `keys` — Keybinding Management
+#### `keys` — Keybinding Management (Planned)
 Registration, conflict detection, and help generation.
 
-#### `events` — Typed Event Bus
+#### `events` — Typed Event Bus (Planned)
 Generic typed pub/sub for component communication beyond tea.Msg.
 
-#### `size` — Terminal Size Utilities
+#### `size` — Terminal Size Utilities (Planned)
 Breakpoint helpers, responsive size calculation, compact mode detection.
 
 ---
@@ -385,7 +390,7 @@ go run ./cmd/test-tui
 It currently validates:
 
 - single-page shell composition (`header` + `main input` + `footer`)
-- theme switching (`/` or `/theme`) with live repaint + persistence
+- theme switching via `/theme` with live repaint + persistence (`/` currently mirrors this in harness)
 - dialog overlays via hotkeys and slash commands (`d`, `x`, `/dialog`, `/confirm`)
 - focus handling between input and action controls (`tab`, `shift+tab`)
 - primitive-first rendering behavior on fullscreen alt-screen

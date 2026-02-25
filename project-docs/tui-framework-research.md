@@ -3,7 +3,12 @@
 
 **Author:** Jack Horton  
 **Date:** February 23, 2026  
-**Status:** Research Phase
+**Status:** Archived research baseline (superseded by implementation docs)
+
+This document is a pre-implementation research snapshot.
+For current framework behavior and roadmap, use:
+- `project-docs/bentotui-main-spec.md`
+- `project-docs/next-steps.md`
 
 ---
 
