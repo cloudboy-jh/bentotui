@@ -34,10 +34,14 @@ func TestHarnessSlashOpensThemePicker(t *testing.T) {
 func TestHarnessHotkeysOpenDialogs(t *testing.T) {
 	p := newHarnessPage(theme.Preset(theme.DefaultName))
 	p.SetSize(120, 40)
+	_, _ = p.Update(specialKey(tea.KeyTab))
+	if got := p.focusName(); got != "actions" {
+		t.Fatalf("expected focus to move to actions, got %q", got)
+	}
 
 	_, cmd := p.Update(keyPress("d"))
 	if cmd == nil {
-		t.Fatal("expected custom dialog command for 'd'")
+		t.Fatal("expected custom dialog command for 'd' on actions focus")
 	}
 	open := cmd()
 	if _, ok := open.(dialog.OpenMsg); !ok {
@@ -46,11 +50,40 @@ func TestHarnessHotkeysOpenDialogs(t *testing.T) {
 
 	_, cmd = p.Update(keyPress("x"))
 	if cmd == nil {
-		t.Fatal("expected confirm dialog command for 'x'")
+		t.Fatal("expected confirm dialog command for 'x' on actions focus")
 	}
 	open = cmd()
 	if _, ok := open.(dialog.OpenMsg); !ok {
 		t.Fatalf("expected dialog.OpenMsg for 'x', got %T", open)
+	}
+}
+
+func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
+	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p.SetSize(120, 40)
+
+	_, cmd := p.Update(keyPress("d"))
+	if cmd != nil {
+		msg := cmd()
+		if _, ok := msg.(dialog.OpenMsg); ok {
+			t.Fatalf("did not expect dialog open from 'd' while input focused")
+		}
+		if _, ok := msg.(tea.QuitMsg); ok {
+			t.Fatalf("did not expect quit from 'd' while input focused")
+		}
+	}
+	_, cmd = p.Update(keyPress("q"))
+	if cmd != nil {
+		msg := cmd()
+		if _, ok := msg.(dialog.OpenMsg); ok {
+			t.Fatalf("did not expect dialog open from 'q' while input focused")
+		}
+		if _, ok := msg.(tea.QuitMsg); ok {
+			t.Fatalf("did not expect quit from 'q' while input focused")
+		}
+	}
+	if got := p.input.Value(); got != "dq" {
+		t.Fatalf("expected input value dq, got %q", got)
 	}
 }
 

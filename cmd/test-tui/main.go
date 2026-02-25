@@ -27,7 +27,7 @@ func main() {
 	t := theme.CurrentTheme()
 	ft := footer.New(
 		footer.Left("BentoTUI theme harness"),
-		footer.Right("tab:focus  <-/->:action  enter:submit/run  /:theme  d:dialog  x:confirm  q:quit"),
+		footer.Right("tab:focus  <-/->:action  enter:submit/run  /:theme  d/x/q:actions  ctrl+c:quit"),
 	)
 
 	m := bentotui.New(
@@ -134,16 +134,8 @@ func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch v.String() {
-		case "q", "ctrl+c":
+		case "ctrl+c":
 			return p, tea.Quit
-		case "d":
-			p.log("opened custom dialog via hotkey")
-			p.refresh()
-			return p, openCustomDialogCmd()
-		case "x":
-			p.log("opened confirm dialog via hotkey")
-			p.refresh()
-			return p, openConfirmDialogCmd()
 		}
 
 		if p.focusOnActions() {
@@ -156,6 +148,16 @@ func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				p.log("ran action: " + strings.ToLower(actionLabels[p.actionIdx]))
 				p.refresh()
 				return p, p.runSelectedActionCmd()
+			case "d":
+				p.log("opened custom dialog via actions hotkey")
+				p.refresh()
+				return p, openCustomDialogCmd()
+			case "x":
+				p.log("opened confirm dialog via actions hotkey")
+				p.refresh()
+				return p, openConfirmDialogCmd()
+			case "q":
+				return p, tea.Quit
 			}
 			p.refresh()
 			return p, nil
@@ -307,7 +309,7 @@ func (p *harnessPage) refresh() {
 		"",
 		"Tab switches focus between input and actions.",
 		"Left/Right selects action. Enter runs selected action.",
-		"Hotkeys: /  d  x  q",
+		"Hotkeys: /  d/x/q on actions focus  ctrl+c global quit",
 	}
 	p.actionsText.SetText(strings.Join(actionLines, "\n"))
 }
