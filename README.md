@@ -2,23 +2,39 @@
 
 # BentoTUI
 
-BentoTUI is an application framework on top of Bubble Tea for building production-grade TUIs with a structured shell, layered rendering, and reusable UI components.
+[![Go Version](https://img.shields.io/badge/go-1.23%2B-00ADD8?logo=go)](https://go.dev/)
+[![Release](https://img.shields.io/github/v/release/cloudboy-jh/bentotui?display_name=tag)](https://github.com/cloudboy-jh/bentotui/releases)
+[![Status](https://img.shields.io/badge/status-v0.1%20active-6D5EF3)](#status)
+[![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
-## What BentoTUI provides
+BentoTUI is an application framework on top of Bubble Tea for building production-grade terminal apps with a structured shell, deterministic layering, and reusable UI primitives.
 
-- app shell with deterministic layer order (body -> footer -> overlays)
-- page router with lazy page factories
+Charm gives you bricks. BentoTUI gives you rooms.
+
+## Status
+
+BentoTUI is in active `v0.1` development and evolving quickly.
+
+Current focus:
+
+- shell architecture and rendering correctness
+- UI layer structure (`ui/components/*`, `ui/styles`)
+- footer-first shell contract
+- theme system and dialog-driven theme switching
+
+## Feature Snapshot
+
+- shell model with explicit layer order (`body -> footer -> scrim -> dialog`)
+- lazy page router and page factories
 - fixed/flex split layout system
-- focus ring manager for keyboard navigation
-- modal dialog manager and theme picker flow
-- semantic theme system (currently `catppuccin-mocha`, `dracula`, `osaka-jade`)
-- UI component layer under `ui/components/*`
-
-## Current package layout
-
-- runtime/framework: `app`, `shell`, `router`, `layout`, `focus`, `surface`, `core`, `theme`
-- UI components: `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`
-- style layer: `ui/styles`
+- focus ring and keyboard routing
+- modal dialog manager (`confirm`, `custom`, theme picker)
+- semantic theme presets (`catppuccin-mocha`, `dracula`, `osaka-jade`)
+- structured UI layer:
+  - `ui/components/dialog`
+  - `ui/components/footer`
+  - `ui/components/panel`
+  - `ui/styles`
 
 ## Install
 
@@ -26,7 +42,7 @@ BentoTUI is an application framework on top of Bubble Tea for building productio
 go get github.com/cloudboy-jh/bentotui
 ```
 
-## Quick start
+## Quick Start
 
 ```go
 package main
@@ -58,18 +74,14 @@ func main() {
 }
 
 type homePage struct {
-	root   *layout.Split
-	width  int
-	height int
+	root         *layout.Split
+	width, height int
 }
 
 func newHomePage() *homePage {
 	sidebar := panel.New(panel.Title("Sidebar"), panel.Content(staticText("Sessions\nFiles")))
 	main := panel.New(panel.Title("Main"), panel.Content(staticText("Welcome to BentoTUI")))
-	root := layout.Horizontal(
-		layout.Fixed(30, sidebar),
-		layout.Flex(1, main),
-	)
+	root := layout.Horizontal(layout.Fixed(30, sidebar), layout.Flex(1, main))
 	return &homePage{root: root}
 }
 
@@ -80,8 +92,7 @@ func (p *homePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (p *homePage) View() tea.View { return p.root.View() }
 func (p *homePage) SetSize(w, h int) {
-	p.width = w
-	p.height = h
+	p.width, p.height = w, h
 	p.root.SetSize(w, h)
 }
 func (p *homePage) GetSize() (int, int) { return p.width, p.height }
@@ -94,9 +105,9 @@ func (s staticText) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return s, nil }
 func (s staticText) View() tea.View                          { return tea.NewView(string(s)) }
 ```
 
-Note: full-screen mode is enabled by default. Disable it with `bentotui.WithFullScreen(false)`.
+Fullscreen is enabled by default. Disable it with `bentotui.WithFullScreen(false)`.
 
-## Internal harness
+## Internal Harness
 
 Run the framework harness:
 
@@ -104,14 +115,24 @@ Run the framework harness:
 go run ./cmd/test-tui
 ```
 
-It validates shell layering, focus behavior, modal overlays, theme switching, and component rendering.
+Harness validates:
 
-## Documentation
+- shell layering and full-frame paint
+- footer behavior and keyboard hints
+- modal overlays and focus handling
+- theme switching and live repaint
 
-- spec: `project-docs/bentotui-main-spec.md`
+## Docs
+
+- main spec: `project-docs/bentotui-main-spec.md`
 - rendering ADR: `project-docs/rendering-system-design.md`
-- implementation roadmap: `project-docs/next-steps.md`
-- framework research: `project-docs/tui-framework-research.md`
+- roadmap: `project-docs/next-steps.md`
+- research notes: `project-docs/tui-framework-research.md`
+- changelog: `CHANGELOG.md`
+
+## Changelog Policy
+
+This project keeps a human-readable changelog in `CHANGELOG.md` using Keep a Changelog style sections.
 
 ## Development
 
