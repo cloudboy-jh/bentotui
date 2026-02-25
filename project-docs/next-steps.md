@@ -3,135 +3,58 @@
 Status: Active
 Date: 2026-02-24
 
-This plan follows ADR-0001 in `project-docs/rendering-system-design.md`, reflects the current repository structure (`ui/components/*`, `ui/styles`, footer-first shell API), and should be executed alongside `project-docs/component-system-reference.md`.
+This plan follows ADR-0001 in `project-docs/rendering-system-design.md` and `project-docs/component-system-reference.md`.
 
-## Recently Completed
+## Active Work
 
-- [x] Moved UI layer to `ui/components/*` and `ui/styles`.
-- [x] Promoted footer-first shell API (`WithFooterBar`, `WithFooter`).
-- [x] Finalized built-in theme IDs and default behavior:
-  - [x] `catppuccin-mocha` (default)
-  - [x] `dracula`
-  - [x] `osaka-jade`
-- [x] Added `CHANGELOG.md` and adopted changelog tracking.
-- [x] Fixed harness text-input hotkey conflict (`d`/`q` can be typed when input is focused).
+1. Footer action model (replace plain hint strings)
+- [ ] Add structured footer actions (`key`, `label`, `variant`, `enabled`).
+- [ ] Add footer API for explicit action lists.
+- [ ] Render action chips/buttons in footer (not freeform text).
 
-## Current Sprint (Priority)
+2. Footer layout and truncation contract
+- [ ] Lock segment roles: `left`, `actions`, `right`.
+- [ ] Define deterministic truncation priority at narrow widths.
+- [ ] Stabilize behavior for width=0 and resize transitions.
 
-## Phase 7A: Theme Dialog Bounds and Layout
+3. Focus manager hardening (`focus/focus.go`)
+- [ ] Add explicit ring/index control APIs (`SetRing`, `SetIndex`, `FocusBy`).
+- [ ] Add enabled/wrap behavior and safe nil handling.
+- [ ] Emit deterministic focus-changed events/messages.
 
-Scope: fix the current theme dialog rendering artifacts and enforce modal bounds.
+4. Component sizing contract enforcement
+- [ ] Ensure all UI components use `SetSize`/`GetSize` consistently.
+- [ ] Enforce clipping within assigned bounds.
+- [ ] Remove viewport-coupled rendering logic from components.
 
-- [x] Clamp theme picker input/list rows to dialog content width.
-- [x] Prevent dialog content from stretching to viewport width.
-- [x] Ensure modal remains centered with stable dimensions on wide terminals.
-- [x] Remove duplicate/stacked visual artifacts in search + list areas.
-
-Exit criteria:
-
-- [x] no horizontal overflow or stretched theme modal frames
-- [x] list and search surfaces render once, cleanly
-- [x] dialog remains centered and visually stable under resize
-
-## Phase 7B: Theme Apply Routing Hardening
-
-Scope: ensure theme switching is deterministic from dialog interaction.
-
-- [x] Guarantee `enter` applies the selected theme before dialog closes.
-- [x] Ensure theme updates propagate to shell, footer, dialogs, and active page.
-- [x] Confirm selected theme persists and restores correctly on restart.
-
-Exit criteria:
-
-- [x] theme apply on `enter` is reliable
-- [x] no race between close/apply paths
-- [x] persisted theme loads correctly on relaunch
-
-## Phase 7C: Footer Contract Standardization
-
-Scope: formalize footer behavior and truncation rules.
-
-- [ ] Lock segment roles: `left`, `help`, `right`.
-- [ ] Define deterministic truncation priority for narrow widths.
-- [ ] Stabilize rendering for width=0, tiny widths, and resize transitions.
-- [ ] Add structured footer actions (button/chip model) instead of plain hint strings.
-- [ ] Define footer action schema (`key`, `label`, `variant`, `enabled`).
-- [ ] Add footer API for explicit action lists and phased migration from ad hoc text.
-
-Exit criteria:
-
-- [ ] footer stays readable and deterministic at constrained widths
-- [ ] no segment ordering drift during resize
-- [ ] footer actions render as first-class UI elements, not freeform text
-
-## Next Sprint
-
-## Phase 8: Component Standardization Contract
-
-Scope: make component behavior consistent across the UI layer.
-
-- [ ] Standardize `SetSize` ownership and bounds clipping across components.
-- [ ] Enforce keybinding precedence rules by focus context.
-- [ ] Ensure focused state is visually explicit and consistent.
-- [ ] Keep components free of ad-hoc color literals (style-layer only).
-
-Exit criteria:
-
-- [ ] panel/dialog/footer/picker follow one sizing and focus contract
-- [ ] no component can render outside assigned bounds
-
-## Phase 9: Shared UI Primitives
-
-Scope: remove duplicated rendering patterns across components.
-
+5. Shared UI primitives
 - [ ] Extract shared modal frame primitive.
 - [ ] Extract shared input surface primitive.
-- [ ] Extract shared selectable row/list primitive.
+- [ ] Extract shared list/row selection primitive.
 - [ ] Extract shared footer action chip primitive.
-- [ ] Keep component-specific behavior, share visual frame mechanics.
 
-Exit criteria:
+6. Visual system normalization
+- [ ] Keep solid card surfaces with no border chrome.
+- [ ] Keep only subtle section separators where necessary.
+- [ ] Ensure focus visibility uses row/text contrast, not border outlines.
 
-- [ ] reduced duplication in panel/dialog/picker/footer rendering
-- [ ] consistent spacing and hierarchy across components
+7. Dialog and picker regression coverage
+- [ ] Add/maintain tests for modal bounds on wide/narrow terminals.
+- [ ] Add tests for `enter` apply/close ordering.
+- [ ] Add tests for custom-dialog key routing (`enter` not swallowed).
 
-## Stability and Verification
+8. Footer regression coverage
+- [ ] Add tests for action rendering order.
+- [ ] Add tests for truncation behavior and tiny-width fallback.
+- [ ] Add tests for disabled/muted action rendering.
 
-## Phase 10: Regression Coverage
+9. Harness refinement (`cmd/test-tui`)
+- [ ] Keep command-entry flow (`/theme`, `/dialog`, `/confirm`) on Enter.
+- [ ] Keep focus behavior deterministic between input/actions.
+- [ ] Use harness as canonical visual regression surface across themes.
 
-- [ ] Add renderer regression tests for full-frame paint guarantees.
-- [ ] Add layout slot paint tests for fixed/flex remainder behavior.
-- [ ] Add theme dialog bound/overflow tests.
-- [ ] Add footer truncation and segment-priority tests.
-- [ ] Add footer action rendering/truncation tests.
-- [ ] Add dialog apply/close routing tests.
-
-Exit criteria:
-
-- [ ] `go test ./...` and `go vet ./...` clean
-- [ ] no known dialog overflow or footer truncation regressions
-
-## Docs and Examples
-
-## Phase 11: Spec and Example Sync
-
-- [ ] Add a dedicated "Build a real app shell" guide to main spec.
-- [ ] Add examples for:
-  - [ ] multi-page routing
-  - [ ] focus manager integration
-  - [ ] dialog flows
-  - [ ] fullscreen vs inline mode
-- [ ] Keep README concise; keep deeper architecture detail in `project-docs`.
-- [ ] Update `CHANGELOG.md` continuously as phases land.
-
-Exit criteria:
-
-- [ ] README remains high-signal and current
-- [ ] spec/doc examples match real package paths and APIs
-
-## Deferred
-
-## Slash Command Palette (`/`)
-
-- [ ] Full command palette UX remains deferred.
-- [ ] Current slash behavior stays explicit (`/theme`, `/dialog`, `/confirm`) until palette design is implemented.
+10. Docs and examples sync
+- [ ] Add "Build a real app shell" guide to main spec.
+- [ ] Add examples for routing, focus, dialog flows, fullscreen vs inline.
+- [ ] Keep README concise; move implementation detail to `project-docs`.
+- [ ] Keep `CHANGELOG.md` updated as milestones land.
