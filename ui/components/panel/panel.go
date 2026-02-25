@@ -79,11 +79,11 @@ func (m *Model) View() tea.View {
 	}
 	outerHeight := m.height
 	if outerHeight <= 0 {
-		outerHeight = max(8, len(strings.Split(body, "\n"))+4)
+		outerHeight = max(6, len(strings.Split(body, "\n"))+3)
 	}
 
-	innerWidth := max(0, outerWidth-2)
-	innerHeight := max(0, outerHeight-2)
+	innerWidth := max(0, outerWidth)
+	innerHeight := max(0, outerHeight)
 	rows := make([]string, 0, innerHeight)
 	contentRows := strings.Split(body, "\n")
 	contentStart := 0
@@ -110,8 +110,8 @@ func (m *Model) View() tea.View {
 func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
-	contentWidth := max(0, width-4)
-	contentHeight := max(0, height-2)
+	contentWidth := max(0, width-2)
+	contentHeight := max(0, height)
 	if m.title != "" {
 		contentHeight = max(0, contentHeight-1)
 	}

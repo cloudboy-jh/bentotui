@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
@@ -87,9 +87,6 @@ func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, func() tea.Msg { return active.OnConfirm() }
 					}
 					return m, nil
-				default:
-					m.active = nil
-					return m, nil
 				}
 			}
 		}
@@ -158,8 +155,8 @@ func (c Confirm) View() tea.View {
 }
 
 func (c Confirm) SetSize(width, height int) {
-	_ = width
-	_ = height
+	c.width = width
+	c.height = height
 }
 
 func (c Confirm) Title() string { return c.DialogTitle }
@@ -210,8 +207,10 @@ func (c Custom) SetSize(width, height int) {
 	if c.Height == 0 {
 		c.Height = height / 2
 	}
+	c.Width = clamp(c.Width, 36, max(36, width-4))
+	c.Height = clamp(c.Height, 10, max(10, height-4))
 	if s, ok := c.Content.(core.Sizeable); ok {
-		s.SetSize(c.Width-4, c.Height-4)
+		s.SetSize(max(1, c.Width-4), max(1, c.Height-4))
 	}
 }
 
@@ -230,28 +229,52 @@ func renderDialogFrame(title, content string, width, height int, t theme.Theme) 
 	if strings.TrimSpace(headerTitle) == "" {
 		headerTitle = "Dialog"
 	}
-	headerWidth := max(0, width-6)
-	header := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		sys.DialogHeader().Render(surfaceFit(headerTitle, max(0, headerWidth-6))),
-		sys.DialogEscHint().Render(lipgloss.PlaceHorizontal(6, lipgloss.Right, "esc")),
-	)
+	if width <= 0 {
+		width = 48
+	}
+	if height <= 0 {
+		height = 14
+	}
+	innerWidth := max(1, width-4)
+	innerHeight := max(1, height-2)
+
+	rightWidth := 3
+	leftWidth := max(1, innerWidth-rightWidth-1)
+	header := sys.DialogHeader().Render(surface.FitWidth(headerTitle, leftWidth)) + " " + sys.DialogEscHint().Render(surface.FitWidth("esc", rightWidth))
+	header = surface.FitWidth(header, innerWidth)
+
 	body := strings.TrimRight(content, "\n")
-	if body == "" {
+	if strings.TrimSpace(body) == "" {
 		body = " "
 	}
-	joined := strings.Join([]string{header, "", body}, "\n")
-	style := sys.DialogFrame().Width(width)
-	if height > 0 {
-		style = style.Height(height)
+	bodyLines := clipLines(body, innerWidth)
+	bodyMax := max(1, innerHeight-2)
+	if len(bodyLines) > bodyMax {
+		bodyLines = bodyLines[:bodyMax]
 	}
+	joined := strings.Join(append([]string{header, ""}, bodyLines...), "\n")
+	style := sys.DialogFrame().Width(width).Height(height)
 	return style.Render(joined)
 }
 
-func surfaceFit(s string, width int) string {
-	if width <= 0 {
-		return ""
+func clipLines(content string, width int) []string {
+	lines := strings.Split(content, "\n")
+	clipped := make([]string, 0, len(lines))
+	for _, line := range lines {
+		clipped = append(clipped, surface.FitWidth(line, width))
 	}
-	s = lipgloss.NewStyle().MaxWidth(width).Render(s)
-	return lipgloss.PlaceHorizontal(width, lipgloss.Left, s)
+	return clipped
+}
+
+func clamp(v, minV, maxV int) int {
+	if maxV < minV {
+		return minV
+	}
+	if v < minV {
+		return minV
+	}
+	if v > maxV {
+		return maxV
+	}
+	return v
 }

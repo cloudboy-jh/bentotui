@@ -216,13 +216,27 @@ func max(a, b int) int {
 
 func openThemeDialogCmd(width, height int) tea.Cmd {
 	picker := dialog.NewThemePicker()
-	picker.SetSize(width, height)
+	modalWidth := clampInt(width-12, 48, 72)
+	modalHeight := clampInt(height-8, 14, 24)
 	return func() tea.Msg {
 		return dialog.Open(dialog.Custom{
 			DialogTitle: "Theme",
 			Content:     picker,
-			Width:       48,
-			Height:      14,
+			Width:       modalWidth,
+			Height:      modalHeight,
 		})
 	}
+}
+
+func clampInt(v, minV, maxV int) int {
+	if maxV < minV {
+		return minV
+	}
+	if v < minV {
+		return minV
+	}
+	if v > maxV {
+		return maxV
+	}
+	return v
 }

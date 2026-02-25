@@ -370,9 +370,9 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 |---|---|
 | Home / Projects / Settings pages | `router` |
 | Sidebar + main content layout | `layout` |
-| Secrets table with grouped sections | `layout` + `panel` |
-| Add/edit/import overlays | `dialog` |
-| Init wizard | `dialog` (multi-step) |
+| Secrets table with grouped sections | `layout` + `ui/components/panel` |
+| Add/edit/import overlays | `ui/components/dialog` |
+| Init wizard | `ui/components/dialog` (multi-step) |
 | Project tab navigation | `focus` |
 | Keybinding help bar | `ui/components/footer` |
 | Catppuccin/Dracula/Osaka Jade themes | `theme` |
@@ -399,9 +399,9 @@ It currently validates:
 
 | Tool | Description | Key BentoTUI Modules |
 |---|---|---|
-| Pretty Log | Clean log output viewer | `layout`, `panel`, `theme` |
+| Pretty Log | Clean log output viewer | `layout`, `ui/components/panel`, `theme` |
 | File Tree | Terminal file navigator | `layout`, `focus`, `keys` |
-| Diff Viewer | Side-by-side diff display | `layout`, `panel`, `theme` |
+| Diff Viewer | Side-by-side diff display | `layout`, `ui/components/panel`, `theme` |
 
 ---
 
@@ -414,9 +414,9 @@ The minimum surface to ship and build Veil on:
 - [x] `layout` — horizontal/vertical splits with fixed/flex
 - [x] `focus` — focus ring with tab cycling
 - [x] `theme` — color system with presets + semantic surface tokens
-- [x] `dialog` — modal overlay with confirm/custom
+- [x] `ui/components/dialog` — modal overlay with confirm/custom
 - [x] `ui/components/footer` — keybinding help + themed footer surface
-- [x] `panel` — themed bordered content container with focus state
+- [x] `ui/components/panel` — themed bordered content container with focus state
 
 **Not in v0.1:**
 - Command palette (v0.2)

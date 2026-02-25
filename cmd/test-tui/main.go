@@ -27,7 +27,7 @@ func main() {
 	t := theme.CurrentTheme()
 	ft := footer.New(
 		footer.Left("BentoTUI theme harness"),
-		footer.Right("tab:focus  <-/->:action  enter:submit/run  /:theme  d/x/q:actions  ctrl+c:quit"),
+		footer.Right("tab:focus  <-/->:action  enter:submit/run  /:command  d/x/q:actions  ctrl+c:quit"),
 	)
 
 	m := bentotui.New(
@@ -163,12 +163,6 @@ func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, nil
 		}
 
-		if v.String() == "/" && strings.TrimSpace(p.input.Value()) == "" {
-			p.log("opened theme picker via / hotkey")
-			p.refresh()
-			return p, openThemePickerCmd()
-		}
-
 		if v.String() == "enter" {
 			cmd := p.submitInput()
 			p.refresh()
@@ -261,7 +255,7 @@ func (p *harnessPage) submitInput() tea.Cmd {
 	p.input.SetValue("")
 
 	switch text {
-	case "/", "/theme":
+	case "/theme":
 		p.log("command accepted: /theme")
 		return openThemePickerCmd()
 	case "/dialog":
@@ -270,7 +264,14 @@ func (p *harnessPage) submitInput() tea.Cmd {
 	case "/confirm":
 		p.log("command accepted: /confirm")
 		return openConfirmDialogCmd()
+	case "/":
+		p.log("command pending: type /theme, /dialog, or /confirm")
+		return nil
 	default:
+		if strings.HasPrefix(text, "/") {
+			p.log("unknown command: " + text)
+			return nil
+		}
 		p.log("submitted: " + text)
 		return nil
 	}
@@ -309,7 +310,8 @@ func (p *harnessPage) refresh() {
 		"",
 		"Tab switches focus between input and actions.",
 		"Left/Right selects action. Enter runs selected action.",
-		"Hotkeys: /  d/x/q on actions focus  ctrl+c global quit",
+		"Commands run on Enter. / starts command text in input.",
+		"Hotkeys: d/x/q on actions focus  ctrl+c global quit",
 	}
 	p.actionsText.SetText(strings.Join(actionLines, "\n"))
 }

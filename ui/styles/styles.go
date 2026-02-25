@@ -12,17 +12,12 @@ type System struct {
 func New(t theme.Theme) System { return System{Theme: t} }
 
 func (s System) PanelFrame(focused bool) lipgloss.Style {
-	border := s.Theme.BorderSubtle
-	if border == "" {
-		border = s.Theme.Border
-	}
+	bg := pick(s.Theme.PanelBG, s.Theme.Surface)
 	if focused {
-		border = s.Theme.BorderFocused
+		bg = pick(s.Theme.ElementBG, bg)
 	}
 	return lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color(border)).
-		Background(lipgloss.Color(pick(s.Theme.PanelBG, s.Theme.Surface))).
+		Background(lipgloss.Color(bg)).
 		Foreground(lipgloss.Color(s.Theme.Text))
 }
 
@@ -58,8 +53,6 @@ func (s System) StatusBar() lipgloss.Style {
 
 func (s System) DialogFrame() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(s.Theme.DialogBorder)).
 		Background(lipgloss.Color(pick(s.Theme.ModalBG, s.Theme.DialogBG))).
 		Foreground(lipgloss.Color(s.Theme.DialogText)).
 		Padding(1, 2)
@@ -96,8 +89,6 @@ func (s System) ActionButton(active bool) lipgloss.Style {
 		return lipgloss.NewStyle().
 			Foreground(lipgloss.Color(pick(s.Theme.SelectionText, s.Theme.Background))).
 			Background(lipgloss.Color(pick(s.Theme.SelectionBG, s.Theme.BorderFocused))).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color(s.Theme.BorderFocused)).
 			Bold(true).
 			Padding(0, 1).
 			MarginRight(1)
@@ -105,8 +96,6 @@ func (s System) ActionButton(active bool) lipgloss.Style {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(s.Theme.Text)).
 		Background(lipgloss.Color(pick(s.Theme.ElementBG, s.Theme.SurfaceMuted))).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(pick(s.Theme.BorderSubtle, s.Theme.Border))).
 		Padding(0, 1).
 		MarginRight(1)
 }

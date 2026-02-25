@@ -17,13 +17,30 @@ func specialKey(code rune) tea.Msg {
 	return tea.KeyPressMsg(tea.Key{Code: code})
 }
 
-func TestHarnessSlashOpensThemePicker(t *testing.T) {
+func TestHarnessSlashTypesIntoInput(t *testing.T) {
 	p := newHarnessPage(theme.Preset(theme.DefaultName))
 	p.SetSize(120, 40)
 
 	_, cmd := p.Update(keyPress("/"))
+	if cmd != nil {
+		msg := cmd()
+		if _, ok := msg.(theme.OpenThemePickerMsg); ok {
+			t.Fatal("did not expect theme picker command from raw '/' key")
+		}
+	}
+	if got := p.input.Value(); got != "/" {
+		t.Fatalf("expected input to contain '/', got %q", got)
+	}
+}
+
+func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
+	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p.SetSize(120, 40)
+	p.input.SetValue("/theme")
+
+	_, cmd := p.Update(specialKey(tea.KeyEnter))
 	if cmd == nil {
-		t.Fatal("expected theme picker command for '/' key")
+		t.Fatal("expected theme picker command from /theme")
 	}
 	msg := cmd()
 	if _, ok := msg.(theme.OpenThemePickerMsg); !ok {

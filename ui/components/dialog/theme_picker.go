@@ -7,6 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/cloudboy-jh/bentotui/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
@@ -88,15 +89,16 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (p *ThemePicker) View() tea.View {
 	t := theme.CurrentTheme()
 	sys := styles.New(t)
+	contentWidth := maxInt(24, p.width)
 	rows := make([]string, 0, 10)
-	rows = append(rows, "Search")
-	rows = append(rows, inputContainer(p.search.View(), t))
+	rows = append(rows, surface.FitWidth("Search", contentWidth))
+	rows = append(rows, inputContainer(p.search.View(), contentWidth, t))
 	rows = append(rows, "")
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render("No matching themes"))
+		rows = append(rows, lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render(surface.FitWidth("No matching themes", contentWidth)))
 	} else {
-		maxRows := maxInt(5, p.height-10)
+		maxRows := maxInt(1, p.height-5)
 		start := 0
 		if p.selected >= maxRows {
 			start = p.selected - maxRows + 1
@@ -110,19 +112,21 @@ func (p *ThemePicker) View() tea.View {
 				marker = sys.CurrentMarker().Render("●")
 			}
 			line := fmt.Sprintf("%s %s", marker, name)
-			rows = append(rows, sys.ListItem(selected).Width(maxInt(28, p.width-8)).Render(line))
+			rows = append(rows, sys.ListItem(selected).Width(contentWidth).Render(surface.FitWidth(line, contentWidth)))
 		}
 	}
 
-	rows = append(rows, "", lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render("enter apply  esc close"))
+	rows = append(rows, "", lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render(surface.FitWidth("enter apply  esc close", contentWidth)))
 	return tea.NewView(strings.Join(rows, "\n"))
 }
 
 func (p *ThemePicker) SetSize(width, height int) {
-	p.width = width
-	p.height = height
+	p.width = maxInt(1, width)
+	p.height = maxInt(1, height)
 	p.syncStyles()
 }
+
+func (p *ThemePicker) GetSize() (int, int) { return p.width, p.height }
 
 func (p *ThemePicker) Title() string { return "Themes" }
 
@@ -135,7 +139,7 @@ func (p *ThemePicker) syncStyles() {
 	s.Blurred = s.Focused
 	s.Cursor.Color = lipgloss.Color(t.Accent)
 	p.search.SetStyles(s)
-	p.search.SetWidth(maxInt(16, p.width-12))
+	p.search.SetWidth(maxInt(10, p.width-2))
 }
 
 func (p *ThemePicker) refilter() {
@@ -185,14 +189,13 @@ func (p *ThemePicker) alignSelectionToCurrent() {
 	p.selected = 0
 }
 
-func inputContainer(view string, t theme.Theme) string {
+func inputContainer(view string, width int, t theme.Theme) string {
 	return lipgloss.NewStyle().
+		Width(width).
 		Background(lipgloss.Color(pick(t.InputBG, t.ElementBG, t.SurfaceMuted))).
 		Foreground(lipgloss.Color(t.Text)).
-		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color(pick(t.InputBorder, t.BorderFocused, t.Border))).
 		Padding(0, 1).
-		Render(view)
+		Render(surface.FitWidth(view, maxInt(1, width-2)))
 }
 
 func pick(values ...string) string {
