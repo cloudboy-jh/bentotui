@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
+	"github.com/cloudboy-jh/bentotui/ui/primitives"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
@@ -91,12 +92,12 @@ func (p *ThemePicker) View() tea.View {
 	sys := styles.New(t)
 	contentWidth := maxInt(24, p.width)
 	rows := make([]string, 0, 10)
-	rows = append(rows, surface.FitWidth("Search", contentWidth))
+	rows = append(rows, primitives.PaintRow(contentWidth, "", t.Text, "Search"))
 	rows = append(rows, inputContainer(p.search.View(), contentWidth, t))
-	rows = append(rows, "")
+	rows = append(rows, primitives.PaintRow(contentWidth, "", "", ""))
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render(surface.FitWidth("No matching themes", contentWidth)))
+		rows = append(rows, primitives.PaintRow(contentWidth, "", t.Muted, "No matching themes"))
 	} else {
 		maxRows := maxInt(1, p.height-5)
 		start := 0
@@ -112,11 +113,11 @@ func (p *ThemePicker) View() tea.View {
 				marker = sys.CurrentMarker().Render("●")
 			}
 			line := fmt.Sprintf("%s %s", marker, name)
-			rows = append(rows, sys.ListItem(selected).Width(contentWidth).Render(surface.FitWidth(line, contentWidth)))
+			rows = append(rows, primitives.PaintStyledRow(sys.ListItem(selected), contentWidth, line))
 		}
 	}
 
-	rows = append(rows, "", lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted)).Render(surface.FitWidth("enter apply  esc close", contentWidth)))
+	rows = append(rows, primitives.PaintRow(contentWidth, "", "", ""), primitives.PaintRow(contentWidth, "", t.Muted, "enter apply  esc close"))
 	return tea.NewView(strings.Join(rows, "\n"))
 }
 
@@ -190,12 +191,11 @@ func (p *ThemePicker) alignSelectionToCurrent() {
 }
 
 func inputContainer(view string, width int, t theme.Theme) string {
-	return lipgloss.NewStyle().
-		Width(width).
-		Background(lipgloss.Color(pick(t.InputBG, t.ElementBG, t.SurfaceMuted))).
-		Foreground(lipgloss.Color(t.Text)).
-		Padding(0, 1).
-		Render(surface.FitWidth(view, maxInt(1, width-2)))
+	if width <= 0 {
+		return ""
+	}
+	content := surface.FitWidth(view, maxInt(1, width-1))
+	return primitives.PaintInputRowInset(width, pick(t.InputBG, t.ElementBG, t.SurfaceMuted), t.Text, content, 1)
 }
 
 func pick(values ...string) string {

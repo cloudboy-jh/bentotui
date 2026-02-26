@@ -8,6 +8,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
+	"github.com/cloudboy-jh/bentotui/ui/primitives"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
@@ -104,7 +105,7 @@ func (m *Model) View() tea.View {
 		Width(outerWidth).
 		Height(outerHeight)
 
-	return tea.NewView(boxStyle.Render(strings.Join(rows, "\n")))
+	return tea.NewView(primitives.PaintFrame(boxStyle, outerWidth, outerHeight, rows))
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -136,9 +137,8 @@ func renderTitleRow(title string, width int, t theme.Theme, focused bool) string
 	}
 	sys := styles.New(t)
 	badge := sys.PanelTitleChip(focused).Render(title)
-	return sys.PanelTitleBar(focused).
-		Width(width).
-		Render(lipgloss.PlaceHorizontal(width, lipgloss.Left, badge))
+	content := lipgloss.PlaceHorizontal(width, lipgloss.Left, badge)
+	return primitives.PaintStyledRow(sys.PanelTitleBar(focused), width, content)
 }
 
 func fitWidth(s string, width int) string {

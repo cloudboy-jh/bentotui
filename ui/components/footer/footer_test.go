@@ -14,13 +14,17 @@ func TestFooterRendersSingleLine(t *testing.T) {
 		Right("right"),
 		Actions(Action{Key: "tab", Label: "focus", Variant: ActionPrimary, Enabled: true}),
 	)
-	m.SetSize(80, 1)
+	m.SetSize(80, 4)
 	view := core.ViewString(m.View())
 	if strings.Contains(view, "\n") {
 		t.Fatal("expected single-line footer output")
 	}
 	if lipgloss.Width(view) != 80 {
 		t.Fatalf("expected footer width 80, got %d", lipgloss.Width(view))
+	}
+	_, h := m.GetSize()
+	if h != 1 {
+		t.Fatalf("expected footer height to stay 1, got %d", h)
 	}
 }
 
@@ -43,19 +47,44 @@ func TestFooterKeepsRightSegmentUnderTightWidth(t *testing.T) {
 	}
 }
 
-func TestFooterActionsFallbackToKeyOnly(t *testing.T) {
+func TestFooterActionCollapseUsesKeyOnlyThenDropsFromEnd(t *testing.T) {
 	m := New(
 		Actions(
 			Action{Key: "tab", Label: "focus", Variant: ActionPrimary, Enabled: true},
-			Action{Key: "enter", Label: "run", Variant: ActionNormal, Enabled: true},
+			Action{Key: "enter", Label: "submit", Variant: ActionNormal, Enabled: true},
 		),
 	)
-	m.SetSize(12, 1)
+	m.SetSize(7, 1)
 	view := core.ViewString(m.View())
-	if strings.Contains(view, "focus") || strings.Contains(view, "run") {
-		t.Fatal("expected label text to be dropped under tight width")
+	if strings.Contains(view, "focus") || strings.Contains(view, "submit") {
+		t.Fatal("expected labels to drop before truncation from end")
 	}
-	if lipgloss.Width(view) != 12 {
-		t.Fatalf("expected width 12, got %d", lipgloss.Width(view))
+	if !strings.Contains(view, "tab") {
+		t.Fatal("expected first key to remain visible")
+	}
+	if strings.Contains(view, "enter") {
+		t.Fatal("expected trailing key to be dropped from end when width is tight")
+	}
+}
+
+func TestFooterHarnessThreeChipLayout(t *testing.T) {
+	m := New(
+		LeftAction(Action{Key: "/dialog", Label: "custom", Variant: ActionMuted, Enabled: true}),
+		Actions(Action{Key: "/theme", Label: "picker", Variant: ActionPrimary, Enabled: true}),
+		RightAction(Action{Key: "/page", Label: "swap", Variant: ActionNormal, Enabled: true}),
+	)
+	m.SetSize(120, 1)
+	view := core.ViewString(m.View())
+	if !strings.Contains(view, "/dialog") {
+		t.Fatal("expected left chip to render")
+	}
+	if !strings.Contains(view, "/theme") {
+		t.Fatal("expected middle chip to render")
+	}
+	if !strings.Contains(view, "/page") {
+		t.Fatalf("expected right chip to render, got %q", view)
+	}
+	if strings.Index(view, "/dialog") > strings.Index(view, "/theme") || strings.Index(view, "/theme") > strings.Index(view, "/page") {
+		t.Fatal("expected left -> middle -> right segment order")
 	}
 }

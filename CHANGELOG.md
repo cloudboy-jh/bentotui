@@ -12,6 +12,7 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 - added searchable theme picker dialog with selection highlight and current-theme marker
 - added explicit theme tokens for layered surfaces and interaction states
 - expanded theme tests for token completeness and preset stability
+- added shared UI render primitives under `ui/primitives` (`chip`, `row`, `frame`, `inputrow`)
 
 ### Changed
 
@@ -20,6 +21,8 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 - updated shell composition to treat footer as a first-class layer
 - refreshed `cmd/test-tui` harness around footer, dialogs, and theme interactions
 - rewrote README to reflect the new architecture and usage paths
+- finalized footer statusline behavior with deterministic truncation and one-row chip rendering
+- updated `cmd/test-tui` footer to three live action chips (`/dialog`, `/theme`, `/page`) with route toggle coverage
 
 ### Removed
 

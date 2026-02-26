@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 )
@@ -17,8 +19,12 @@ func specialKey(code rune) tea.Msg {
 	return tea.KeyPressMsg(tea.Key{Code: code})
 }
 
+func ctrlKey(code rune) tea.Msg {
+	return tea.KeyPressMsg(tea.Key{Code: code, Mod: tea.ModCtrl})
+}
+
 func TestHarnessSlashTypesIntoInput(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 
 	_, cmd := p.Update(keyPress("/"))
@@ -34,7 +40,7 @@ func TestHarnessSlashTypesIntoInput(t *testing.T) {
 }
 
 func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("/theme")
 
@@ -49,7 +55,7 @@ func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
 }
 
 func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("/dialog")
 
@@ -62,20 +68,75 @@ func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
 		t.Fatalf("expected dialog.OpenMsg for /dialog, got %T", open)
 	}
 
-	p.input.SetValue("/confirm")
+}
 
-	_, cmd = p.Update(specialKey(tea.KeyEnter))
+func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p.SetSize(120, 40)
+	p.input.SetValue("/page")
+
+	_, cmd := p.Update(specialKey(tea.KeyEnter))
 	if cmd == nil {
-		t.Fatal("expected confirm dialog command for /confirm")
+		t.Fatal("expected navigate command for /page")
 	}
-	open = cmd()
-	if _, ok := open.(dialog.OpenMsg); !ok {
-		t.Fatalf("expected dialog.OpenMsg for /confirm, got %T", open)
+	msg := cmd()
+	nav, ok := msg.(core.NavigateMsg)
+	if !ok {
+		t.Fatalf("expected core.NavigateMsg, got %T", msg)
+	}
+	if nav.Page != "secondary" {
+		t.Fatalf("expected page secondary, got %q", nav.Page)
+	}
+}
+
+func TestHarnessHotkeysTriggerActionsWithoutTyping(t *testing.T) {
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p.SetSize(120, 40)
+	p.input.SetValue("seed")
+
+	_, cmd := p.Update(ctrlKey('d'))
+	if cmd == nil {
+		t.Fatal("expected dialog command for ctrl+d")
+	}
+	msg := cmd()
+	if _, ok := msg.(dialog.OpenMsg); !ok {
+		t.Fatalf("expected dialog.OpenMsg for ctrl+d, got %T", msg)
+	}
+	if got := p.input.Value(); got != "seed" {
+		t.Fatalf("expected input unchanged after ctrl+d, got %q", got)
+	}
+
+	_, cmd = p.Update(ctrlKey('t'))
+	if cmd == nil {
+		t.Fatal("expected theme picker command for ctrl+t")
+	}
+	msg = cmd()
+	if _, ok := msg.(theme.OpenThemePickerMsg); !ok {
+		t.Fatalf("expected theme.OpenThemePickerMsg for ctrl+t, got %T", msg)
+	}
+	if got := p.input.Value(); got != "seed" {
+		t.Fatalf("expected input unchanged after ctrl+t, got %q", got)
+	}
+
+	_, cmd = p.Update(ctrlKey('p'))
+	if cmd == nil {
+		t.Fatal("expected navigate command for ctrl+p")
+	}
+	msg = cmd()
+	nav, ok := msg.(core.NavigateMsg)
+	if !ok {
+		t.Fatalf("expected core.NavigateMsg for ctrl+p, got %T", msg)
+	}
+	if nav.Page != "secondary" {
+		t.Fatalf("expected page secondary from ctrl+p, got %q", nav.Page)
+	}
+	if got := p.input.Value(); got != "seed" {
+		t.Fatalf("expected input unchanged after ctrl+p, got %q", got)
 	}
 }
 
 func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 
 	_, cmd := p.Update(keyPress("d"))
@@ -96,7 +157,7 @@ func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
 }
 
 func TestHarnessEnterSubmitsInput(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName))
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("hello bento")
 
@@ -112,5 +173,21 @@ func TestHarnessEnterSubmitsInput(t *testing.T) {
 	}
 	if p.input.Value() != "" {
 		t.Fatalf("expected input to clear after submit, got %q", p.input.Value())
+	}
+}
+
+func TestHarnessViewRowsMatchViewportWidth(t *testing.T) {
+	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p.SetSize(120, 40)
+
+	view := core.ViewString(p.View())
+	lines := strings.Split(view, "\n")
+	if len(lines) == 0 {
+		t.Fatal("expected non-empty harness view")
+	}
+	for i, line := range lines {
+		if w := lipgloss.Width(line); w != 120 {
+			t.Fatalf("expected row %d width 120, got %d", i, w)
+		}
 	}
 }

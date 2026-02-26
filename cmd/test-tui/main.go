@@ -12,32 +12,30 @@ import (
 	"github.com/cloudboy-jh/bentotui/app"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/layout"
+	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 	"github.com/cloudboy-jh/bentotui/ui/components/footer"
 	"github.com/cloudboy-jh/bentotui/ui/components/panel"
+	"github.com/cloudboy-jh/bentotui/ui/primitives"
 )
 
 func main() {
 	t := theme.CurrentTheme()
 	ft := footer.New(
-		footer.Left("BentoTUI theme harness"),
-		footer.Right("early production"),
+		footer.LeftAction(footer.Action{Key: "ctrl+d", Label: "dialog", Variant: footer.ActionNormal, Enabled: true}),
 		footer.Actions(
-			footer.Action{Key: "enter", Label: "submit", Variant: footer.ActionPrimary, Enabled: true},
-			footer.Action{Key: "/", Label: "command", Variant: footer.ActionNormal, Enabled: true},
-			footer.Action{Key: "/theme", Label: "picker", Variant: footer.ActionMuted, Enabled: true},
-			footer.Action{Key: "/dialog", Label: "custom", Variant: footer.ActionMuted, Enabled: true},
-			footer.Action{Key: "/confirm", Label: "confirm", Variant: footer.ActionMuted, Enabled: true},
-			footer.Action{Key: "ctrl+c", Label: "quit", Variant: footer.ActionDanger, Enabled: true},
+			footer.Action{Key: "ctrl+t", Label: "theme", Variant: footer.ActionPrimary, Enabled: true},
 		),
+		footer.RightAction(footer.Action{Key: "ctrl+p", Label: "page", Variant: footer.ActionDanger, Enabled: true}),
 	)
 
 	m := bentotui.New(
 		bentotui.WithTheme(t),
 		app.WithFooter(ft),
 		bentotui.WithPages(
-			bentotui.Page("harness", func() core.Page { return newHarnessPage(t) }),
+			bentotui.Page("harness", func() core.Page { return newHarnessPage(t, "harness", "secondary") }),
+			bentotui.Page("secondary", func() core.Page { return newHarnessPage(t, "secondary", "harness") }),
 		),
 		bentotui.WithFooterBar(true),
 		bentotui.WithFullScreen(true),
@@ -49,7 +47,11 @@ func main() {
 	}
 }
 
-type textBlock struct{ text string }
+type textBlock struct {
+	text   string
+	width  int
+	height int
+}
 
 func newTextBlock(text string) *textBlock { return &textBlock{text: text} }
 func (b *textBlock) SetText(text string)  { b.text = text }
@@ -58,9 +60,17 @@ func (b *textBlock) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	_ = msg
 	return b, nil
 }
-func (b *textBlock) View() tea.View { return tea.NewView(b.text) }
-
-type harnessEventMsg struct{ text string }
+func (b *textBlock) View() tea.View {
+	if b.width <= 0 || b.height <= 0 {
+		return tea.NewView(b.text)
+	}
+	return tea.NewView(surface.Region(b.text, b.width, b.height, "", ""))
+}
+func (b *textBlock) SetSize(width, height int) {
+	b.width = width
+	b.height = height
+}
+func (b *textBlock) GetSize() (int, int) { return b.width, b.height }
 
 type harnessPage struct {
 	root *layout.Split
@@ -74,18 +84,20 @@ type harnessPage struct {
 
 	theme     theme.Theme
 	themeName string
+	pageName  string
+	nextPage  string
 	width     int
 	height    int
 	startedAt time.Time
 	events    []string
 }
 
-func newHarnessPage(t theme.Theme) *harnessPage {
+func newHarnessPage(t theme.Theme, pageName, nextPage string) *harnessPage {
 	in := textinput.New()
 	in.Prompt = "> "
-	in.Placeholder = "Type text, /theme, /dialog, or /confirm"
+	in.Placeholder = "Type text, /dialog, /theme, or /page"
 	in.ShowSuggestions = true
-	in.SetSuggestions([]string{"/theme", "/dialog", "/confirm"})
+	in.SetSuggestions([]string{"/dialog", "/theme", "/page"})
 	in.SetStyles(inputStyles(t))
 
 	p := &harnessPage{
@@ -94,6 +106,8 @@ func newHarnessPage(t theme.Theme) *harnessPage {
 		input:      in,
 		theme:      t,
 		themeName:  theme.CurrentThemeName(),
+		pageName:   pageName,
+		nextPage:   nextPage,
 		startedAt:  time.Now(),
 	}
 	_ = p.input.Focus()
@@ -116,14 +130,22 @@ func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.themeName = v.Name
 		p.applyTheme(v.Theme)
 		p.log("theme switched to " + v.Name)
-	case harnessEventMsg:
-		if strings.TrimSpace(v.text) != "" {
-			p.log(v.text)
-		}
 	case tea.KeyMsg:
 		switch v.String() {
 		case "ctrl+c":
 			return p, tea.Quit
+		case "ctrl+d":
+			p.log("hotkey accepted: ctrl+d -> dialog")
+			p.refresh()
+			return p, openCustomDialogCmd()
+		case "ctrl+t":
+			p.log("hotkey accepted: ctrl+t -> theme")
+			p.refresh()
+			return p, openThemePickerCmd()
+		case "ctrl+p":
+			p.log("hotkey accepted: ctrl+p -> " + p.nextPage)
+			p.refresh()
+			return p, navigateToCmd(p.nextPage)
 		}
 
 		if v.String() == "enter" {
@@ -188,11 +210,11 @@ func (p *harnessPage) submitInput() tea.Cmd {
 	case "/dialog":
 		p.log("command accepted: /dialog")
 		return openCustomDialogCmd()
-	case "/confirm":
-		p.log("command accepted: /confirm")
-		return openConfirmDialogCmd()
+	case "/page":
+		p.log("command accepted: /page -> " + p.nextPage)
+		return navigateToCmd(p.nextPage)
 	case "/":
-		p.log("command pending: type /theme, /dialog, or /confirm")
+		p.log("command pending: type /dialog, /theme, or /page")
 		return nil
 	default:
 		if strings.HasPrefix(text, "/") {
@@ -212,6 +234,7 @@ func (p *harnessPage) updateInputWidth() {
 func (p *harnessPage) refresh() {
 	headerLines := []string{
 		"Command-driven validation harness",
+		fmt.Sprintf("Page: %s   Next: %s", p.pageName, p.nextPage),
 		fmt.Sprintf("Theme: %s", p.themeName),
 		fmt.Sprintf("Viewport: %dx%d   Uptime: %s", p.width, p.height, time.Since(p.startedAt).Round(time.Second)),
 	}
@@ -219,10 +242,11 @@ func (p *harnessPage) refresh() {
 
 	mainLines := []string{
 		"Prompt",
-		inputSurface(p.input.View(), p.theme),
-		sectionDivider(max(24, p.width-6), p.theme),
+		inputSurface(p.input.View(), p.mainContentWidth(), p.theme),
+		sectionDivider(p.mainContentWidth(), p.theme),
 		"",
-		"Commands: /theme  /dialog  /confirm",
+		"Hotkeys: ctrl+d dialog  ctrl+t theme  ctrl+p page",
+		"Slash:   /dialog        /theme         /page",
 		"",
 		"Recent Events:",
 	}
@@ -234,12 +258,12 @@ func (p *harnessPage) refresh() {
 	p.mainText.SetText(strings.Join(mainLines, "\n"))
 }
 
-func inputSurface(view string, t theme.Theme) string {
-	return lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(t.InputBG, t.ElementBG, t.SurfaceMuted))).
-		Foreground(lipgloss.Color(t.Text)).
-		Padding(0, 1).
-		Render(view)
+func inputSurface(view string, width int, t theme.Theme) string {
+	if width <= 0 {
+		return ""
+	}
+	bg := pick(t.InputBG, t.ElementBG, t.SurfaceMuted)
+	return primitives.PaintInputRow(width, bg, t.Text, view)
 }
 
 func sectionDivider(width int, t theme.Theme) string {
@@ -248,6 +272,14 @@ func sectionDivider(width int, t theme.Theme) string {
 	}
 	line := strings.Repeat("-", width)
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.BorderSubtle, t.Muted))).Render(line)
+}
+
+func (p *harnessPage) mainContentWidth() int {
+	mainWidth, _ := p.mainPanel.GetSize()
+	if mainWidth <= 2 {
+		return 0
+	}
+	return mainWidth - 2
 }
 
 func (p *harnessPage) log(s string) {
@@ -273,16 +305,8 @@ func openCustomDialogCmd() tea.Cmd {
 	}
 }
 
-func openConfirmDialogCmd() tea.Cmd {
-	return func() tea.Msg {
-		return dialog.Open(dialog.Confirm{
-			DialogTitle: "Confirm Action",
-			Message:     "Press Enter to emit a confirm event.",
-			OnConfirm: func() tea.Msg {
-				return harnessEventMsg{text: "confirm accepted"}
-			},
-		})
-	}
+func navigateToCmd(page string) tea.Cmd {
+	return func() tea.Msg { return core.Navigate(page) }
 }
 
 func inputStyles(t theme.Theme) textinput.Styles {

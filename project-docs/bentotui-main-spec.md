@@ -1,7 +1,7 @@
 # BentoTUI — Main Spec
 
 Status: Active
-Date: 2026-02-24
+Date: 2026-02-25
 
 > 🍱 The application framework for Bubble Tea. Compartmentalized layouts, composable components, shipped apps.
 
@@ -19,7 +19,7 @@ import "github.com/cloudboy-jh/bentotui"
 
 ### Implementation Update (Current)
 
-- v0.1 foundation is implemented in code (`core/shell`, `core/router`, `core/layout`, `core/focus`, `core/theme`, `core/surface`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`)
+- v0.1 foundation is implemented in code (`core/shell`, `core/router`, `core/layout`, `core/focus`, `core/theme`, `core/surface`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`, `ui/primitives`)
 - Public facade package `bentotui` remains the recommended app entrypoint; `app` currently aliases `core/shell` for compatibility
 - Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
 - Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
@@ -302,9 +302,9 @@ Bottom layer showing keybinding hints, status messages, and contextual info.
 
 ```go
 footer := footer.New(
-    footer.Left("~/projects/porter:main"),
-    footer.Right("v1.2.10"),
-    footer.HelpFrom(focusedComponent), // auto-generates from Bindings()
+    footer.LeftAction(footer.Action{Key: "ctrl+d", Label: "dialog", Variant: footer.ActionNormal, Enabled: true}),
+    footer.Actions(footer.Action{Key: "ctrl+t", Label: "theme", Variant: footer.ActionPrimary, Enabled: true}),
+    footer.RightAction(footer.Action{Key: "ctrl+p", Label: "page", Variant: footer.ActionDanger, Enabled: true}),
 )
 ```
 

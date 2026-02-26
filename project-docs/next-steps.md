@@ -8,21 +8,21 @@ Use this with `project-docs/component-system-reference.md`.
 
 ## 1. Footer Statusline Contract
 
-- [ ] Keep footer as one continuous strip (height = 1 always).
-- [ ] Enforce segment ownership: `left | actions | right`.
-- [ ] Remove freeform footer hint strings as primary API.
+- [x] Keep footer as one continuous strip (height = 1 always).
+- [x] Enforce segment ownership: `left | actions | right`.
+- [x] Remove freeform footer hint strings as primary API.
 
 ## 2. Footer Action Model
 
-- [ ] Add structured action schema: `key`, `label`, `variant`, `enabled`.
-- [ ] Add explicit footer API for action arrays.
-- [ ] Render actions as first-class inline chips/buttons.
+- [x] Add structured action schema: `key`, `label`, `variant`, `enabled`.
+- [x] Add explicit footer API for action arrays.
+- [x] Render actions as first-class inline chips/buttons.
 
 ## 3. Footer Truncation Rules
 
-- [ ] Lock deterministic truncation priority: `right > left > actions`.
-- [ ] Add action collapse policy: full chip -> key only -> drop from end.
-- [ ] Guarantee no wrapping in narrow widths.
+- [x] Lock deterministic truncation priority: `right > left > actions`.
+- [x] Add action collapse policy: full chip -> key only -> drop from end.
+- [x] Guarantee no wrapping in narrow widths.
 
 ## 4. Focus Manager API Hardening (`core/focus/focus.go`)
 
@@ -38,10 +38,10 @@ Use this with `project-docs/component-system-reference.md`.
 
 ## 6. Shared UI Primitives
 
-- [ ] Extract footer action chip primitive.
-- [ ] Extract reusable list row primitive.
-- [ ] Extract reusable input surface primitive.
-- [ ] Keep modal frame primitive shared and bounded.
+- [x] Extract footer action chip primitive.
+- [x] Extract reusable list row primitive.
+- [x] Extract reusable input surface primitive.
+- [x] Keep modal frame primitive shared and bounded.
 
 ## 7. Theme Picker UX Refinement
 
@@ -53,17 +53,17 @@ Use this with `project-docs/component-system-reference.md`.
 
 - [ ] Add command palette dialog component.
 - [ ] Route `/` to command-entry/palette workflow (as finalized behavior).
-- [ ] Keep `/theme`, `/dialog`, `/confirm` command paths consistent.
+- [ ] Keep `/theme`, `/dialog`, `/page` command paths consistent.
 
 ## 9. Component Regression Coverage
 
-- [ ] Footer tests: layout/order/truncation/no-wrap.
+- [x] Footer tests: layout/order/truncation/no-wrap.
 - [ ] Focus tests: ring updates/wrap/index/events.
 - [ ] Dialog tests: custom enter routing + bounds stability.
 - [ ] Theme picker tests: preview/apply/revert behavior.
 
 ## 10. Harness + Docs Sync
 
-- [ ] Update `cmd/test-tui` to consume structured footer actions.
-- [ ] Keep `project-docs/component-system-reference.md` aligned.
-- [ ] Keep `project-docs/framework-roadmap.md` and `CHANGELOG.md` updated.
+- [x] Update `cmd/test-tui` to consume structured footer actions.
+- [x] Keep `project-docs/component-system-reference.md` aligned.
+- [x] Keep `project-docs/framework-roadmap.md` and `CHANGELOG.md` updated.

@@ -1,7 +1,7 @@
 # BentoTUI Component System Reference
 
 Status: Active reference
-Date: 2026-02-24
+Date: 2026-02-25
 
 Purpose: prevent ad hoc component work by defining one component contract, one dialog contract, and one reference index for implementation decisions.
 
@@ -13,14 +13,20 @@ Purpose: prevent ad hoc component work by defining one component contract, one d
 
 Any new UI behavior should be implemented against this document and `project-docs/next-steps.md`.
 
+Latest update:
+
+- normalized shared render primitives to `ui/primitives` (`chip`, `row`, `frame`, `inputrow`)
+- component ownership remains in `ui/components/*` with bounded rendering contracts
+
 ## Directory Contract
 
 - `ui/components/dialog` - modal manager and modal content components
 - `ui/components/footer` - footer layer model and segment behavior
 - `ui/components/panel` - bordered/surface panel container
+- `ui/primitives` - shared bounded render primitives (rows/chips/frames/input rows)
 - `ui/styles` - semantic style mapping from `theme.Theme`
 
-No new top-level UI package directories should be introduced.
+UI package top-level is constrained to `ui/components`, `ui/primitives`, and `ui/styles`.
 
 ## Component Contract (Required)
 
@@ -134,5 +140,9 @@ Key files:
 - `ui/components/dialog/theme_picker.go`
 - `ui/components/footer/footer.go`
 - `ui/components/panel/panel.go`
+- `ui/primitives/chip.go`
+- `ui/primitives/row.go`
+- `ui/primitives/frame.go`
+- `ui/primitives/inputrow.go`
 - `ui/styles/styles.go`
 - `project-docs/next-steps.md`

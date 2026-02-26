@@ -9,6 +9,7 @@ BentoTUI has moved from a rough harness into a structured framework baseline wit
 
 - runtime/core: `shell`, `router`, `layout`, `focus`, `surface`, `theme`, `core`
 - UI layer: `ui/components/*`
+- shared primitives: `ui/primitives`
 - style layer: `ui/styles`
 
 This separation is now documented and enforced through:
@@ -28,8 +29,9 @@ This separation is now documented and enforced through:
   - `osaka-jade`
 - Theme persistence and reload behavior are active.
 - Test harness command flow is now command-string based:
-  - type `/theme`, `/dialog`, `/confirm` in input, run on Enter
+  - type `/theme`, `/dialog`, `/page` in input, run on Enter
   - `/` no longer auto-opens a modal
+- Harness footer chips are live hotkeys (`ctrl+d`, `ctrl+t`, `ctrl+p`) and no longer rely on typed hints.
 - README and changelog discipline are in place (`CHANGELOG.md`, early-production warning tag).
 
 ## Architecture Direction (Locked)
@@ -42,7 +44,7 @@ This separation is now documented and enforced through:
 
 ## Current Gaps
 
-- Footer still uses plain hint text rather than structured action chips.
+- Remaining visual gaps in some component rows still require bounded-row hardening.
 - Focus manager needs a clearer API/state contract and stronger test coverage.
 - Visual polish is improved but not fully normalized across all components/themes.
 

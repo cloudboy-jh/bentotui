@@ -1,7 +1,7 @@
 # BentoTUI Framework Roadmap
 
 Status: Active
-Date: 2026-02-24
+Date: 2026-02-25
 
 This roadmap defines the framework-level plan for BentoTUI. It is separate from `project-docs/next-steps.md`, which tracks immediate execution items.
 
@@ -18,6 +18,7 @@ BentoTUI is a framework layer over Bubble Tea for building complete terminal app
 
 - contract-first implementation (no ad hoc components)
 - runtime/core separated from UI layer (`ui/components/*`, `ui/styles`)
+- shared UI primitives centralized in `ui/primitives`
 - semantic styles only (no scattered raw color literals in components)
 - test-backed behavior before API expansion
 
@@ -42,7 +43,7 @@ Goals:
 
 Remaining focus to close v0.1:
 
-- footer action model (structured action chips)
+- footer visual normalization across all component rows/panels/dialog inputs
 - focus manager hardening and clearer state contract
 - no-chrome visual normalization across harness/components
 - regression coverage for dialog bounds and footer truncation
