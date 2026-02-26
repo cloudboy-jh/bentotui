@@ -1,6 +1,6 @@
 # BentoTUI Framework Progress Update
 
-Date: 2026-02-25
+Date: 2026-02-26
 Status: Active (early production)
 
 ## Current State
@@ -33,6 +33,8 @@ This separation is now documented and enforced through:
   - legacy aliases (`/dialog`, `/theme`, `/page`) still resolve
   - `/` no longer auto-opens a modal
 - Harness footer cards are command-first (`/pr`, `/issue`, `/branch`) and no longer tied to hotkeys.
+- UI naming is now card-first across the stack (`Card`, `Cards`, `LeftCard`, `RightCard`).
+- Shared primitive verbs are standardized as `Render*` (`RenderRow`, `RenderFrame`, `RenderInputRow`).
 - README and changelog discipline are in place (`CHANGELOG.md`, early-production warning tag).
 
 ## Architecture Direction (Locked)
@@ -66,6 +68,7 @@ Recent framework passes are consistently validated with:
 ## Reference Docs
 
 - Main spec: `project-docs/bentotui-main-spec.md`
+- Layer architecture: `project-docs/layer-architecture.md`
 - Next execution list: `project-docs/next-steps.md`
 - Component contract: `project-docs/component-system-reference.md`
 - Framework roadmap: `project-docs/framework-roadmap.md`
