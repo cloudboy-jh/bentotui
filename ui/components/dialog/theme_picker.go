@@ -92,12 +92,12 @@ func (p *ThemePicker) View() tea.View {
 	sys := styles.New(t)
 	contentWidth := maxInt(24, p.width)
 	rows := make([]string, 0, 10)
-	rows = append(rows, primitives.PaintRow(contentWidth, "", t.Text, "Search"))
+	rows = append(rows, primitives.RenderRow(contentWidth, "", t.Text, "Search"))
 	rows = append(rows, inputContainer(p.search.View(), contentWidth, t))
-	rows = append(rows, primitives.PaintRow(contentWidth, "", "", ""))
+	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""))
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, primitives.PaintRow(contentWidth, "", t.Muted, "No matching themes"))
+		rows = append(rows, primitives.RenderRow(contentWidth, "", t.Muted, "No matching themes"))
 	} else {
 		maxRows := maxInt(1, p.height-5)
 		start := 0
@@ -113,11 +113,11 @@ func (p *ThemePicker) View() tea.View {
 				marker = sys.CurrentMarker().Render("●")
 			}
 			line := fmt.Sprintf("%s %s", marker, name)
-			rows = append(rows, primitives.PaintStyledRow(sys.ListItem(selected), contentWidth, line))
+			rows = append(rows, primitives.RenderStyledRow(sys.ListItem(selected), contentWidth, line))
 		}
 	}
 
-	rows = append(rows, primitives.PaintRow(contentWidth, "", "", ""), primitives.PaintRow(contentWidth, "", t.Muted, "enter apply  esc close"))
+	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""), primitives.RenderRow(contentWidth, "", t.Muted, "enter apply  esc close"))
 	return tea.NewView(strings.Join(rows, "\n"))
 }
 
@@ -195,7 +195,7 @@ func inputContainer(view string, width int, t theme.Theme) string {
 		return ""
 	}
 	content := surface.FitWidth(view, maxInt(1, width-1))
-	return primitives.PaintInputRowInset(width, pick(t.InputBG, t.ElementBG, t.SurfaceMuted), t.Text, content, 1)
+	return primitives.RenderInputRowInset(width, pick(t.InputBG, t.ElementBG, t.SurfaceMuted), t.Text, content, 1)
 }
 
 func pick(values ...string) string {

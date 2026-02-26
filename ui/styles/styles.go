@@ -31,7 +31,7 @@ func (s System) PanelTitleBar(focused bool) lipgloss.Style {
 	return lipgloss.NewStyle().Background(lipgloss.Color(bg)).Foreground(lipgloss.Color(fg))
 }
 
-func (s System) PanelTitleChip(focused bool) lipgloss.Style {
+func (s System) PanelTitleBadge(focused bool) lipgloss.Style {
 	bg := pick(s.Theme.TitleBG, s.Theme.Accent)
 	fg := pick(s.Theme.TitleText, s.Theme.Background)
 	if focused {
@@ -51,16 +51,16 @@ func (s System) StatusBar() lipgloss.Style {
 		Background(lipgloss.Color(s.Theme.StatusBG))
 }
 
-func (s System) FooterActionKey(variant string, enabled bool) lipgloss.Style {
-	fg, bg := s.footerActionColors(variant, enabled, true)
+func (s System) FooterCardCommand(variant string, enabled bool) lipgloss.Style {
+	fg, bg := s.footerCardColors(variant, enabled, true)
 	return lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color(fg)).
 		Background(lipgloss.Color(bg))
 }
 
-func (s System) FooterActionLabel(variant string, enabled bool) lipgloss.Style {
-	fg, bg := s.footerActionColors(variant, enabled, false)
+func (s System) FooterCardLabel(variant string, enabled bool) lipgloss.Style {
+	fg, bg := s.footerCardColors(variant, enabled, false)
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(fg)).
 		Background(lipgloss.Color(bg))
@@ -122,29 +122,29 @@ func pick(v, fallback string) string {
 	return v
 }
 
-func (s System) footerActionColors(variant string, enabled bool, keyPart bool) (fg string, bg string) {
+func (s System) footerCardColors(variant string, enabled bool, commandPart bool) (fg string, bg string) {
 	if !enabled {
 		return pick(s.Theme.Muted, s.Theme.Text), pick(s.Theme.SurfaceMuted, s.Theme.PanelBG)
 	}
 
 	switch variant {
 	case "primary":
-		if keyPart {
+		if commandPart {
 			return pick(s.Theme.SelectionText, s.Theme.Background), pick(s.Theme.SelectionBG, s.Theme.Accent)
 		}
 		return pick(s.Theme.Text, s.Theme.Text), pick(s.Theme.ElementBG, s.Theme.SurfaceMuted)
 	case "danger":
-		if keyPart {
+		if commandPart {
 			return pick(s.Theme.Background, s.Theme.Text), pick(s.Theme.Error, s.Theme.Accent)
 		}
 		return pick(s.Theme.Text, s.Theme.Text), pick(s.Theme.ElementBG, s.Theme.SurfaceMuted)
 	case "muted":
-		if keyPart {
+		if commandPart {
 			return pick(s.Theme.Muted, s.Theme.Text), pick(s.Theme.SurfaceMuted, s.Theme.PanelBG)
 		}
 		return pick(s.Theme.Muted, s.Theme.Text), pick(s.Theme.SurfaceMuted, s.Theme.PanelBG)
 	default:
-		if keyPart {
+		if commandPart {
 			return pick(s.Theme.SelectionText, s.Theme.Background), pick(s.Theme.BorderFocused, s.Theme.Accent)
 		}
 		return pick(s.Theme.Text, s.Theme.Text), pick(s.Theme.ElementBG, s.Theme.SurfaceMuted)

@@ -5,7 +5,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/surface"
 )
 
-func PaintRow(width int, bg, fg, content string) string {
+func RenderRow(width int, bg, fg, content string) string {
 	if width <= 0 {
 		return ""
 	}
@@ -20,7 +20,7 @@ func PaintRow(width int, bg, fg, content string) string {
 	return style.Render(line)
 }
 
-func PaintStyledRow(style lipgloss.Style, width int, content string) string {
+func RenderStyledRow(style lipgloss.Style, width int, content string) string {
 	if width <= 0 {
 		return ""
 	}

@@ -105,7 +105,7 @@ func (m *Model) View() tea.View {
 		Width(outerWidth).
 		Height(outerHeight)
 
-	return tea.NewView(primitives.PaintFrame(boxStyle, outerWidth, outerHeight, rows))
+	return tea.NewView(primitives.RenderFrame(boxStyle, outerWidth, outerHeight, rows))
 }
 
 func (m *Model) SetSize(width, height int) {
@@ -136,9 +136,9 @@ func renderTitleRow(title string, width int, t theme.Theme, focused bool) string
 		return ""
 	}
 	sys := styles.New(t)
-	badge := sys.PanelTitleChip(focused).Render(title)
+	badge := sys.PanelTitleBadge(focused).Render(title)
 	content := lipgloss.PlaceHorizontal(width, lipgloss.Left, badge)
-	return primitives.PaintStyledRow(sys.PanelTitleBar(focused), width, content)
+	return primitives.RenderStyledRow(sys.PanelTitleBar(focused), width, content)
 }
 
 func fitWidth(s string, width int) string {

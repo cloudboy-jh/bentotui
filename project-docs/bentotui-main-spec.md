@@ -298,13 +298,13 @@ picker := picker.New(
 ```
 
 #### `ui/components/footer` — Context-Aware Footer Bar
-Bottom layer showing keybinding hints, status messages, and contextual info.
+Bottom layer showing command cards, status messages, and contextual info.
 
 ```go
 footer := footer.New(
-    footer.LeftAction(footer.Action{Key: "ctrl+d", Label: "dialog", Variant: footer.ActionNormal, Enabled: true}),
-    footer.Actions(footer.Action{Key: "ctrl+t", Label: "theme", Variant: footer.ActionPrimary, Enabled: true}),
-    footer.RightAction(footer.Action{Key: "ctrl+p", Label: "page", Variant: footer.ActionDanger, Enabled: true}),
+    footer.LeftCard(footer.Card{Command: "/pr", Label: "pull requests", Variant: footer.CardNormal, Enabled: true}),
+    footer.Cards(footer.Card{Command: "/issue", Label: "issues", Variant: footer.CardPrimary, Enabled: true}),
+    footer.RightCard(footer.Card{Command: "/branch", Label: "branches", Variant: footer.CardMuted, Enabled: true}),
 )
 ```
 
@@ -374,7 +374,7 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 | Add/edit/import overlays | `ui/components/dialog` |
 | Init wizard | `ui/components/dialog` (multi-step) |
 | Project tab navigation | `focus` |
-| Keybinding help bar | `ui/components/footer` |
+| Command card bar | `ui/components/footer` |
 | Catppuccin/Dracula/Osaka Jade themes | `theme` |
 
 ### Internal Harness (Current)
@@ -390,8 +390,8 @@ go run ./cmd/test-tui
 It currently validates:
 
 - single-page shell composition (`header` + `main input` + `footer`)
-- theme switching via `/theme` with live repaint + persistence (`/` currently mirrors this in harness)
-- dialog overlays via hotkeys and slash commands (`d`, `x`, `/dialog`, `/confirm`)
+- theme switching via `/issue` (`/theme` alias) with live repaint + persistence
+- dialog overlays via slash commands (`/pr`, `/dialog`, `/confirm`)
 - focus handling between input and action controls (`tab`, `shift+tab`)
 - primitive-first rendering behavior on fullscreen alt-screen
 
@@ -415,7 +415,7 @@ The minimum surface to ship and build Veil on:
 - [x] `focus` — focus ring with tab cycling
 - [x] `theme` — color system with presets + semantic surface tokens
 - [x] `ui/components/dialog` — modal overlay with confirm/custom
-- [x] `ui/components/footer` — keybinding help + themed footer surface
+- [x] `ui/components/footer` — command cards + themed footer surface
 - [x] `ui/components/panel` — themed bordered content container with focus state
 
 **Not in v0.1:**

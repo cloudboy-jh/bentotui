@@ -15,7 +15,7 @@ Any new UI behavior should be implemented against this document and `project-doc
 
 Latest update:
 
-- normalized shared render primitives to `ui/primitives` (`chip`, `row`, `frame`, `inputrow`)
+- normalized shared render primitives to `ui/primitives` (`card`, `row`, `frame`, `inputrow`)
 - component ownership remains in `ui/components/*` with bounded rendering contracts
 
 ## Directory Contract
@@ -23,7 +23,7 @@ Latest update:
 - `ui/components/dialog` - modal manager and modal content components
 - `ui/components/footer` - footer layer model and segment behavior
 - `ui/components/panel` - bordered/surface panel container
-- `ui/primitives` - shared bounded render primitives (rows/chips/frames/input rows)
+- `ui/primitives` - shared bounded render primitives (rows/cards/frames/input rows)
 - `ui/styles` - semantic style mapping from `theme.Theme`
 
 UI package top-level is constrained to `ui/components`, `ui/primitives`, and `ui/styles`.
@@ -53,7 +53,8 @@ Routing precedence:
 Rules:
 
 - Text input focus receives character keys first.
-- Global hotkeys should avoid consuming normal text keys.
+- Global shortcuts are optional and must not be the primary interaction contract.
+- Footer cards should prioritize command discoverability (`/pr`, `/issue`, `/branch`) over hotkey display.
 - `Confirm` dialogs may use manager-level `enter`; `Custom` dialogs must receive key events directly.
 
 ## Dialog Contract (Current Priority)
@@ -140,7 +141,7 @@ Key files:
 - `ui/components/dialog/theme_picker.go`
 - `ui/components/footer/footer.go`
 - `ui/components/panel/panel.go`
-- `ui/primitives/chip.go`
+- `ui/primitives/card.go`
 - `ui/primitives/row.go`
 - `ui/primitives/frame.go`
 - `ui/primitives/inputrow.go`

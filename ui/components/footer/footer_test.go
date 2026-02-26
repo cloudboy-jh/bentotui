@@ -12,7 +12,7 @@ func TestFooterRendersSingleLine(t *testing.T) {
 	m := New(
 		Left("left"),
 		Right("right"),
-		Actions(Action{Key: "tab", Label: "focus", Variant: ActionPrimary, Enabled: true}),
+		Cards(Card{Command: "/focus", Label: "focus", Variant: CardPrimary, Enabled: true}),
 	)
 	m.SetSize(80, 4)
 	view := core.ViewString(m.View())
@@ -32,9 +32,9 @@ func TestFooterKeepsRightSegmentUnderTightWidth(t *testing.T) {
 	m := New(
 		Left("very long left context that should truncate first"),
 		Right("RIGHT"),
-		Actions(
-			Action{Key: "tab", Label: "focus", Variant: ActionPrimary, Enabled: true},
-			Action{Key: "enter", Label: "run", Variant: ActionNormal, Enabled: true},
+		Cards(
+			Card{Command: "/focus", Label: "focus", Variant: CardPrimary, Enabled: true},
+			Card{Command: "/run", Label: "run", Variant: CardNormal, Enabled: true},
 		),
 	)
 	m.SetSize(20, 1)
@@ -47,44 +47,44 @@ func TestFooterKeepsRightSegmentUnderTightWidth(t *testing.T) {
 	}
 }
 
-func TestFooterActionCollapseUsesKeyOnlyThenDropsFromEnd(t *testing.T) {
+func TestFooterCardCollapseUsesCommandOnlyThenDropsFromEnd(t *testing.T) {
 	m := New(
-		Actions(
-			Action{Key: "tab", Label: "focus", Variant: ActionPrimary, Enabled: true},
-			Action{Key: "enter", Label: "submit", Variant: ActionNormal, Enabled: true},
+		Cards(
+			Card{Command: "/f", Label: "focus", Variant: CardPrimary, Enabled: true},
+			Card{Command: "/s", Label: "submit", Variant: CardNormal, Enabled: true},
 		),
 	)
-	m.SetSize(7, 1)
+	m.SetSize(3, 1)
 	view := core.ViewString(m.View())
 	if strings.Contains(view, "focus") || strings.Contains(view, "submit") {
 		t.Fatal("expected labels to drop before truncation from end")
 	}
-	if !strings.Contains(view, "tab") {
-		t.Fatal("expected first key to remain visible")
+	if !strings.Contains(view, "/f") {
+		t.Fatal("expected first card command to remain visible")
 	}
-	if strings.Contains(view, "enter") {
-		t.Fatal("expected trailing key to be dropped from end when width is tight")
+	if strings.Contains(view, "/s") {
+		t.Fatal("expected trailing card command to be dropped from end when width is tight")
 	}
 }
 
-func TestFooterHarnessThreeChipLayout(t *testing.T) {
+func TestFooterHarnessThreeCardLayout(t *testing.T) {
 	m := New(
-		LeftAction(Action{Key: "/dialog", Label: "custom", Variant: ActionMuted, Enabled: true}),
-		Actions(Action{Key: "/theme", Label: "picker", Variant: ActionPrimary, Enabled: true}),
-		RightAction(Action{Key: "/page", Label: "swap", Variant: ActionNormal, Enabled: true}),
+		LeftCard(Card{Command: "/pr", Label: "pull requests", Variant: CardMuted, Enabled: true}),
+		Cards(Card{Command: "/issue", Label: "issues", Variant: CardPrimary, Enabled: true}),
+		RightCard(Card{Command: "/branch", Label: "branches", Variant: CardNormal, Enabled: true}),
 	)
 	m.SetSize(120, 1)
 	view := core.ViewString(m.View())
-	if !strings.Contains(view, "/dialog") {
-		t.Fatal("expected left chip to render")
+	if !strings.Contains(view, "/pr") {
+		t.Fatal("expected left card to render")
 	}
-	if !strings.Contains(view, "/theme") {
-		t.Fatal("expected middle chip to render")
+	if !strings.Contains(view, "/issue") {
+		t.Fatal("expected middle card to render")
 	}
-	if !strings.Contains(view, "/page") {
-		t.Fatalf("expected right chip to render, got %q", view)
+	if !strings.Contains(view, "/branch") {
+		t.Fatalf("expected right card to render, got %q", view)
 	}
-	if strings.Index(view, "/dialog") > strings.Index(view, "/theme") || strings.Index(view, "/theme") > strings.Index(view, "/page") {
+	if strings.Index(view, "/pr") > strings.Index(view, "/issue") || strings.Index(view, "/issue") > strings.Index(view, "/branch") {
 		t.Fatal("expected left -> middle -> right segment order")
 	}
 }

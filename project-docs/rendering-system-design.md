@@ -7,7 +7,7 @@ Decision: Adopt a draw-first, area-owned renderer (Crush-style) for framework in
 
 Implementation update (2026-02-25):
 
-- shared bounded row/chip/frame/input primitives are now centralized in `ui/primitives`
+- shared bounded row/card/frame/input primitives are now centralized in `ui/primitives`
 - footer/panel/theme-picker paths are migrating to primitive-backed full-width row rendering
 
 ---

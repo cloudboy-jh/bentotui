@@ -121,7 +121,7 @@ go run ./cmd/test-tui
 Harness validates:
 
 - shell layering and full-frame paint
-- footer behavior and keyboard hints
+- footer card behavior and command hints
 - modal overlays and focus handling
 - theme switching and live repaint
 

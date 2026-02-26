@@ -89,52 +89,6 @@ func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
 	}
 }
 
-func TestHarnessHotkeysTriggerActionsWithoutTyping(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
-	p.SetSize(120, 40)
-	p.input.SetValue("seed")
-
-	_, cmd := p.Update(ctrlKey('d'))
-	if cmd == nil {
-		t.Fatal("expected dialog command for ctrl+d")
-	}
-	msg := cmd()
-	if _, ok := msg.(dialog.OpenMsg); !ok {
-		t.Fatalf("expected dialog.OpenMsg for ctrl+d, got %T", msg)
-	}
-	if got := p.input.Value(); got != "seed" {
-		t.Fatalf("expected input unchanged after ctrl+d, got %q", got)
-	}
-
-	_, cmd = p.Update(ctrlKey('t'))
-	if cmd == nil {
-		t.Fatal("expected theme picker command for ctrl+t")
-	}
-	msg = cmd()
-	if _, ok := msg.(theme.OpenThemePickerMsg); !ok {
-		t.Fatalf("expected theme.OpenThemePickerMsg for ctrl+t, got %T", msg)
-	}
-	if got := p.input.Value(); got != "seed" {
-		t.Fatalf("expected input unchanged after ctrl+t, got %q", got)
-	}
-
-	_, cmd = p.Update(ctrlKey('p'))
-	if cmd == nil {
-		t.Fatal("expected navigate command for ctrl+p")
-	}
-	msg = cmd()
-	nav, ok := msg.(core.NavigateMsg)
-	if !ok {
-		t.Fatalf("expected core.NavigateMsg for ctrl+p, got %T", msg)
-	}
-	if nav.Page != "secondary" {
-		t.Fatalf("expected page secondary from ctrl+p, got %q", nav.Page)
-	}
-	if got := p.input.Value(); got != "seed" {
-		t.Fatalf("expected input unchanged after ctrl+p, got %q", got)
-	}
-}
-
 func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
 	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)

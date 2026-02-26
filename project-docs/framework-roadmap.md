@@ -55,7 +55,7 @@ Status: `planned`
 Goals:
 
 - standardized component contracts (`SetSize`/`GetSize`, clipping, focus behavior)
-- shared primitives (modal frame, input surface, list row, footer action chip)
+- shared primitives (modal frame, input surface, list row, footer card)
 - deterministic key routing precedence across dialogs/pages/shell
 - stronger component-level regression suite
 

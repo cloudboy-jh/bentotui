@@ -23,11 +23,11 @@ import (
 func main() {
 	t := theme.CurrentTheme()
 	ft := footer.New(
-		footer.LeftAction(footer.Action{Key: "ctrl+d", Label: "dialog", Variant: footer.ActionNormal, Enabled: true}),
-		footer.Actions(
-			footer.Action{Key: "ctrl+t", Label: "theme", Variant: footer.ActionPrimary, Enabled: true},
+		footer.LeftCard(footer.Card{Command: "/pr", Label: " pull requests", Variant: footer.CardNormal, Enabled: true}),
+		footer.Cards(
+			footer.Card{Command: "/issue", Label: " issues", Variant: footer.CardPrimary, Enabled: true},
 		),
-		footer.RightAction(footer.Action{Key: "ctrl+p", Label: "page", Variant: footer.ActionDanger, Enabled: true}),
+		footer.RightCard(footer.Card{Command: "/branch", Label: " branches", Variant: footer.CardMuted, Enabled: true}),
 	)
 
 	m := bentotui.New(
@@ -95,9 +95,9 @@ type harnessPage struct {
 func newHarnessPage(t theme.Theme, pageName, nextPage string) *harnessPage {
 	in := textinput.New()
 	in.Prompt = "> "
-	in.Placeholder = "Type text, /dialog, /theme, or /page"
+	in.Placeholder = "Type text, /pr, /issue, or /branch"
 	in.ShowSuggestions = true
-	in.SetSuggestions([]string{"/dialog", "/theme", "/page"})
+	in.SetSuggestions([]string{"/pr", "/issue", "/branch", "/dialog", "/theme", "/page"})
 	in.SetStyles(inputStyles(t))
 
 	p := &harnessPage{
@@ -131,21 +131,8 @@ func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		p.applyTheme(v.Theme)
 		p.log("theme switched to " + v.Name)
 	case tea.KeyMsg:
-		switch v.String() {
-		case "ctrl+c":
+		if v.String() == "ctrl+c" {
 			return p, tea.Quit
-		case "ctrl+d":
-			p.log("hotkey accepted: ctrl+d -> dialog")
-			p.refresh()
-			return p, openCustomDialogCmd()
-		case "ctrl+t":
-			p.log("hotkey accepted: ctrl+t -> theme")
-			p.refresh()
-			return p, openThemePickerCmd()
-		case "ctrl+p":
-			p.log("hotkey accepted: ctrl+p -> " + p.nextPage)
-			p.refresh()
-			return p, navigateToCmd(p.nextPage)
 		}
 
 		if v.String() == "enter" {
@@ -204,17 +191,17 @@ func (p *harnessPage) submitInput() tea.Cmd {
 	p.input.SetValue("")
 
 	switch text {
-	case "/theme":
-		p.log("command accepted: /theme")
+	case "/theme", "/issue":
+		p.log("command accepted: /issue")
 		return openThemePickerCmd()
-	case "/dialog":
-		p.log("command accepted: /dialog")
+	case "/dialog", "/pr":
+		p.log("command accepted: /pr")
 		return openCustomDialogCmd()
-	case "/page":
-		p.log("command accepted: /page -> " + p.nextPage)
+	case "/page", "/branch":
+		p.log("command accepted: /branch -> " + p.nextPage)
 		return navigateToCmd(p.nextPage)
 	case "/":
-		p.log("command pending: type /dialog, /theme, or /page")
+		p.log("command pending: type /pr, /issue, or /branch")
 		return nil
 	default:
 		if strings.HasPrefix(text, "/") {
@@ -245,8 +232,8 @@ func (p *harnessPage) refresh() {
 		inputSurface(p.input.View(), p.mainContentWidth(), p.theme),
 		sectionDivider(p.mainContentWidth(), p.theme),
 		"",
-		"Hotkeys: ctrl+d dialog  ctrl+t theme  ctrl+p page",
-		"Slash:   /dialog        /theme         /page",
+		"Cards:   /pr pull requests  /issue issues  /branch branches",
+		"Slash:   /pr               /issue         /branch",
 		"",
 		"Recent Events:",
 	}
@@ -263,7 +250,7 @@ func inputSurface(view string, width int, t theme.Theme) string {
 		return ""
 	}
 	bg := pick(t.InputBG, t.ElementBG, t.SurfaceMuted)
-	return primitives.PaintInputRow(width, bg, t.Text, view)
+	return primitives.RenderInputRow(width, bg, t.Text, view)
 }
 
 func sectionDivider(width int, t theme.Theme) string {

@@ -6,7 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-func PaintFrame(style lipgloss.Style, width, height int, rows []string) string {
+func RenderFrame(style lipgloss.Style, width, height int, rows []string) string {
 	if width <= 0 || height <= 0 {
 		return ""
 	}

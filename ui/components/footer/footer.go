@@ -15,32 +15,32 @@ import (
 
 type Option func(*Model)
 
-type ActionVariant string
+type CardVariant string
 
 const (
-	ActionNormal  ActionVariant = "normal"
-	ActionPrimary ActionVariant = "primary"
-	ActionMuted   ActionVariant = "muted"
-	ActionDanger  ActionVariant = "danger"
+	CardNormal  CardVariant = "normal"
+	CardPrimary CardVariant = "primary"
+	CardMuted   CardVariant = "muted"
+	CardDanger  CardVariant = "danger"
 )
 
-type Action struct {
-	Key     string
+type Card struct {
+	Command string
 	Label   string
-	Variant ActionVariant
+	Variant CardVariant
 	Enabled bool
 }
 
 type Model struct {
-	left    string
-	right   string
-	leftA   *Action
-	rightA  *Action
-	help    core.Bindable
-	actions []Action
-	theme   theme.Theme
-	width   int
-	height  int
+	left      string
+	right     string
+	leftCard  *Card
+	rightCard *Card
+	help      core.Bindable
+	cards     []Card
+	theme     theme.Theme
+	width     int
+	height    int
 }
 
 func New(opts ...Option) *Model {
@@ -53,15 +53,15 @@ func New(opts ...Option) *Model {
 
 func Left(v string) Option  { return func(m *Model) { m.left = v } }
 func Right(v string) Option { return func(m *Model) { m.right = v } }
-func LeftAction(a Action) Option {
-	return func(m *Model) { m.leftA = copyAction(a) }
+func LeftCard(c Card) Option {
+	return func(m *Model) { m.leftCard = copyCard(c) }
 }
-func RightAction(a Action) Option {
-	return func(m *Model) { m.rightA = copyAction(a) }
+func RightCard(c Card) Option {
+	return func(m *Model) { m.rightCard = copyCard(c) }
 }
-func Actions(actions ...Action) Option {
+func Cards(cards ...Card) Option {
 	return func(m *Model) {
-		m.actions = append([]Action(nil), actions...)
+		m.cards = append([]Card(nil), cards...)
 	}
 }
 func HelpFrom(b core.Bindable) Option {
@@ -80,10 +80,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() tea.View {
 	left := m.renderLeftSegment()
-	actions := m.renderActionBlock(-1)
+	cards := m.renderCardBlock(-1)
 	rightRaw := m.renderRightSegment()
 	if m.width == 0 {
-		line := strings.TrimSpace(strings.Join(nonEmpty(left, actions, rightRaw), "  "))
+		line := strings.TrimSpace(strings.Join(nonEmpty(left, cards, rightRaw), "  "))
 		return tea.NewView(styles.New(m.theme).StatusBar().Render(line))
 	}
 	right := rightRaw
@@ -101,7 +101,7 @@ func (m *Model) View() tea.View {
 		leftArea--
 	}
 	leftBlock := ""
-	actionBlock := ""
+	cardBlock := ""
 	if left != "" && leftArea > 0 {
 		leftBlock = clipWidth(left, leftArea)
 		leftArea -= lipgloss.Width(leftBlock)
@@ -110,10 +110,10 @@ func (m *Model) View() tea.View {
 		if leftBlock != "" {
 			leftArea--
 		}
-		actionBlock = m.renderActionBlock(leftArea)
+		cardBlock = m.renderCardBlock(leftArea)
 	}
 
-	leftSide := strings.TrimSpace(strings.Join(nonEmpty(leftBlock, actionBlock), " "))
+	leftSide := strings.TrimSpace(strings.Join(nonEmpty(leftBlock, cardBlock), " "))
 	line := strings.TrimSpace(strings.Join(nonEmpty(leftSide, right), " "))
 	return m.renderLine(line)
 }
@@ -131,16 +131,16 @@ func (m *Model) SetTheme(t theme.Theme) {
 	m.theme = t
 }
 
-func (m *Model) SetActions(actions []Action) {
-	m.actions = append([]Action(nil), actions...)
+func (m *Model) SetCards(cards []Card) {
+	m.cards = append([]Card(nil), cards...)
 }
 
-func (m *Model) SetLeftAction(a Action) {
-	m.leftA = copyAction(a)
+func (m *Model) SetLeftCard(c Card) {
+	m.leftCard = copyCard(c)
 }
 
-func (m *Model) SetRightAction(a Action) {
-	m.rightA = copyAction(a)
+func (m *Model) SetRightCard(c Card) {
+	m.rightCard = copyCard(c)
 }
 
 func (m *Model) helpText() string {
@@ -164,8 +164,8 @@ func (m *Model) helpText() string {
 
 func (m *Model) renderLeftSegment() string {
 	parts := make([]string, 0, 2)
-	if m.leftA != nil {
-		parts = append(parts, m.renderChip(*m.leftA, false))
+	if m.leftCard != nil {
+		parts = append(parts, m.renderCard(*m.leftCard, false))
 	}
 	help := m.helpText()
 	text := strings.TrimSpace(strings.Join(nonEmpty(m.left, help), "  "))
@@ -180,8 +180,8 @@ func (m *Model) renderRightSegment() string {
 	if m.right != "" {
 		parts = append(parts, m.right)
 	}
-	if m.rightA != nil {
-		parts = append(parts, m.renderChip(*m.rightA, false))
+	if m.rightCard != nil {
+		parts = append(parts, m.renderCard(*m.rightCard, false))
 	}
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
@@ -191,32 +191,32 @@ func (m *Model) renderLine(text string) tea.View {
 	if m.width == 0 {
 		return tea.NewView(style.Render(text))
 	}
-	line := primitives.PaintRow(m.width, m.theme.StatusBG, m.theme.StatusText, text)
+	line := primitives.RenderRow(m.width, m.theme.StatusBG, m.theme.StatusText, text)
 	return tea.NewView(line)
 }
 
-func (m *Model) renderActions(width int, keyOnly bool) string {
-	rendered, _ := m.renderActionsForWidth(width, keyOnly)
+func (m *Model) renderCards(width int, commandOnly bool) string {
+	rendered, _ := m.renderCardsForWidth(width, commandOnly)
 	return rendered
 }
 
-func (m *Model) renderActionsForWidth(width int, keyOnly bool) (string, bool) {
-	if len(m.actions) == 0 {
+func (m *Model) renderCardsForWidth(width int, commandOnly bool) (string, bool) {
+	if len(m.cards) == 0 {
 		return "", true
 	}
-	rendered := make([]string, 0, len(m.actions))
+	rendered := make([]string, 0, len(m.cards))
 	used := 0
 	allFit := true
 	validCount := 0
-	for _, a := range m.actions {
-		if strings.TrimSpace(a.Key) == "" {
+	for _, c := range m.cards {
+		if strings.TrimSpace(c.Command) == "" {
 			continue
 		}
 		validCount++
-		chip := m.renderChip(a, keyOnly)
+		card := m.renderCard(c, commandOnly)
 
 		if width >= 0 {
-			w := lipgloss.Width(chip)
+			w := lipgloss.Width(card)
 			sep := 0
 			if len(rendered) > 0 {
 				sep = 1
@@ -227,7 +227,7 @@ func (m *Model) renderActionsForWidth(width int, keyOnly bool) (string, bool) {
 			}
 			used += sep + w
 		}
-		rendered = append(rendered, chip)
+		rendered = append(rendered, card)
 	}
 	if len(rendered) < validCount {
 		allFit = false
@@ -235,17 +235,17 @@ func (m *Model) renderActionsForWidth(width int, keyOnly bool) (string, bool) {
 	return strings.Join(rendered, " "), allFit
 }
 
-func (m *Model) renderActionBlock(width int) string {
-	full, allFit := m.renderActionsForWidth(width, false)
+func (m *Model) renderCardBlock(width int) string {
+	full, allFit := m.renderCardsForWidth(width, false)
 	if allFit {
 		return full
 	}
-	keyOnly, _ := m.renderActionsForWidth(width, true)
-	return keyOnly
+	commandOnly, _ := m.renderCardsForWidth(width, true)
+	return commandOnly
 }
 
-func (m *Model) renderChip(a Action, keyOnly bool) string {
-	return primitives.ActionChip(m.theme, string(a.Variant), a.Enabled, a.Key, a.Label, keyOnly)
+func (m *Model) renderCard(c Card, commandOnly bool) string {
+	return primitives.Card(m.theme, string(c.Variant), c.Enabled, c.Command, c.Label, commandOnly)
 }
 
 func nonEmpty(parts ...string) []string {
@@ -276,7 +276,7 @@ func max(a, b int) int {
 	return b
 }
 
-func copyAction(a Action) *Action {
-	b := a
+func copyCard(c Card) *Card {
+	b := c
 	return &b
 }

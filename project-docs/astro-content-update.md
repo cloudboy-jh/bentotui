@@ -29,9 +29,10 @@ This separation is now documented and enforced through:
   - `osaka-jade`
 - Theme persistence and reload behavior are active.
 - Test harness command flow is now command-string based:
-  - type `/theme`, `/dialog`, `/page` in input, run on Enter
+  - type `/pr`, `/issue`, `/branch` in input, run on Enter
+  - legacy aliases (`/dialog`, `/theme`, `/page`) still resolve
   - `/` no longer auto-opens a modal
-- Harness footer chips are live hotkeys (`ctrl+d`, `ctrl+t`, `ctrl+p`) and no longer rely on typed hints.
+- Harness footer cards are command-first (`/pr`, `/issue`, `/branch`) and no longer tied to hotkeys.
 - README and changelog discipline are in place (`CHANGELOG.md`, early-production warning tag).
 
 ## Architecture Direction (Locked)
@@ -50,9 +51,9 @@ This separation is now documented and enforced through:
 
 ## Next Priorities
 
-1. Footer action model and deterministic truncation contract.
+1. Footer card model and deterministic truncation contract.
 2. Focus manager hardening (`SetRing`, `SetIndex`, `FocusBy`, events, wrap/enable behavior).
-3. Shared UI primitives (modal frame, input surface, list row, footer action chip).
+3. Shared UI primitives (modal frame, input surface, list row, footer card).
 4. Broader regression coverage (dialog bounds, footer rendering, key routing).
 
 ## Validation Snapshot

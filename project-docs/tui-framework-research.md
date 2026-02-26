@@ -10,9 +10,9 @@ For current framework behavior and roadmap, use:
 - `project-docs/bentotui-main-spec.md`
 - `project-docs/next-steps.md`
 
-Implementation note (2026-02-25):
+Implementation note (2026-02-26):
 - shared UI render primitives now live in `ui/primitives`
-- harness/footer behavior has shifted to hotkey-driven action chips (`ctrl+d`, `ctrl+t`, `ctrl+p`)
+- harness/footer behavior is card-first with command cards (`/pr`, `/issue`, `/branch`)
 
 ---
 
