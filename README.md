@@ -128,6 +128,7 @@ Harness validates:
 ## Docs
 
 - main spec: `project-docs/bentotui-main-spec.md`
+- layer architecture: `project-docs/layer-architecture.md`
 - framework roadmap: `project-docs/framework-roadmap.md`
 - rendering ADR: `project-docs/rendering-system-design.md`
 - roadmap: `project-docs/next-steps.md`
