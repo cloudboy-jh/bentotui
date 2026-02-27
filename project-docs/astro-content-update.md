@@ -28,11 +28,11 @@ This separation is now documented and enforced through:
   - `dracula`
   - `osaka-jade`
 - Theme persistence and reload behavior are active.
-- Test harness command flow is now command-string based:
+- Starter app command flow is now command-string based:
   - type `/pr`, `/issue`, `/branch` in input, run on Enter
   - legacy aliases (`/dialog`, `/theme`, `/page`) still resolve
   - `/` no longer auto-opens a modal
-- Harness footer cards are command-first (`/pr`, `/issue`, `/branch`) and no longer tied to hotkeys.
+- Starter app footer cards are command-first (`/pr`, `/issue`, `/branch`) and no longer tied to hotkeys.
 - UI naming is now card-first across the stack (`Card`, `Cards`, `LeftCard`, `RightCard`).
 - Shared primitive verbs are standardized as `Render*` (`RenderRow`, `RenderFrame`, `RenderInputRow`).
 - README and changelog discipline are in place (`CHANGELOG.md`, early-production warning tag).

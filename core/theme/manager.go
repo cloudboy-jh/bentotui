@@ -33,6 +33,14 @@ func CurrentThemeName() string {
 }
 
 func SetTheme(name string) (Theme, error) {
+	return applyTheme(name, true)
+}
+
+func PreviewTheme(name string) (Theme, error) {
+	return applyTheme(name, false)
+}
+
+func applyTheme(name string, persist bool) (Theme, error) {
 	t, ok := lookupPreset(name)
 	if !ok {
 		return Theme{}, fmt.Errorf("unknown theme %q", name)
@@ -41,7 +49,9 @@ func SetTheme(name string) (Theme, error) {
 	currentName = name
 	current = t
 	mu.Unlock()
-	_ = saveThemeName(name)
+	if persist {
+		_ = saveThemeName(name)
+	}
 	return t, nil
 }
 

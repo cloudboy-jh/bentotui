@@ -24,7 +24,7 @@ import "github.com/cloudboy-jh/bentotui"
 - Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
 - Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
 - Dialogs are rendered through a layer/canvas composition path and centered in the app shell
-- Internal harness app added at `cmd/test-tui` for daily framework regression checks
+- Internal starter app added at `cmd/starter-app` for daily framework regression checks
 
 ---
 
@@ -196,7 +196,7 @@ layout := layout.Horizontal(
 )
 ```
 
-Responsive helpers are still planned at framework level. Current compact-mode behavior is exercised in `cmd/test-tui`.
+Responsive helpers are still planned at framework level. Current compact-mode behavior is exercised in `cmd/starter-app`.
 
 #### `focus` — Focus Management
 Handles focus cycling between components, visual indicators, and input routing.
@@ -379,12 +379,12 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 
 ### Internal Harness (Current)
 
-`cmd/test-tui` is the active internal validation surface for framework behavior and rendering quality.
+`cmd/starter-app` is the active internal validation surface for framework behavior and rendering quality.
 
 Run it with:
 
 ```bash
-go run ./cmd/test-tui
+go run ./cmd/starter-app
 ```
 
 It currently validates:

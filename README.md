@@ -27,7 +27,7 @@ Current focus:
 
 ## Feature Snapshot
 
-- shell model with explicit layer order (`body -> footer -> scrim -> dialog`)
+- shell model with explicit layer order (`header -> body -> footer -> scrim -> dialog`)
 - lazy page router and page factories
 - fixed/flex split layout system
 - focus ring and keyboard routing
@@ -112,10 +112,10 @@ Fullscreen is enabled by default. Disable it with `bentotui.WithFullScreen(false
 
 ## Internal Harness
 
-Run the framework harness:
+Run the starter app:
 
 ```bash
-go run ./cmd/test-tui
+go run ./cmd/starter-app
 ```
 
 Harness validates:
@@ -132,8 +132,15 @@ Harness validates:
 - framework roadmap: `project-docs/framework-roadmap.md`
 - rendering ADR: `project-docs/rendering-system-design.md`
 - roadmap: `project-docs/next-steps.md`
+- 1.0 component queue: `project-docs/next-components-tobuild.md`
 - research notes: `project-docs/tui-framework-research.md`
 - changelog: `CHANGELOG.md`
+
+Agent integration assets:
+
+- `LLM.txt`
+- `simple-mcp.json`
+- MCP server entrypoint: `cmd/bentotui-mcp`
 
 ## Changelog Policy
 

@@ -6,6 +6,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/router"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/footer"
+	"github.com/cloudboy-jh/bentotui/ui/components/header"
 )
 
 func New(opts ...app.Option) *app.Model {
@@ -18,6 +19,14 @@ func WithTheme(t theme.Theme) app.Option {
 
 func WithPages(routes ...router.Route) app.Option {
 	return app.WithPages(routes...)
+}
+
+func WithHeaderBar(v bool) app.Option {
+	return app.WithHeaderBar(v)
+}
+
+func WithHeader(model *header.Model) app.Option {
+	return app.WithHeader(model)
 }
 
 func WithFooterBar(v bool) app.Option {

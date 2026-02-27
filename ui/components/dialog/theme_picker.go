@@ -20,6 +20,7 @@ type ThemePicker struct {
 	width     int
 	height    int
 	themeName string
+	baseTheme string
 	search    textinput.Model
 }
 
@@ -32,7 +33,7 @@ func NewThemePicker() *ThemePicker {
 	in.ShowSuggestions = false
 	in.Focus()
 
-	p := &ThemePicker{allThemes: names, filtered: append([]string(nil), names...), themeName: cur, search: in}
+	p := &ThemePicker{allThemes: names, filtered: append([]string(nil), names...), themeName: cur, baseTheme: cur, search: in}
 	p.alignSelectionToCurrent()
 	p.syncStyles()
 	return p
@@ -54,15 +55,27 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch keyMsg.String() {
 	case "esc":
-		return p, func() tea.Msg { return Close() }
+		t, err := theme.PreviewTheme(p.baseTheme)
+		if err != nil {
+			return p, func() tea.Msg { return Close() }
+		}
+		p.themeName = p.baseTheme
+		p.alignSelectionToCurrent()
+		p.syncStyles()
+		return p, tea.Batch(
+			func() tea.Msg { return theme.ThemeChangedMsg{Name: p.baseTheme, Theme: t} },
+			func() tea.Msg { return Close() },
+		)
 	case "up", "k":
 		if p.selected > 0 {
 			p.selected--
+			return p, p.previewSelectedCmd()
 		}
 		return p, nil
 	case "down", "j":
 		if p.selected < len(p.filtered)-1 {
 			p.selected++
+			return p, p.previewSelectedCmd()
 		}
 		return p, nil
 	case "enter":
@@ -75,6 +88,8 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, nil
 		}
 		p.themeName = name
+		p.baseTheme = name
+		p.syncStyles()
 		return p, tea.Batch(
 			func() tea.Msg { return theme.ThemeChangedMsg{Name: name, Theme: t} },
 			func() tea.Msg { return Close() },
@@ -83,7 +98,11 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	updated, cmd := p.search.Update(keyMsg)
 	p.search = updated
+	before := p.selected
 	p.refilter()
+	if p.selected != before {
+		return p, tea.Batch(cmd, p.previewSelectedCmd())
+	}
 	return p, cmd
 }
 
@@ -188,6 +207,23 @@ func (p *ThemePicker) alignSelectionToCurrent() {
 		}
 	}
 	p.selected = 0
+}
+
+func (p *ThemePicker) previewSelectedCmd() tea.Cmd {
+	if len(p.filtered) == 0 || p.selected < 0 || p.selected >= len(p.filtered) {
+		return nil
+	}
+	name := p.filtered[p.selected]
+	if name == p.themeName {
+		return nil
+	}
+	t, err := theme.PreviewTheme(name)
+	if err != nil {
+		return nil
+	}
+	p.themeName = name
+	p.syncStyles()
+	return func() tea.Msg { return theme.ThemeChangedMsg{Name: name, Theme: t} }
 }
 
 func inputContainer(view string, width int, t theme.Theme) string {

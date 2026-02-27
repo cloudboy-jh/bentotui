@@ -1,0 +1,31 @@
+BentoTUI Agent Contract
+
+Build against BentoTUI conventions, not generic Bubble Tea patterns.
+
+Primary reference app
+- Use `cmd/starter-app` as the canonical composition pattern.
+- Shell layer order is `header -> body -> footer -> scrim -> dialog`.
+
+Component contract
+- Implement `tea.Model` plus `SetSize(width,height)` and `GetSize() (width,height)`.
+- Render only inside assigned bounds; no unbounded lines or wrapping leaks.
+- Route keys with precedence: dialog -> focused component -> shell/global bindings.
+
+Style contract
+- Use semantic styles from `ui/styles`.
+- Avoid hardcoded per-component color literals.
+
+Bar contract
+- Header and footer are always single-row statuslines.
+- Segment ownership is `left | cards | right`.
+- Truncation priority is `right > left > cards`.
+- Card collapse is `full card -> command only -> drop from end`.
+
+Focus contract
+- Focus manager APIs are `SetRing`, `SetIndex`, `FocusBy` with `enabled` and `wrap` controls.
+- Focus changes emit `FocusChangedMsg {From, To}` deterministically.
+
+Theme picker contract
+- Selection move previews theme without persistence.
+- `enter` commits.
+- `esc` reverts preview to pre-open theme and closes.

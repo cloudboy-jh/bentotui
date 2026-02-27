@@ -73,7 +73,7 @@ Dialog content responsibilities:
 
 Target shell layer order:
 
-- `body -> footer -> scrim -> dialog`
+- `header -> body -> footer -> scrim -> dialog`
 
 ## Styling Contract
 

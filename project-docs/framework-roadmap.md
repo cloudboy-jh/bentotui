@@ -4,6 +4,7 @@ Status: Active
 Date: 2026-02-25
 
 This roadmap defines the framework-level plan for BentoTUI. It is separate from `project-docs/next-steps.md`, which tracks immediate execution items.
+The locked 1.0 component queue lives in `project-docs/next-components-tobuild.md`.
 
 ## Vision
 
@@ -35,7 +36,7 @@ Status: `in-progress`
 
 Goals:
 
-- shell layering model (`body -> footer -> scrim -> dialog`)
+- shell layering model (`header -> body -> footer -> scrim -> dialog`)
 - router, layout, focus baseline
 - dialog manager with confirm/custom flows
 - theme presets and persistence
@@ -43,10 +44,10 @@ Goals:
 
 Remaining focus to close v0.1:
 
-- footer visual normalization across all component rows/panels/dialog inputs
-- focus manager hardening and clearer state contract
-- no-chrome visual normalization across harness/components
-- regression coverage for dialog bounds and footer truncation
+- header/footer parity and visual normalization across component surfaces
+- focus manager hardening and deterministic event contract
+- starter-app-first component composition defaults
+- regression coverage for dialog bounds and bar truncation behavior
 
 ## v0.2 Component System
 

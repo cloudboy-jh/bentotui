@@ -6,6 +6,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/core/focus"
 )
 
 func TestFooterRendersSingleLine(t *testing.T) {
@@ -86,5 +87,18 @@ func TestFooterHarnessThreeCardLayout(t *testing.T) {
 	}
 	if strings.Index(view, "/pr") > strings.Index(view, "/issue") || strings.Index(view, "/issue") > strings.Index(view, "/branch") {
 		t.Fatal("expected left -> middle -> right segment order")
+	}
+}
+
+func TestFooterConsumesFocusChangedMessage(t *testing.T) {
+	m := New(Cards(
+		Card{Command: "/a", Label: "a", Variant: CardMuted, Enabled: true},
+		Card{Command: "/b", Label: "b", Variant: CardMuted, Enabled: true},
+	))
+	m.SetSize(80, 1)
+	_, _ = m.Update(focus.FocusChangedMsg{From: 0, To: 1})
+	view := core.ViewString(m.View())
+	if !strings.Contains(view, "/b") {
+		t.Fatal("expected focused card command to remain visible after focus update")
 	}
 }

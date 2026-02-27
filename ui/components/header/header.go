@@ -1,4 +1,4 @@
-package footer
+package header
 
 import (
 	"strings"
@@ -7,7 +7,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/core/focus"
 	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/primitives"
@@ -42,11 +41,10 @@ type Model struct {
 	theme     theme.Theme
 	width     int
 	height    int
-	focusIdx  int
 }
 
 func New(opts ...Option) *Model {
-	m := &Model{theme: theme.Preset(theme.DefaultName), focusIdx: -1}
+	m := &Model{theme: theme.Preset(theme.DefaultName)}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -76,8 +74,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch v := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.SetSize(v.Width, 1)
-	case focus.FocusChangedMsg:
-		m.focusIdx = v.To
 	}
 	return m, nil
 }
@@ -212,16 +208,12 @@ func (m *Model) renderCardsForWidth(width int, commandOnly bool) (string, bool) 
 	used := 0
 	allFit := true
 	validCount := 0
-	for i, c := range m.cards {
+	for _, c := range m.cards {
 		if strings.TrimSpace(c.Command) == "" {
 			continue
 		}
 		validCount++
-		cardModel := c
-		if i == m.focusIdx {
-			cardModel.Variant = CardPrimary
-		}
-		card := m.renderCard(cardModel, commandOnly)
+		card := m.renderCard(c, commandOnly)
 
 		if width >= 0 {
 			w := lipgloss.Width(card)

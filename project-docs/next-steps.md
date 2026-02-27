@@ -26,15 +26,15 @@ Use this with `project-docs/component-system-reference.md`.
 
 ## 4. Focus Manager API Hardening (`core/focus/focus.go`)
 
-- [ ] Add explicit APIs: `SetRing`, `SetIndex`, `FocusBy`.
-- [ ] Add `enabled` and `wrap` controls.
-- [ ] Handle empty/nil ring entries safely.
+- [x] Add explicit APIs: `SetRing`, `SetIndex`, `FocusBy`.
+- [x] Add `enabled` and `wrap` controls.
+- [x] Handle empty/nil ring entries safely.
 
 ## 5. Focus Event Contract
 
-- [ ] Add `FocusChangedMsg {from, to}`.
-- [ ] Emit focus changes deterministically from manager.
-- [ ] Wire footer to consume focus change state.
+- [x] Add `FocusChangedMsg {from, to}`.
+- [x] Emit focus changes deterministically from manager.
+- [x] Wire footer to consume focus change state.
 
 ## 6. Shared UI Primitives
 
@@ -45,9 +45,9 @@ Use this with `project-docs/component-system-reference.md`.
 
 ## 7. Theme Picker UX Refinement
 
-- [ ] Add hover preview on selection move (no commit yet).
-- [ ] Commit on `enter`, revert preview on `esc`.
-- [ ] Keep picker bounded and clipping-safe in all terminal sizes.
+- [x] Add hover preview on selection move (no commit yet).
+- [x] Commit on `enter`, revert preview on `esc`.
+- [x] Keep picker bounded and clipping-safe in all terminal sizes.
 
 ## 8. Command Palette Component
 
@@ -58,13 +58,13 @@ Use this with `project-docs/component-system-reference.md`.
 ## 9. Component Regression Coverage
 
 - [x] Footer tests: layout/order/truncation/no-wrap.
-- [ ] Focus tests: ring updates/wrap/index/events.
+- [x] Focus tests: ring updates/wrap/index/events.
 - [ ] Dialog tests: custom enter routing + bounds stability.
-- [ ] Theme picker tests: preview/apply/revert behavior.
+- [x] Theme picker tests: preview/apply/revert behavior.
 
 ## 10. Harness + Docs Sync
 
-- [x] Update `cmd/test-tui` to consume structured footer cards.
+- [x] Update `cmd/starter-app` to consume structured footer cards.
 - [x] Keep `project-docs/component-system-reference.md` aligned.
 - [x] Keep `project-docs/framework-roadmap.md` and `CHANGELOG.md` updated.
 

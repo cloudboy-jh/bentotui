@@ -14,6 +14,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 	"github.com/cloudboy-jh/bentotui/ui/components/footer"
+	"github.com/cloudboy-jh/bentotui/ui/components/header"
 )
 
 type Option func(*Model)
@@ -21,8 +22,10 @@ type Option func(*Model)
 type Model struct {
 	router     *router.Model
 	dialogs    *dialog.Manager
+	header     *header.Model
 	footer     *footer.Model
 	theme      theme.Theme
+	showHeader bool
 	showFooter bool
 	fullScreen bool
 	width      int
@@ -33,14 +36,17 @@ func New(opts ...Option) *Model {
 	m := &Model{
 		router:     router.New(),
 		dialogs:    dialog.New(),
+		header:     header.New(),
 		footer:     footer.New(),
 		theme:      theme.CurrentTheme(),
+		showHeader: true,
 		showFooter: true,
 		fullScreen: true,
 	}
 	for _, opt := range opts {
 		opt(m)
 	}
+	m.header.SetTheme(m.theme)
 	m.footer.SetTheme(m.theme)
 	m.dialogs.SetTheme(m.theme)
 	return m
@@ -49,9 +55,14 @@ func New(opts ...Option) *Model {
 func WithTheme(t theme.Theme) Option {
 	return func(m *Model) {
 		m.theme = t
+		m.header.SetTheme(t)
 		m.footer.SetTheme(t)
 		m.dialogs.SetTheme(t)
 	}
+}
+
+func WithHeaderBar(v bool) Option {
+	return func(m *Model) { m.showHeader = v }
 }
 
 func WithPages(routes ...router.Route) Option {
@@ -62,6 +73,15 @@ func WithPages(routes ...router.Route) Option {
 
 func WithFooterBar(v bool) Option {
 	return func(m *Model) { m.showFooter = v }
+}
+
+func WithHeader(model *header.Model) Option {
+	return func(m *Model) {
+		if model != nil {
+			m.header = model
+			m.header.SetTheme(m.theme)
+		}
+	}
 }
 
 func WithFullScreen(v bool) Option {
@@ -78,7 +98,7 @@ func WithFooter(model *footer.Model) Option {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.router.Init(), m.dialogs.Init(), m.footer.Init())
+	return tea.Batch(m.router.Init(), m.dialogs.Init(), m.header.Init(), m.footer.Init())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -93,6 +113,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case theme.ThemeChangedMsg:
 		m.theme = v.Theme
+		m.header.SetTheme(v.Theme)
 		m.footer.SetTheme(v.Theme)
 		m.dialogs.SetTheme(v.Theme)
 		forwardTheme = true
@@ -109,9 +130,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_, pageCmd = m.router.Update(msg)
 	}
 
+	_, headerCmd := m.header.Update(msg)
 	_, footerCmd := m.footer.Update(msg)
 
-	return m, tea.Batch(dialogCmd, pageCmd, footerCmd)
+	return m, tea.Batch(dialogCmd, pageCmd, headerCmd, footerCmd)
 }
 
 func (m *Model) View() tea.View {
@@ -145,6 +167,9 @@ func (m *Model) syncViewport(width, height int) {
 	m.width = width
 	m.height = height
 	bodyHeight := height
+	if m.showHeader {
+		bodyHeight--
+	}
 	if m.showFooter {
 		bodyHeight--
 	}
@@ -153,6 +178,7 @@ func (m *Model) syncViewport(width, height int) {
 	}
 	m.router.SetSize(width, bodyHeight)
 	m.dialogs.SetSize(width, height)
+	m.header.SetSize(width, 1)
 	m.footer.SetSize(width, 1)
 }
 
@@ -166,6 +192,9 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 	}
 
 	bodyHeight := h
+	if m.showHeader {
+		bodyHeight--
+	}
 	if m.showFooter {
 		bodyHeight--
 	}
@@ -178,7 +207,17 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 
 	layers := []*lipgloss.Layer{
 		lipgloss.NewLayer(shellBG).ID("shell-bg").X(area.Min.X).Y(area.Min.Y).Z(0),
-		lipgloss.NewLayer(core.ViewLayer(bodyView)).ID("body").X(area.Min.X).Y(area.Min.Y).Z(1),
+		lipgloss.NewLayer(core.ViewLayer(bodyView)).ID("body").X(area.Min.X).Y(area.Min.Y + boolToInt(m.showHeader)).Z(1),
+	}
+
+	if m.showHeader {
+		layers = append(layers,
+			lipgloss.NewLayer(core.ViewLayer(m.header.View())).
+				ID("header").
+				X(area.Min.X).
+				Y(area.Min.Y).
+				Z(2),
+		)
 	}
 
 	if m.showFooter {
@@ -186,8 +225,8 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 			lipgloss.NewLayer(core.ViewLayer(m.footer.View())).
 				ID("footer").
 				X(area.Min.X).
-				Y(area.Min.Y+bodyHeight).
-				Z(2),
+				Y(area.Min.Y+bodyHeight+boolToInt(m.showHeader)).
+				Z(3),
 		)
 	}
 
@@ -199,8 +238,8 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 		dlgX := area.Min.X + max(0, (w-dlgW)/2)
 		dlgY := area.Min.Y + max(0, (h-dlgH)/2)
 		layers = append(layers,
-			lipgloss.NewLayer(scrim).ID("scrim").X(area.Min.X).Y(area.Min.Y).Z(3),
-			lipgloss.NewLayer(core.ViewLayer(dlgView)).ID("dialog").X(dlgX).Y(dlgY).Z(4),
+			lipgloss.NewLayer(scrim).ID("scrim").X(area.Min.X).Y(area.Min.Y).Z(4),
+			lipgloss.NewLayer(core.ViewLayer(dlgView)).ID("dialog").X(dlgX).Y(dlgY).Z(5),
 		)
 	}
 
@@ -248,4 +287,11 @@ func clampInt(v, minV, maxV int) int {
 		return maxV
 	}
 	return v
+}
+
+func boolToInt(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
 }

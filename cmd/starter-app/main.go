@@ -16,12 +16,20 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
 	"github.com/cloudboy-jh/bentotui/ui/components/footer"
+	"github.com/cloudboy-jh/bentotui/ui/components/header"
 	"github.com/cloudboy-jh/bentotui/ui/components/panel"
 	"github.com/cloudboy-jh/bentotui/ui/primitives"
 )
 
 func main() {
 	t := theme.CurrentTheme()
+	hd := header.New(
+		header.LeftCard(header.Card{Command: "starter", Label: "bentotui", Variant: header.CardMuted, Enabled: true}),
+		header.Cards(
+			header.Card{Command: "page", Label: "harness", Variant: header.CardNormal, Enabled: true},
+		),
+		header.RightCard(header.Card{Command: "theme", Label: theme.CurrentThemeName(), Variant: header.CardPrimary, Enabled: true}),
+	)
 	ft := footer.New(
 		footer.LeftCard(footer.Card{Command: "/pr", Label: " pull requests", Variant: footer.CardNormal, Enabled: true}),
 		footer.Cards(
@@ -32,18 +40,20 @@ func main() {
 
 	m := bentotui.New(
 		bentotui.WithTheme(t),
+		app.WithHeader(hd),
 		app.WithFooter(ft),
 		bentotui.WithPages(
-			bentotui.Page("harness", func() core.Page { return newHarnessPage(t, "harness", "secondary") }),
-			bentotui.Page("secondary", func() core.Page { return newHarnessPage(t, "secondary", "harness") }),
+			bentotui.Page("harness", func() core.Page { return newStarterPage(t, "harness", "secondary") }),
+			bentotui.Page("secondary", func() core.Page { return newStarterPage(t, "secondary", "harness") }),
 		),
+		bentotui.WithHeaderBar(true),
 		bentotui.WithFooterBar(true),
 		bentotui.WithFullScreen(true),
 	)
 
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("bentotui test-tui failed: %v\n", err)
+		fmt.Printf("bentotui starter-app failed: %v\n", err)
 	}
 }
 
@@ -72,7 +82,7 @@ func (b *textBlock) SetSize(width, height int) {
 }
 func (b *textBlock) GetSize() (int, int) { return b.width, b.height }
 
-type harnessPage struct {
+type starterPage struct {
 	root *layout.Split
 
 	headerPanel *panel.Model
@@ -92,7 +102,7 @@ type harnessPage struct {
 	events    []string
 }
 
-func newHarnessPage(t theme.Theme, pageName, nextPage string) *harnessPage {
+func newStarterPage(t theme.Theme, pageName, nextPage string) *starterPage {
 	in := textinput.New()
 	in.Prompt = "> "
 	in.Placeholder = "Type text, /pr, /issue, or /branch"
@@ -100,7 +110,7 @@ func newHarnessPage(t theme.Theme, pageName, nextPage string) *harnessPage {
 	in.SetSuggestions([]string{"/pr", "/issue", "/branch", "/dialog", "/theme", "/page"})
 	in.SetStyles(inputStyles(t))
 
-	p := &harnessPage{
+	p := &starterPage{
 		headerText: newTextBlock(""),
 		mainText:   newTextBlock(""),
 		input:      in,
@@ -120,11 +130,11 @@ func newHarnessPage(t theme.Theme, pageName, nextPage string) *harnessPage {
 	return p
 }
 
-func (p *harnessPage) Init() tea.Cmd {
+func (p *starterPage) Init() tea.Cmd {
 	return p.input.Focus()
 }
 
-func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (p *starterPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch v := msg.(type) {
 	case theme.ThemeChangedMsg:
 		p.themeName = v.Name
@@ -152,9 +162,9 @@ func (p *harnessPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return p, layoutCmd
 }
 
-func (p *harnessPage) View() tea.View { return p.root.View() }
+func (p *starterPage) View() tea.View { return p.root.View() }
 
-func (p *harnessPage) SetSize(width, height int) {
+func (p *starterPage) SetSize(width, height int) {
 	p.width = width
 	p.height = height
 	p.root.SetSize(width, height)
@@ -162,10 +172,10 @@ func (p *harnessPage) SetSize(width, height int) {
 	p.refresh()
 }
 
-func (p *harnessPage) GetSize() (int, int) { return p.width, p.height }
-func (p *harnessPage) Title() string       { return "Harness" }
+func (p *starterPage) GetSize() (int, int) { return p.width, p.height }
+func (p *starterPage) Title() string       { return "Starter" }
 
-func (p *harnessPage) rebuildLayout() {
+func (p *starterPage) rebuildLayout() {
 	p.root = layout.Vertical(
 		layout.Fixed(6, p.headerPanel),
 		layout.Flex(1, p.mainPanel),
@@ -176,14 +186,14 @@ func (p *harnessPage) rebuildLayout() {
 	}
 }
 
-func (p *harnessPage) applyTheme(t theme.Theme) {
+func (p *starterPage) applyTheme(t theme.Theme) {
 	p.theme = t
 	p.headerPanel.SetTheme(t)
 	p.mainPanel.SetTheme(t)
 	p.input.SetStyles(inputStyles(t))
 }
 
-func (p *harnessPage) submitInput() tea.Cmd {
+func (p *starterPage) submitInput() tea.Cmd {
 	text := strings.TrimSpace(p.input.Value())
 	if text == "" {
 		return nil
@@ -213,12 +223,12 @@ func (p *harnessPage) submitInput() tea.Cmd {
 	}
 }
 
-func (p *harnessPage) updateInputWidth() {
+func (p *starterPage) updateInputWidth() {
 	panelWidth, _ := p.mainPanel.GetSize()
 	p.input.SetWidth(max(20, panelWidth-8))
 }
 
-func (p *harnessPage) refresh() {
+func (p *starterPage) refresh() {
 	headerLines := []string{
 		"Command-driven validation harness",
 		fmt.Sprintf("Page: %s   Next: %s", p.pageName, p.nextPage),
@@ -261,7 +271,7 @@ func sectionDivider(width int, t theme.Theme) string {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.BorderSubtle, t.Muted))).Render(line)
 }
 
-func (p *harnessPage) mainContentWidth() int {
+func (p *starterPage) mainContentWidth() int {
 	mainWidth, _ := p.mainPanel.GetSize()
 	if mainWidth <= 2 {
 		return 0
@@ -269,7 +279,7 @@ func (p *harnessPage) mainContentWidth() int {
 	return mainWidth - 2
 }
 
-func (p *harnessPage) log(s string) {
+func (p *starterPage) log(s string) {
 	entry := fmt.Sprintf("- [%s] %s", time.Now().Format("15:04:05"), s)
 	p.events = append([]string{entry}, p.events...)
 	if len(p.events) > 10 {

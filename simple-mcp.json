@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "bentotui": {
+      "command": "go",
+      "args": ["run", "./cmd/bentotui-mcp"],
+      "cwd": "."
+    }
+  }
+}

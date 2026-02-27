@@ -24,7 +24,7 @@ func ctrlKey(code rune) tea.Msg {
 }
 
 func TestHarnessSlashTypesIntoInput(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 
 	_, cmd := p.Update(keyPress("/"))
@@ -40,7 +40,7 @@ func TestHarnessSlashTypesIntoInput(t *testing.T) {
 }
 
 func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("/theme")
 
@@ -55,7 +55,7 @@ func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
 }
 
 func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("/dialog")
 
@@ -71,7 +71,7 @@ func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
 }
 
 func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("/page")
 
@@ -90,7 +90,7 @@ func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
 }
 
 func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 
 	_, cmd := p.Update(keyPress("d"))
@@ -111,7 +111,7 @@ func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
 }
 
 func TestHarnessEnterSubmitsInput(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 	p.input.SetValue("hello bento")
 
@@ -131,7 +131,7 @@ func TestHarnessEnterSubmitsInput(t *testing.T) {
 }
 
 func TestHarnessViewRowsMatchViewportWidth(t *testing.T) {
-	p := newHarnessPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
 
 	view := core.ViewString(p.View())
