@@ -1,229 +1,330 @@
+// starter-app is the bentotui component showcase.
+// It demonstrates every registry component with live theme switching.
+// Run with: go run ./cmd/starter-app
 package main
 
 import (
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/cloudboy-jh/bentotui"
-	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/core/layout"
-	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
-	"github.com/cloudboy-jh/bentotui/ui/containers/panel"
-	"github.com/cloudboy-jh/bentotui/ui/widgets"
+	"charm.land/lipgloss/v2"
+	"github.com/cloudboy-jh/bentotui/layout"
+	"github.com/cloudboy-jh/bentotui/registry/bar"
+	"github.com/cloudboy-jh/bentotui/registry/dialog"
+	"github.com/cloudboy-jh/bentotui/registry/input"
+	"github.com/cloudboy-jh/bentotui/registry/list"
+	"github.com/cloudboy-jh/bentotui/registry/panel"
+	"github.com/cloudboy-jh/bentotui/registry/table"
+	"github.com/cloudboy-jh/bentotui/registry/text"
+	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 func main() {
-	page := NewStarterPage()
-
-	m := bentotui.New(
-		bentotui.WithTheme(theme.CurrentTheme()),
-		bentotui.WithPages(
-			bentotui.Page("starter", func() core.Page { return page }),
-		),
-		bentotui.WithCommands(
-			bentotui.Command{Label: "Open dialog", Keybind: "/dialog", Action: func() tea.Msg { return openCustomDialogCmd()() }},
-			bentotui.Command{Label: "Switch theme", Keybind: "/theme", Action: func() tea.Msg { return openThemePickerCmd()() }},
-			bentotui.Command{Label: "Command palette", Keybind: "/command", Action: func() tea.Msg { return openCommandPaletteCmd()() }},
-		),
-		bentotui.WithFooterBar(true),
-	)
-
+	m := newModel()
 	if _, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("error: %v\n", err)
 	}
 }
 
-func openCustomDialogCmd() tea.Cmd {
-	return func() tea.Msg {
-		return dialog.Open(dialog.Custom{
-			DialogTitle: "Custom Dialog",
-			Content:     widgets.NewText("This is a custom dialog.\nPress Enter or Esc to close."),
-			Width:       62,
-			Height:      9,
-		})
-	}
+// ── root model ────────────────────────────────────────────────────────────────
+
+type model struct {
+	// Layout
+	root   *layout.Split
+	header *bar.Model
+	footer *bar.Model
+	body   *layout.Split
+
+	// Panels
+	infoPanel   *panel.Model
+	eventsPanel *panel.Model
+	inputPanel  *panel.Model
+	tablePanel  *panel.Model
+
+	// Widgets
+	eventsList *list.Model
+	inputBox   *input.Model
+	dataTable  *table.Model
+
+	// Dialogs
+	dialogs *dialog.Manager
+
+	// Commands for the palette
+	commands []dialog.Command
+
+	width  int
+	height int
 }
 
-func openThemePickerCmd() tea.Cmd {
-	return func() tea.Msg {
-		return theme.OpenThemePicker()
-	}
-}
+const (
+	headerH = 1
+	footerH = 1
+)
 
-// StarterPage demonstrates the new layout/widgets architecture.
-type StarterPage struct {
-	layout       *layout.Split
-	input        *widgets.Input
-	eventsList   *widgets.List
-	infoPanel    *panel.Model
-	commandPanel *panel.Model
-	statusPanel  *panel.Model
-	eventsPanel  *panel.Model
-	width        int
-	height       int
-}
+func newModel() *model {
+	// Events log
+	events := list.New(50)
+	events.Append("bentotui starter-app")
+	events.Append("ctrl+t → theme picker")
+	events.Append("ctrl+p → command palette")
+	events.Append("ctrl+d → sample dialog")
 
-func NewStarterPage() *StarterPage {
-	// Create content using new widgets
-	infoList := widgets.NewList(50)
-	infoList.Append("Page: starter")
-	infoList.Append("Theme: " + theme.CurrentThemeName())
-	infoList.Append("Status: Ready")
+	// Input
+	inp := input.New()
+	inp.SetPlaceholder("Type here…")
 
-	eventsList := widgets.NewList(20)
-	eventsList.Append("Application started")
-	// Add command hints
-	eventsList.Append("Type /command, /theme, or /dialog")
+	// Table
+	tbl := table.New("Component", "Status", "Notes")
+	tbl.AddRow("panel", "✓", "themed container")
+	tbl.AddRow("bar", "✓", "header/footer row")
+	tbl.AddRow("dialog", "✓", "modal overlay")
+	tbl.AddRow("list", "✓", "plain-text log")
+	tbl.AddRow("table", "✓", "header + rows")
+	tbl.AddRow("text", "✓", "static label")
+	tbl.AddRow("input", "✓", "text field")
 
-	input := widgets.NewInput()
-	input.SetValue("")
-
-	// Create panels using OLD panel API with NEW widgets as content
-	infoPanel := panel.New(
-		panel.Title("Info"),
-		panel.Content(infoList),
+	// Panels
+	infoP := panel.New(
+		panel.Title("bentotui"),
+		panel.Content(text.New(infoText())),
 	)
-
-	commandPanel := panel.New(
-		panel.Title("Command"),
-		panel.Content(input),
-	)
-
-	statusPanel := panel.New(
-		panel.Title("Status"),
-		panel.Content(widgets.NewText("All systems operational")),
-	)
-
-	eventsPanel := panel.New(
+	eventsP := panel.New(
 		panel.Title("Events"),
-		panel.Content(eventsList),
+		panel.Content(events),
+	)
+	inputP := panel.New(
+		panel.Title("Input"),
+		panel.Content(inp),
+		panel.Elevated(),
+	)
+	tableP := panel.New(
+		panel.Title("Components"),
+		panel.Content(tbl),
 	)
 
-	// Build layout using OLD canvas-based API
-	// Right column: Status (fixed 8 rows) + Events (flex remaining)
-	rightColumn := layout.Vertical(
-		layout.Fixed(8, statusPanel),
-		layout.Flex(1, eventsPanel),
+	// Layout: left column (info + input), right column (table + events)
+	left := layout.Vertical(
+		layout.Flex(1, infoP),
+		layout.Fixed(4, inputP),
+	)
+	right := layout.Vertical(
+		layout.Flex(1, tableP),
+		layout.Fixed(8, eventsP),
+	)
+	body := layout.Horizontal(
+		layout.Flex(1, left),
+		layout.Flex(2, right),
 	)
 
-	// Main layout: 3 columns with gutter
-	mainLayout := layout.Horizontal(
-		layout.Flex(1, infoPanel),
-		layout.Flex(2, commandPanel),
-		layout.Flex(1, rightColumn),
-	).WithGutterColor(theme.CurrentTheme().Border.Subtle)
+	// Header + footer bars
+	hdr := bar.New(
+		bar.Left("bentotui showcase"),
+		bar.Right(fmt.Sprintf("theme: %s", theme.CurrentThemeName())),
+	)
+	ftr := bar.New(
+		bar.Cards(
+			bar.Card{Command: "ctrl+t", Label: "theme", Enabled: true},
+			bar.Card{Command: "ctrl+p", Label: "palette", Enabled: true},
+			bar.Card{Command: "ctrl+d", Label: "dialog", Enabled: true},
+			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardDanger, Enabled: true},
+		),
+	)
 
-	return &StarterPage{
-		layout:       mainLayout,
-		input:        input,
-		eventsList:   eventsList,
-		infoPanel:    infoPanel,
-		commandPanel: commandPanel,
-		statusPanel:  statusPanel,
-		eventsPanel:  eventsPanel,
+	// Root layout: header / body / footer
+	root := layout.Vertical(
+		layout.Fixed(headerH, hdr),
+		layout.Flex(1, body),
+		layout.Fixed(footerH, ftr),
+	)
+
+	// Dialog manager + command palette commands
+	commands := []dialog.Command{
+		{Label: "Switch theme", Group: "App", Keybind: "ctrl+t", Action: func() tea.Msg {
+			return dialog.Open(dialog.Custom{
+				DialogTitle: "Themes",
+				Content:     dialog.NewThemePicker(),
+			})
+		}},
+		{Label: "Sample confirm", Group: "App", Action: func() tea.Msg {
+			return dialog.Open(dialog.Confirm{
+				DialogTitle: "Confirm",
+				Message:     "This is a confirm dialog.\nPress Enter to confirm.",
+			})
+		}},
+		{Label: "Quit", Group: "App", Keybind: "ctrl+c", Action: func() tea.Msg {
+			return tea.Quit()
+		}},
+	}
+
+	return &model{
+		root:        root,
+		header:      hdr,
+		footer:      ftr,
+		body:        body,
+		infoPanel:   infoP,
+		eventsPanel: eventsP,
+		inputPanel:  inputP,
+		tablePanel:  tableP,
+		eventsList:  events,
+		inputBox:    inp,
+		dataTable:   tbl,
+		dialogs:     dialog.New(),
+		commands:    commands,
 	}
 }
 
-func (p *StarterPage) Init() tea.Cmd {
-	// Initialize layout and focus the input
+func (m *model) Init() tea.Cmd {
 	return tea.Batch(
-		p.layout.Init(),
-		p.input.Focus(),
+		m.root.Init(),
+		m.inputBox.Focus(),
 	)
 }
 
-func (p *StarterPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Dialog manager gets first shot at every message.
+	if m.dialogs.IsOpen() {
+		updated, cmd := m.dialogs.Update(msg)
+		m.dialogs = updated.(*dialog.Manager)
+		// Handle dialog-generated theme changes.
+		if tc, ok := msg.(theme.ThemeChangedMsg); ok {
+			m.onThemeChange(tc)
+		}
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
-	case theme.ThemeChangedMsg:
-		// Apply theme to all panels and widgets
-		p.infoPanel.SetTheme(msg.Theme)
-		p.commandPanel.SetTheme(msg.Theme)
-		p.statusPanel.SetTheme(msg.Theme)
-		p.eventsPanel.SetTheme(msg.Theme)
-		p.input.SetTheme(msg.Theme)
-		return p, nil
-	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
-			return p, tea.Quit
-		}
-		// Check if this is a printable character or special key we want to handle
-		switch msg.String() {
-		case "enter":
-			// Check input for commands before passing to layout
-			if cmd := p.checkInputCommand(); cmd != nil {
-				return p, cmd
-			}
-			return p.layout.Update(msg)
-		case "backspace", "delete", "left", "right", "home", "end":
-			// Pass these to input directly
-			updated, cmd := p.input.Update(msg)
-			if inp, ok := updated.(*widgets.Input); ok {
-				p.input = inp
-			}
-			return p, cmd
-		default:
-			// Pass all other keys (including "/") to input
-			updated, cmd := p.input.Update(msg)
-			if inp, ok := updated.(*widgets.Input); ok {
-				p.input = inp
-			}
-			return p, cmd
-		}
 	case tea.WindowSizeMsg:
-		p.width = msg.Width
-		p.height = msg.Height
-		p.layout.SetSize(p.width, p.height)
-	}
+		m.width = msg.Width
+		m.height = msg.Height
+		m.root.SetSize(m.width, m.height)
+		// Propagate body size to dialog manager.
+		bodyH := max(0, m.height-headerH-footerH)
+		m.dialogs.SetSize(m.width, bodyH)
+		return m, nil
 
-	return p.layout.Update(msg)
-}
+	case theme.ThemeChangedMsg:
+		m.onThemeChange(msg)
+		return m, nil
 
-func (p *StarterPage) checkInputCommand() tea.Cmd {
-	text := p.input.Value()
-	p.input.SetValue("") // Clear input after checking
-	switch text {
-	case "/command":
-		return openCommandPaletteCmd()
-	case "/theme":
-		return openThemePickerCmd()
-	case "/dialog":
-		return openCustomDialogCmd()
-	}
-	return nil
-}
-
-func openCommandPaletteCmd() tea.Cmd {
-	return func() tea.Msg {
-		// Create a command palette with registered commands
-		commands := []dialog.Command{
-			{Label: "Open dialog", Group: "Suggested", Keybind: "/dialog", Action: func() tea.Msg { return openCustomDialogCmd()() }},
-			{Label: "Switch theme", Group: "System", Keybind: "/theme", Action: func() tea.Msg { return openThemePickerCmd()() }},
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		case "ctrl+t":
+			m.eventsList.Append("opening theme picker")
+			return m, func() tea.Msg {
+				return dialog.Open(dialog.Custom{
+					DialogTitle: "Themes",
+					Content:     dialog.NewThemePicker(),
+				})
+			}
+		case "ctrl+p":
+			m.eventsList.Append("opening command palette")
+			return m, func() tea.Msg {
+				return dialog.Open(dialog.Custom{
+					DialogTitle: "Commands",
+					Content:     dialog.NewCommandPalette(m.commands),
+				})
+			}
+		case "ctrl+d":
+			m.eventsList.Append("opening dialog")
+			return m, func() tea.Msg {
+				return dialog.Open(dialog.Confirm{
+					DialogTitle: "Hello",
+					Message:     "This is a Confirm dialog.\nPress Enter or Esc.",
+				})
+			}
+		case "enter":
+			val := m.inputBox.Value()
+			if strings.TrimSpace(val) != "" {
+				m.eventsList.Append("> " + val)
+				m.inputBox.SetValue("")
+			}
+			return m, nil
 		}
-		palette := dialog.NewCommandPalette(commands)
-		return dialog.Open(palette)
+		// Pass other keys to the input box.
+		updated, cmd := m.inputBox.Update(msg)
+		m.inputBox = updated.(*input.Model)
+		return m, cmd
 	}
+
+	// Propagate to layout for window size and other system messages.
+	updated, cmd := m.root.Update(msg)
+	m.root = updated.(*layout.Split)
+	return m, cmd
 }
 
-func (p *StarterPage) View() tea.View {
-	return p.layout.View()
+func (m *model) View() tea.View {
+	t := theme.CurrentTheme()
+
+	// Render body (panels).
+	bodyStr := viewString(m.body.View())
+
+	// If a dialog is open, overlay it centered on the body.
+	if m.dialogs.IsOpen() {
+		dialogStr := viewString(m.dialogs.View())
+		bodyH := max(0, m.height-headerH-footerH)
+		centered := lipgloss.PlaceHorizontal(m.width, lipgloss.Center,
+			lipgloss.PlaceVertical(bodyH, lipgloss.Center, dialogStr))
+		bodyStr = centered
+	}
+
+	headerStr := viewString(m.header.View())
+	footerStr := viewString(m.footer.View())
+
+	// Paint the full screen: header / body / footer.
+	screen := lipgloss.JoinVertical(lipgloss.Top, headerStr, bodyStr, footerStr)
+
+	v := tea.NewView(screen)
+	v.AltScreen = true
+	v.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
+	return v
 }
 
-func (p *StarterPage) SetSize(width, height int) {
-	p.width = width
-	p.height = height
-	p.layout.SetSize(width, height)
+// onThemeChange updates gutter colors and header text when the theme changes.
+func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
+	m.body.SetGutterColor(msg.Theme.Border.Subtle)
+	m.header.SetRight(fmt.Sprintf("theme: %s", msg.Name))
+	m.eventsList.Append("theme → " + msg.Name)
 }
 
-func (p *StarterPage) GetSize() (int, int) {
-	return p.width, p.height
+// ── helpers ───────────────────────────────────────────────────────────────────
+
+func infoText() string {
+	return strings.Join([]string{
+		"ShadCN for Go TUIs.",
+		"",
+		"Copy components into",
+		"your project and own",
+		"them completely.",
+		"",
+		"bento add panel",
+		"bento add bar",
+		"bento add dialog",
+		"bento add list",
+		"bento add table",
+		"bento add input",
+		"bento add text",
+	}, "\n")
 }
 
-func (p *StarterPage) Title() string {
-	return "BentoTUI Starter"
+func viewString(v tea.View) string {
+	if v.Content == nil {
+		return ""
+	}
+	if r, ok := v.Content.(interface{ Render() string }); ok {
+		return r.Render()
+	}
+	if s, ok := v.Content.(interface{ String() string }); ok {
+		return s.String()
+	}
+	return fmt.Sprint(v.Content)
 }
 
-// Ensure StarterPage implements required interfaces
-var _ core.Page = (*StarterPage)(nil)
-var _ core.Component = (*StarterPage)(nil)
-var _ core.Sizeable = (*StarterPage)(nil)
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}

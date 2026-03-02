@@ -1,0 +1,12 @@
+# Build outputs
+*.exe
+*.test
+dist/
+
+# Windows null device artifact
+nul
+
+# Editor
+.vscode/
+.idea/
+*.swp

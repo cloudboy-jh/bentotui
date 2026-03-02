@@ -1,270 +1,379 @@
----
-title: "BentoTUI Components"
-description: "Complete guide to BentoTUI components and layouts"
----
-
 # BentoTUI Components
 
-BentoTUI provides a clear separation between layout, containers, and widgets.
+API reference for every registry component and module dep.
+All components are copy-and-own — run `bento add <name>` to copy source into your project.
 
-## Architecture
+---
 
-Four layers:
+## Module deps (import, don't copy)
 
-1. **Layout** (`core/layout/`) - Canvas-based positioning
-2. **Containers** (`ui/containers/`) - Complex components (Panel, Bar, Dialog)
-3. **Widgets** (`ui/widgets/`) - Simple content (Card, Input, List, Table, Text)
-4. **Styles** (`ui/styles/`) - Theme mapping
+### `theme`
 
 ```go
-// Layout positions containers (which hold widgets)
+import "github.com/cloudboy-jh/bentotui/theme"
+
+theme.SetTheme("dracula")            // persist choice
+theme.PreviewTheme("nord")           // live preview, no persist
+theme.CurrentTheme() theme.Theme     // always read in View()
+theme.CurrentThemeName() string
+theme.AvailableThemes() []string     // sorted, default first
+theme.RegisterTheme("x", t)         // add custom preset
+```
+
+`Theme` has tokens for every visual slot:
+
+```go
+t.Surface.{Canvas, Panel, Elevated, Overlay, Interactive}
+t.Text.{Primary, Muted, Inverse, Accent}
+t.Border.{Normal, Subtle, Focus}
+t.State.{Info, Success, Warning, Danger}
+t.Selection.{BG, FG}
+t.Input.{BG, FG, Placeholder, Cursor, Border}
+t.Bar.{BG, FG}
+t.Dialog.{BG, FG, Border, Scrim}
+```
+
+### `layout`
+
+```go
+import "github.com/cloudboy-jh/bentotui/layout"
+
 root := layout.Horizontal(
-    layout.Flex(1, panel.New(
-        panel.Title("Info"),
-        panel.Content(widgets.NewList()),
-    )),
-).WithGutterColor(theme.Border.Subtle)
+    layout.Fixed(30, sidebar),     // exact column count
+    layout.Flex(1, main),          // proportional share
+    layout.Flex(2, detail),        // 2× share vs Flex(1)
+).WithGutterColor(t.Border.Subtle) // 1-cell painted gutter
+
+root.SetSize(width, height)        // call on WindowSizeMsg
+root.GetSize() (int, int)
+root.DebugLayout() string          // "####|########|####"
 ```
 
-## Layout (`core/layout`)
+`SetSize` propagates to children that implement `Sizeable` (have `SetSize`/`GetSize`).
 
-Canvas-based positioning system.
+---
 
-### Horizontal
+## Registry components
 
-Arranges children horizontally with proper canvas layering.
+### `panel`
 
-```go
-layout.Horizontal(
-    layout.Fixed(30, sidebar),    // exactly 30 cells wide
-    layout.Flex(1, mainContent),  // takes remaining space
-    layout.Flex(1, rightPanel),   // takes half of remaining
-).WithGutterColor("#585B70")      // gutter between panels
-```
-
-### Vertical
-
-Arranges children vertically.
+Titled, focusable content container with left-edge focus stripe.
 
 ```go
-layout.Vertical(
-    layout.Fixed(3, header),   // exactly 3 rows
-    layout.Flex(1, body),      // takes remaining height
-    layout.Fixed(1, footer),   // exactly 1 row
-)
-```
+import "yourmodule/components/panel"
 
-### Constraints
-
-- `layout.Fixed(n)` - Exactly n cells
-- `layout.Flex(w)` - Proportional share (weight w)
-
-### Gutter
-
-Use `WithGutterColor(color)` to add spacing between children:
-
-```go
-layout.Horizontal(...).WithGutterColor(theme.Border.Subtle)
-```
-
-## Containers (`ui/containers`)
-
-### Panel
-
-Bordered container that holds widgets as content.
-
-```go
-infoPanel := panel.New(
-    panel.Title("Info"),
-    panel.Content(widgets.NewList()),
+p := panel.New(
+    panel.Title("Sidebar"),
+    panel.Content(myWidget),   // any tea.Model
+    panel.Elevated(),          // Surface.Elevated bg instead of Panel
 )
 
-// With options
-panel.New(
-    panel.Title("My Panel"),
-    panel.Content(myWidget),
-    panel.Elevated(),  // uses elevated surface color
-)
+p.SetSize(width, height)
+p.Focus()
+p.Blur()
+p.IsFocused() bool
 ```
 
-### Bar
+Layout inside panel:
+- Row 0: title badge + title bar (1 row, only when Title set)
+- Row 1: `───` separator (1 row, only when Title set)
+- Rows 2…n: content lines with left-edge focus stripe when focused
 
-Header or footer bar with card system.
+Content receives `SetSize(width-2, height-titleRows)` if it implements `Sizeable`.
+
+---
+
+### `bar`
+
+Single-row header or footer bar. Truncates cards gracefully when width is tight.
 
 ```go
-footer := bar.New(
-    bar.LeftCard(bar.Card{
-        Command: "bento",
-        Variant: bar.CardMuted,
-    }),
+import "yourmodule/components/bar"
+
+b := bar.New(
+    bar.Left("my app"),
+    bar.Right("v1.0"),
     bar.Cards(
-        bar.Card{Command: "/", Label: "commands"},
-        bar.Card{Command: "tab", Label: "focus"},
+        bar.Card{Command: "ctrl+t", Label: "theme", Enabled: true},
+        bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardDanger, Enabled: true},
     ),
-    bar.RightCard(bar.Card{
-        Command: "Status",
-        Variant: bar.CardPrimary,
-    }),
 )
+
+b.SetSize(width, 1)
+b.SetLeft(s string)
+b.SetRight(s string)
+b.SetCards([]bar.Card)
 ```
 
-### Dialog
+**Card variants:** `CardNormal`, `CardPrimary`, `CardMuted`, `CardDanger`
 
-Modal dialog system.
+Cards render as `command label` pairs. When width is tight, labels are dropped
+first; then cards are truncated from the right.
+
+---
+
+### `dialog`
+
+Modal overlay manager plus built-in dialog types.
 
 ```go
-// Show a dialog
-dialog.Open(dialog.Custom{
+import "yourmodule/components/dialog"
+
+// In your root model
+dm := dialog.New()
+
+// Open from any Update() return
+return m, func() tea.Msg { return dialog.Open(dialog.Confirm{
+    DialogTitle: "Delete?",
+    Message:     "This cannot be undone.",
+    OnConfirm:   func() tea.Msg { return deleteMsg{} },
+}) }
+
+// Route messages through the manager
+updated, cmd := dm.Update(msg)
+dm = updated.(*dialog.Manager)
+
+// Render — position it in your View() with lipgloss.Place*
+if dm.IsOpen() {
+    overlay := viewString(dm.View())
+    // center it, then composite over body
+}
+
+dm.SetSize(width, height)
+dm.IsOpen() bool
+```
+
+#### `Confirm`
+
+Simple yes/no. Manager handles `enter` (fires `OnConfirm`) and `esc` (closes) automatically.
+
+```go
+dialog.Confirm{
     DialogTitle: "Confirm",
-    Content:     myContentWidget,
+    Message:     "Are you sure?",
+    OnConfirm:   func() tea.Msg { return doSomethingMsg{} },
+}
+```
+
+#### `Custom`
+
+Wraps any `tea.Model` as dialog content. The dialog title frame is provided by
+`Custom` — your content model renders inside it.
+
+```go
+dialog.Custom{
+    DialogTitle: "Settings",
+    Content:     mySettingsModel,
     Width:       60,
-    Height:      10,
+    Height:      20,
+}
+```
+
+#### `ThemePicker`
+
+Live-previewing theme switcher. Broadcasts `theme.ThemeChangedMsg` on navigation
+and on confirm. ESC reverts to the theme active when the picker was opened.
+
+```go
+dialog.Open(dialog.Custom{
+    DialogTitle: "Themes",
+    Content:     dialog.NewThemePicker(),
 })
 ```
 
-## Widgets (`ui/widgets`)
+#### `CommandPalette`
 
-Simple content components that render inside containers.
-
-### Card
-
-Key/value badge for keybindings.
+Searchable, grouped command list.
 
 ```go
-card := widgets.NewCard("/", "commands")
-// Renders: "/ commands" with accent styling
+palette := dialog.NewCommandPalette([]dialog.Command{
+    {Label: "Switch theme", Group: "App", Keybind: "ctrl+t", Action: func() tea.Msg {
+        return dialog.Open(dialog.Custom{Content: dialog.NewThemePicker()})
+    }},
+    {Label: "Quit", Group: "App", Keybind: "ctrl+c", Action: func() tea.Msg {
+        return tea.Quit()
+    }},
+})
+
+dialog.Open(dialog.Custom{
+    DialogTitle: "Commands",
+    Content:     palette,
+})
 ```
 
-### Input
+---
 
-Text input field.
+### `list`
+
+Scrollable log-style list. Returns **plain text** — the parent panel applies color.
 
 ```go
-input := widgets.NewInput()
-input.SetValue("Type here...")
-input.Focus()  // returns tea.Cmd
+import "yourmodule/components/list"
+
+l := list.New(200)  // max 200 items stored
+l.Append("line added to bottom")
+l.Prepend("line added to top")
+l.Clear()
+l.Items() []string  // copy of current items
+
+l.SetSize(width, height)  // shows last N lines that fit
 ```
 
-### Text
+---
 
-Static text display.
+### `table`
+
+Header row + data rows. Column width is `totalWidth / colCount`.
 
 ```go
-text := widgets.NewText("Hello World")
-text.SetText("Updated text")
+import "yourmodule/components/table"
+
+t := table.New("Name", "Status", "Size")
+t.AddRow("main.go", "ok", "4.2 KB")
+t.AddRow("go.mod", "ok", "1.1 KB")
+t.Clear()
+
+t.SetSize(width, height)
 ```
 
-### List
+---
 
-Scrollable list of items.
+### `text`
+
+Static string in `Text.Primary` color. For styled text, build a `lipgloss.Style`
+directly in your app instead of using this component.
 
 ```go
-list := widgets.NewList(100)  // max 100 items
-list.Append("Item 1")
-list.Append("Item 2")
-list.Prepend("Item 0")  // adds to beginning
-list.Clear()
+import "yourmodule/components/text"
+
+t := text.New("All systems operational")
+t.SetText("Updated message")
+
+t.SetSize(width, height)
 ```
 
-### Table
+---
 
-Data table with headers.
+### `input`
+
+Single-line text field wrapping `bubbles/textinput`. Styles update from
+`theme.CurrentTheme()` on every `View()` call — live theme switching works
+without any extra wiring.
 
 ```go
-table := widgets.NewTable("Name", "Status", "Date")
-table.AddRow("Task 1", "Done", "2024-01-01")
-table.AddRow("Task 2", "Pending", "2024-01-02")
+import "yourmodule/components/input"
+
+i := input.New()
+i.SetPlaceholder("Search…")
+i.Focus()   // returns tea.Cmd — include in Init() or batch
+i.Blur()
+i.SetValue("initial text")
+i.Value() string
+
+i.SetSize(width, height)
 ```
 
-## Complete Example: 3-Column Layout
+---
+
+## Complete Example
 
 ```go
 package main
 
 import (
-    "github.com/cloudboy-jh/bentotui/core/layout"
-    "github.com/cloudboy-jh/bentotui/core/theme"
-    "github.com/cloudboy-jh/bentotui/ui/containers/panel"
-    "github.com/cloudboy-jh/bentotui/ui/widgets"
+    "fmt"
+
+    tea "charm.land/bubbletea/v2"
+    "charm.land/lipgloss/v2"
+    "github.com/cloudboy-jh/bentotui/layout"
+    "github.com/cloudboy-jh/bentotui/theme"
+    "yourmodule/components/bar"
+    "yourmodule/components/dialog"
+    "yourmodule/components/list"
+    "yourmodule/components/panel"
 )
 
-func buildLayout() *layout.Split {
-    // Left panel with list
-    leftPanel := panel.New(
-        panel.Title("Sidebar"),
-        panel.Content(widgets.NewList()),
-    )
-
-    // Center panel with input
-    centerPanel := panel.New(
-        panel.Title("Main"),
-        panel.Content(widgets.NewInput()),
-    )
-
-    // Right panel with text
-    rightPanel := panel.New(
-        panel.Title("Details"),
-        panel.Content(widgets.NewText("Info...")),
-    )
-
-    // Arrange with gutter
-    return layout.Horizontal(
-        layout.Flex(1, leftPanel),
-        layout.Flex(2, centerPanel),
-        layout.Flex(1, rightPanel),
-    ).WithGutterColor(theme.CurrentTheme().Border.Subtle)
+func main() {
+    if _, err := tea.NewProgram(newModel()).Run(); err != nil {
+        fmt.Printf("error: %v\n", err)
+    }
 }
-```
 
-## Theming
+type model struct {
+    root    *layout.Split
+    header  *bar.Model
+    body    *panel.Model
+    log     *list.Model
+    dialogs *dialog.Manager
+    w, h    int
+}
 
-All containers and widgets respect the current theme.
+func newModel() *model {
+    log := list.New(100)
+    log.Append("ready")
 
-```go
-// Set theme on containers that support it
-panel.SetTheme(myTheme)
-input.SetTheme(myTheme)
+    body := panel.New(panel.Title("Main"), panel.Content(log))
+    hdr  := bar.New(
+        bar.Left("my app"),
+        bar.Cards(bar.Card{Command: "ctrl+t", Label: "theme", Enabled: true}),
+    )
+    root := layout.Vertical(layout.Fixed(1, hdr), layout.Flex(1, body))
 
-// Use theme tokens for gutters
-layout.Horizontal(...).WithGutterColor(theme.Border.Subtle)
-```
+    return &model{root: root, header: hdr, body: body, log: log, dialogs: dialog.New()}
+}
 
-Available themes (via bubbletint):
-- `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`
-- `dracula`
-- `tokyo-night`, `tokyo-night-storm`
-- `nord`
-- `gruvbox-dark`
-- `kanagawa`
-- `rose-pine`
-- `one-dark`
-- `monokai-pro`
-- `material-ocean`
-- `ayu-mirage`
-- `github-dark`
+func (m *model) Init() tea.Cmd { return m.root.Init() }
 
-## Key Principles
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if m.dialogs.IsOpen() {
+        u, cmd := m.dialogs.Update(msg)
+        m.dialogs = u.(*dialog.Manager)
+        if tc, ok := msg.(theme.ThemeChangedMsg); ok {
+            m.header.SetRight(tc.Name)
+        }
+        return m, cmd
+    }
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        m.w, m.h = msg.Width, msg.Height
+        m.root.SetSize(m.w, m.h)
+        m.dialogs.SetSize(m.w, m.h)
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "ctrl+c":
+            return m, tea.Quit
+        case "ctrl+t":
+            return m, func() tea.Msg {
+                return dialog.Open(dialog.Custom{
+                    DialogTitle: "Themes",
+                    Content:     dialog.NewThemePicker(),
+                })
+            }
+        }
+    }
+    u, cmd := m.root.Update(msg)
+    m.root = u.(*layout.Split)
+    return m, cmd
+}
 
-1. **Layout positions containers** - Use `layout.Horizontal()` / `layout.Vertical()`
-2. **Containers hold widgets** - Panels have borders, widgets don't
-3. **Use constraints** - `Fixed(n)` or `Flex(w)`, no manual positioning
-4. **Gutter for spacing** - `WithGutterColor()` not hardcoded gaps
-5. **Canvas-based rendering** - Layout uses proper layer compositing
+func (m *model) View() tea.View {
+    t := theme.CurrentTheme()
+    screen := viewString(m.root.View())
+    if m.dialogs.IsOpen() {
+        d := viewString(m.dialogs.View())
+        screen = lipgloss.PlaceHorizontal(m.w, lipgloss.Center,
+            lipgloss.PlaceVertical(m.h, lipgloss.Center, d))
+    }
+    v := tea.NewView(screen)
+    v.AltScreen = true
+    v.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
+    return v
+}
 
-## Import Summary
-
-```go
-// Layout (positioning)
-"github.com/cloudboy-jh/bentotui/core/layout"
-
-// Containers (complex components)
-"github.com/cloudboy-jh/bentotui/ui/containers/panel"
-"github.com/cloudboy-jh/bentotui/ui/containers/bar"
-"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
-
-// Widgets (content)
-"github.com/cloudboy-jh/bentotui/ui/widgets"
-
-// Styles (theming)
-"github.com/cloudboy-jh/bentotui/ui/styles"
+func viewString(v tea.View) string {
+    if v.Content == nil { return "" }
+    if r, ok := v.Content.(interface{ Render() string }); ok { return r.Render() }
+    if s, ok := v.Content.(interface{ String() string }); ok { return s.String() }
+    return fmt.Sprint(v.Content)
+}
 ```
