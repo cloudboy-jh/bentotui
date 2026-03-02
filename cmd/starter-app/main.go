@@ -66,13 +66,13 @@ func newModel() *model {
 	// Events log
 	events := list.New(50)
 	events.Append("bentotui starter-app")
-	events.Append("ctrl+t → theme picker")
-	events.Append("ctrl+p → command palette")
-	events.Append("ctrl+d → sample dialog")
+	events.Append("ctrl+t or /theme → theme picker")
+	events.Append("ctrl+p or /command → command palette")
+	events.Append("ctrl+d or /dialog → sample dialog")
 
 	// Input
 	inp := input.New()
-	inp.SetPlaceholder("Type here…")
+	inp.SetPlaceholder("Type here… or /theme, /command, /dialog")
 
 	// Table
 	tbl := table.New("Component", "Status", "Notes")
@@ -124,9 +124,9 @@ func newModel() *model {
 	)
 	ftr := bar.New(
 		bar.Cards(
-			bar.Card{Command: "ctrl+t", Label: "theme", Enabled: true},
-			bar.Card{Command: "ctrl+p", Label: "palette", Enabled: true},
-			bar.Card{Command: "ctrl+d", Label: "dialog", Enabled: true},
+			bar.Card{Command: "ctrl+t  /theme", Label: "theme", Enabled: true},
+			bar.Card{Command: "ctrl+p  /command", Label: "palette", Enabled: true},
+			bar.Card{Command: "ctrl+d  /dialog", Label: "dialog", Enabled: true},
 			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardDanger, Enabled: true},
 		),
 	)
@@ -236,10 +236,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 			}
 		case "enter":
-			val := m.inputBox.Value()
-			if strings.TrimSpace(val) != "" {
-				m.eventsList.Append("> " + val)
+			val := strings.TrimSpace(m.inputBox.Value())
+			if val != "" {
 				m.inputBox.SetValue("")
+				if cmd := m.checkInputCommand(val); cmd != nil {
+					return m, cmd
+				}
+				m.eventsList.Append("> " + val)
 			}
 			return m, nil
 		}
@@ -289,11 +292,44 @@ func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
 	m.eventsList.Append("theme → " + msg.Name)
 }
 
+// checkInputCommand routes slash commands typed into the input field.
+// Returns a non-nil Cmd if the input was a slash command, nil otherwise.
+func (m *model) checkInputCommand(val string) tea.Cmd {
+	switch val {
+	case "/theme":
+		m.eventsList.Append("opening theme picker")
+		return func() tea.Msg {
+			return dialog.Open(dialog.Custom{
+				DialogTitle: "Themes",
+				Content:     dialog.NewThemePicker(),
+			})
+		}
+	case "/command":
+		m.eventsList.Append("opening command palette")
+		return func() tea.Msg {
+			return dialog.Open(dialog.Custom{
+				DialogTitle: "Commands",
+				Content:     dialog.NewCommandPalette(m.commands),
+			})
+		}
+	case "/dialog":
+		m.eventsList.Append("opening dialog")
+		return func() tea.Msg {
+			return dialog.Open(dialog.Confirm{
+				DialogTitle: "Hello",
+				Message:     "This is a Confirm dialog.\nPress Enter or Esc.",
+			})
+		}
+	}
+	return nil
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 func infoText() string {
 	return strings.Join([]string{
-		"ShadCN for Go TUIs.",
+		"Copy-and-own registry",
+		"for Go TUIs.",
 		"",
 		"Copy components into",
 		"your project and own",

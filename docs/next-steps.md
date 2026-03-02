@@ -23,8 +23,8 @@ requested component directory and writes each file into the user's
 the real `bentotui` module deps, not local copies.
 
 **Decision needed:** Should `bento add panel` write to `components/panel/` (relative
-to `go.mod`) or ask the user for a destination? ShadCN uses a configurable
-`components/ui/` default. Recommend: default to `components/<name>/`, flag to
+to `go.mod`) or ask the user for a destination? The registry default is a configurable
+`components/ui/` path. Recommend: default to `components/<name>/`, flag to
 override.
 
 **File to edit:** `cmd/bento/add.go`
