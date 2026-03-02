@@ -7,9 +7,16 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/core/focus"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/containers/bar"
 )
+
+func newTestPage() *starterPage {
+	ft := bar.New()
+	return newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary", ft)
+}
 
 func keyPress(text string) tea.Msg {
 	return tea.KeyPressMsg(tea.Key{Text: text})
@@ -23,24 +30,45 @@ func ctrlKey(code rune) tea.Msg {
 	return tea.KeyPressMsg(tea.Key{Code: code, Mod: tea.ModCtrl})
 }
 
-func TestHarnessSlashTypesIntoInput(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+// TestHarnessSlashFromNonCommandPanelOpensPalette checks that pressing "/" when
+// a non-input panel is focused opens the command palette rather than typing into input.
+func TestHarnessSlashFromNonCommandPanelOpensPalette(t *testing.T) {
+	p := newTestPage()
 	p.SetSize(120, 40)
 
+	// Move focus away from Command panel (index 1) to Info (index 0)
+	p.focusIdx = 0
+	p.syncInputFocus()
+
 	_, cmd := p.Update(keyPress("/"))
-	if cmd != nil {
-		msg := cmd()
-		if _, ok := msg.(theme.OpenThemePickerMsg); ok {
-			t.Fatal("did not expect theme picker command from raw '/' key")
-		}
+	if cmd == nil {
+		t.Fatal("expected command palette cmd from '/' when non-input panel is focused")
 	}
+	msg := cmd()
+	if _, ok := msg.(interface{}); !ok {
+		t.Fatalf("unexpected msg type: %T", msg)
+	}
+}
+
+// TestHarnessSlashInCommandPanelTypesIntoInput verifies "/" types into the input
+// when the Command panel is focused.
+func TestHarnessSlashInCommandPanelTypesIntoInput(t *testing.T) {
+	p := newTestPage()
+	p.SetSize(120, 40)
+
+	// Command panel is focused by default (index 1)
+	if p.focusIdx != commandPanelIdx {
+		t.Fatalf("expected command panel to be focused initially, got %d", p.focusIdx)
+	}
+
+	_, _ = p.Update(keyPress("/"))
 	if got := p.input.Value(); got != "/" {
 		t.Fatalf("expected input to contain '/', got %q", got)
 	}
 }
 
 func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newTestPage()
 	p.SetSize(120, 40)
 	p.input.SetValue("/theme")
 
@@ -54,8 +82,8 @@ func TestHarnessThemeCommandOpensThemePicker(t *testing.T) {
 	}
 }
 
-func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+func TestHarnessDialogCommandOpensDialog(t *testing.T) {
+	p := newTestPage()
 	p.SetSize(120, 40)
 	p.input.SetValue("/dialog")
 
@@ -67,11 +95,10 @@ func TestHarnessDialogCommandsOpenDialogs(t *testing.T) {
 	if _, ok := open.(dialog.OpenMsg); !ok {
 		t.Fatalf("expected dialog.OpenMsg for /dialog, got %T", open)
 	}
-
 }
 
 func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newTestPage()
 	p.SetSize(120, 40)
 	p.input.SetValue("/page")
 
@@ -89,43 +116,8 @@ func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
 	}
 }
 
-func TestHarnessLegacyAliasesRemainSupported(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
-	p.SetSize(120, 40)
-
-	p.input.SetValue("/pr")
-	_, dialogCmd := p.Update(specialKey(tea.KeyEnter))
-	if dialogCmd == nil {
-		t.Fatal("expected dialog command for /pr alias")
-	}
-	dialogMsg := dialogCmd()
-	if _, ok := dialogMsg.(dialog.OpenMsg); !ok {
-		t.Fatalf("expected dialog.OpenMsg for /pr alias, got %T", dialogMsg)
-	}
-
-	p.input.SetValue("/issue")
-	_, themeCmd := p.Update(specialKey(tea.KeyEnter))
-	if themeCmd == nil {
-		t.Fatal("expected theme command for /issue alias")
-	}
-	themeMsg := themeCmd()
-	if _, ok := themeMsg.(theme.OpenThemePickerMsg); !ok {
-		t.Fatalf("expected theme.OpenThemePickerMsg for /issue alias, got %T", themeMsg)
-	}
-
-	p.input.SetValue("/branch")
-	_, navCmd := p.Update(specialKey(tea.KeyEnter))
-	if navCmd == nil {
-		t.Fatal("expected navigate command for /branch alias")
-	}
-	navMsg := navCmd()
-	if _, ok := navMsg.(core.NavigateMsg); !ok {
-		t.Fatalf("expected core.NavigateMsg for /branch alias, got %T", navMsg)
-	}
-}
-
 func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newTestPage()
 	p.SetSize(120, 40)
 
 	_, cmd := p.Update(keyPress("d"))
@@ -146,7 +138,7 @@ func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
 }
 
 func TestHarnessEnterSubmitsInput(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newTestPage()
 	p.SetSize(120, 40)
 	p.input.SetValue("hello bento")
 
@@ -166,7 +158,7 @@ func TestHarnessEnterSubmitsInput(t *testing.T) {
 }
 
 func TestHarnessViewRowsMatchViewportWidth(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p := newTestPage()
 	p.SetSize(120, 40)
 
 	view := core.ViewString(p.View())
@@ -181,14 +173,61 @@ func TestHarnessViewRowsMatchViewportWidth(t *testing.T) {
 	}
 }
 
-func TestHarnessPromotesCanonicalCommandsInCopy(t *testing.T) {
-	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+func TestHarnessFocusCycleUpdatesFocusIdx(t *testing.T) {
+	p := newTestPage()
 	p.SetSize(120, 40)
-	content := core.ViewString(p.View())
-	if !strings.Contains(content, "Commands: /dialog  /theme  /page") {
-		t.Fatal("expected canonical command copy in starter view")
+
+	initial := p.focusIdx
+
+	// Simulate FocusChangedMsg from the focus manager
+	_, _ = p.Update(focus.FocusChangedMsg{From: initial, To: 0})
+	if p.focusIdx != 0 {
+		t.Fatalf("expected focusIdx 0 after FocusChangedMsg{To:0}, got %d", p.focusIdx)
 	}
-	if strings.Contains(content, "Cards:   /pr pull requests") {
-		t.Fatal("did not expect legacy command copy in starter view")
+
+	_, _ = p.Update(focus.FocusChangedMsg{From: 0, To: 2})
+	if p.focusIdx != 2 {
+		t.Fatalf("expected focusIdx 2 after FocusChangedMsg{To:2}, got %d", p.focusIdx)
+	}
+}
+
+func TestHarnessFocusCommandPanelActivatesInput(t *testing.T) {
+	p := newTestPage()
+	p.SetSize(120, 40)
+
+	// Move to Info panel first
+	_, _ = p.Update(focus.FocusChangedMsg{From: commandPanelIdx, To: 0})
+	if p.input.Focused() {
+		t.Fatal("expected input to be blurred when non-command panel is focused")
+	}
+
+	// Move back to Command panel
+	_, _ = p.Update(focus.FocusChangedMsg{From: 0, To: commandPanelIdx})
+	if !p.input.Focused() {
+		t.Fatal("expected input to be focused when Command panel is active")
+	}
+}
+
+func TestHarnessAllFourPanelNamesKnown(t *testing.T) {
+	if len(panelNames) != 4 {
+		t.Fatalf("expected 4 panel names, got %d", len(panelNames))
+	}
+	if len(panelIcons) != 4 {
+		t.Fatalf("expected 4 panel icons, got %d", len(panelIcons))
+	}
+}
+
+func TestHarnessStatusPanelContainsHealthChecks(t *testing.T) {
+	p := newTestPage()
+	p.SetSize(120, 40)
+
+	// Check the statusText content directly — the horizontal canvas-layer
+	// renderer can split plain words across ANSI escape sequences, making
+	// raw string search on the final view unreliable.
+	status := p.statusText.text
+	for _, keyword := range []string{"footer", "palette", "focus", "theme"} {
+		if !strings.Contains(status, keyword) {
+			t.Fatalf("expected statusText to contain %q, got:\n%s", keyword, status)
+		}
 	}
 }

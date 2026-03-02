@@ -1,4 +1,4 @@
-package footer
+package bar
 
 import (
 	"strings"
@@ -9,27 +9,27 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/focus"
 )
 
-func TestFooterRendersSingleLine(t *testing.T) {
+func TestBarRendersSingleLine(t *testing.T) {
 	m := New(
 		Left("left"),
 		Right("right"),
 		Cards(Card{Command: "/focus", Label: "focus", Variant: CardPrimary, Enabled: true}),
 	)
-	m.SetSize(80, 4)
+	m.SetSize(80, 1)
 	view := core.ViewString(m.View())
 	if strings.Contains(view, "\n") {
-		t.Fatal("expected single-line footer output")
+		t.Fatal("expected single-line bar output")
 	}
 	if lipgloss.Width(view) != 80 {
-		t.Fatalf("expected footer width 80, got %d", lipgloss.Width(view))
+		t.Fatalf("expected bar width 80, got %d", lipgloss.Width(view))
 	}
 	_, h := m.GetSize()
 	if h != 1 {
-		t.Fatalf("expected footer height to stay 1, got %d", h)
+		t.Fatalf("expected bar height 1, got %d", h)
 	}
 }
 
-func TestFooterKeepsRightSegmentUnderTightWidth(t *testing.T) {
+func TestBarKeepsRightSegmentUnderTightWidth(t *testing.T) {
 	m := New(
 		Left("very long left context that should truncate first"),
 		Right("RIGHT"),
@@ -48,7 +48,7 @@ func TestFooterKeepsRightSegmentUnderTightWidth(t *testing.T) {
 	}
 }
 
-func TestFooterCardCollapseUsesCommandOnlyThenDropsFromEnd(t *testing.T) {
+func TestBarCardCollapseUsesCommandOnlyThenDropsFromEnd(t *testing.T) {
 	m := New(
 		Cards(
 			Card{Command: "/f", Label: "focus", Variant: CardPrimary, Enabled: true},
@@ -64,11 +64,11 @@ func TestFooterCardCollapseUsesCommandOnlyThenDropsFromEnd(t *testing.T) {
 		t.Fatal("expected first card command to remain visible")
 	}
 	if strings.Contains(view, "/s") {
-		t.Fatal("expected trailing card command to be dropped from end when width is tight")
+		t.Fatal("expected trailing card to be dropped when width is tight")
 	}
 }
 
-func TestFooterHarnessThreeCardLayout(t *testing.T) {
+func TestBarThreeCardLayout(t *testing.T) {
 	m := New(
 		LeftCard(Card{Command: "/pr", Label: "pull requests", Variant: CardMuted, Enabled: true}),
 		Cards(Card{Command: "/issue", Label: "issues", Variant: CardPrimary, Enabled: true}),
@@ -85,12 +85,13 @@ func TestFooterHarnessThreeCardLayout(t *testing.T) {
 	if !strings.Contains(view, "/branch") {
 		t.Fatalf("expected right card to render, got %q", view)
 	}
-	if strings.Index(view, "/pr") > strings.Index(view, "/issue") || strings.Index(view, "/issue") > strings.Index(view, "/branch") {
+	if strings.Index(view, "/pr") > strings.Index(view, "/issue") ||
+		strings.Index(view, "/issue") > strings.Index(view, "/branch") {
 		t.Fatal("expected left -> middle -> right segment order")
 	}
 }
 
-func TestFooterConsumesFocusChangedMessage(t *testing.T) {
+func TestBarConsumesFocusChangedMessage(t *testing.T) {
 	m := New(Cards(
 		Card{Command: "/a", Label: "a", Variant: CardMuted, Enabled: true},
 		Card{Command: "/b", Label: "b", Variant: CardMuted, Enabled: true},
@@ -99,6 +100,6 @@ func TestFooterConsumesFocusChangedMessage(t *testing.T) {
 	_, _ = m.Update(focus.FocusChangedMsg{From: 0, To: 1})
 	view := core.ViewString(m.View())
 	if !strings.Contains(view, "/b") {
-		t.Fatal("expected focused card command to remain visible after focus update")
+		t.Fatal("expected focused card to remain visible after focus update")
 	}
 }

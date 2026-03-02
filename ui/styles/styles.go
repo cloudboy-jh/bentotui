@@ -112,6 +112,27 @@ func (s System) CurrentMarker() lipgloss.Style {
 	return lipgloss.NewStyle().Foreground(lipgloss.Color(s.Theme.Text.Accent)).Bold(true)
 }
 
+func (s System) PaletteGroupHeader() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color(pick(s.Theme.Text.Accent, s.Theme.State.Info)))
+}
+
+func (s System) PaletteItem(selected bool) lipgloss.Style {
+	if selected {
+		return lipgloss.NewStyle().
+			Background(lipgloss.Color(pick(s.Theme.Selection.BG, s.Theme.Border.Focus))).
+			Foreground(lipgloss.Color(pick(s.Theme.Selection.FG, s.Theme.Text.Inverse)))
+	}
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(pick(s.Theme.Dialog.BG, s.Theme.Surface.Elevated))).
+		Foreground(lipgloss.Color(s.Theme.Text.Primary))
+}
+
+func (s System) PaletteKeybind() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(s.Theme.Text.Muted))
+}
+
 func (s System) ActionButton(active bool) lipgloss.Style {
 	if active {
 		return lipgloss.NewStyle().
@@ -126,6 +147,36 @@ func (s System) ActionButton(active bool) lipgloss.Style {
 		Background(lipgloss.Color(pick(s.Theme.Surface.Interactive, s.Theme.Surface.Elevated))).
 		Padding(0, 1).
 		MarginRight(1)
+}
+
+// ── missing token methods ─────────────────────────────────────────────────────
+
+// Divider returns a style for full-width separator lines (─── rows).
+// Uses Border.Normal as foreground so separators are visible but not loud.
+func (s System) Divider() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(s.Theme.Border.Normal))
+}
+
+// SubtleDivider returns a style for low-contrast separator lines.
+// Uses Border.Subtle — for gutters and de-emphasized section breaks.
+func (s System) SubtleDivider() lipgloss.Style {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(s.Theme.Border.Subtle))
+}
+
+// FocusAccent returns a style for the focused panel left-edge stripe.
+// One-cell wide column with Border.Focus background.
+func (s System) FocusAccent() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(s.Theme.Border.Focus)).
+		Foreground(lipgloss.Color(pick(s.Theme.Text.Inverse, s.Theme.Surface.Canvas)))
+}
+
+// ElevatedFrame returns a style for secondary/nested panels.
+// Uses Surface.Elevated instead of Surface.Panel — creates visual depth.
+func (s System) ElevatedFrame() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel))).
+		Foreground(lipgloss.Color(s.Theme.Text.Primary))
 }
 
 func pick(v, fallback string) string {

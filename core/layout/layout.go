@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/ui/primitives"
 )
 
 type Kind int
@@ -37,10 +38,11 @@ func Flex(weight int, child core.Component) Item {
 }
 
 type Split struct {
-	horizontal bool
-	items      []Item
-	width      int
-	height     int
+	horizontal  bool
+	items       []Item
+	width       int
+	height      int
+	gutterColor string // if non-empty, insert 1-cell gutters between children
 }
 
 func Horizontal(items ...Item) *Split {
@@ -49,6 +51,15 @@ func Horizontal(items ...Item) *Split {
 
 func Vertical(items ...Item) *Split {
 	return &Split{horizontal: false, items: items}
+}
+
+// WithGutterColor inserts a 1-cell separator between children painted with
+// the given hex color string. The gutter cells are subtracted from the total
+// before flex allocations are computed, so children still fill exactly their
+// allocated region.
+func (s *Split) WithGutterColor(color string) *Split {
+	s.gutterColor = color
+	return s
 }
 
 func (s *Split) Init() tea.Cmd { return nil }
@@ -87,39 +98,81 @@ func (s *Split) View() tea.View {
 	}
 
 	allocs := s.allocations()
-	layers := make([]*lipgloss.Layer, 0, len(s.items))
+	gutterSize := s.gutterCells()
+	layers := make([]*lipgloss.Layer, 0, len(s.items)*2)
 	if s.horizontal {
 		x := 0
 		for i, item := range s.items {
 			w := max(0, allocs[i])
-			layer := lipgloss.NewLayer(core.ViewLayer(item.child.View())).
+			h := s.height
+			// Wrap each child in an exact-size style so that the layer occupies
+			// its full allocated w×h region in the canvas. Without this, children
+			// that render fewer rows than their allocation leave gaps that the
+			// canvas background bleeds through (OpenCode container pattern).
+			content := sizeWrapped(core.ViewString(item.child.View()), w, h)
+			layer := lipgloss.NewLayer(tea.NewView(content).Content).
 				X(x).
 				Y(0).
-				Z(i)
+				Z(i * 2)
 			layers = append(layers, layer)
 			x += w
+			// Insert gutter between children (not after the last one).
+			if gutterSize > 0 && i < len(s.items)-1 {
+				gutter := primitives.Fill(gutterSize, h, s.gutterColor)
+				gl := lipgloss.NewLayer(tea.NewView(gutter).Content).
+					X(x).
+					Y(0).
+					Z(i*2 + 1)
+				layers = append(layers, gl)
+				x += gutterSize
+			}
 		}
 		return tea.NewView(lipgloss.NewCanvas(layers...))
 	}
 
 	y := 0
 	for i, item := range s.items {
+		w := s.width
 		h := max(0, allocs[i])
-		layer := lipgloss.NewLayer(core.ViewLayer(item.child.View())).
+		// Same region-anchored wrapping for vertical splits.
+		content := sizeWrapped(core.ViewString(item.child.View()), w, h)
+		layer := lipgloss.NewLayer(tea.NewView(content).Content).
 			X(0).
 			Y(y).
-			Z(i)
+			Z(i * 2)
 		layers = append(layers, layer)
 		y += h
+		// Insert gutter between children (not after the last one).
+		if gutterSize > 0 && i < len(s.items)-1 {
+			gutter := primitives.Fill(w, gutterSize, s.gutterColor)
+			gl := lipgloss.NewLayer(tea.NewView(gutter).Content).
+				X(0).
+				Y(y).
+				Z(i*2 + 1)
+			layers = append(layers, gl)
+			y += gutterSize
+		}
 	}
 
 	return tea.NewView(lipgloss.NewCanvas(layers...))
 }
 
+// sizeWrapped forces a string into an exact width×height block so that the
+// canvas layer for this region covers every cell in its allocation. This is
+// the OpenCode container pattern applied to BentoTUI's canvas compositor.
+// The child component is responsible for painting its own background color;
+// this wrapper only guarantees the layer dimensions are exact.
+func sizeWrapped(s string, w, h int) string {
+	if w <= 0 || h <= 0 {
+		return ""
+	}
+	return lipgloss.NewStyle().Width(w).Height(h).Render(s)
+}
+
 func (s *Split) SetSize(width, height int) {
 	s.width = width
 	s.height = height
-	allocs := s.allocations()
+	allocs := s.allocations() // already gutter-subtracted
 	for i := range s.items {
 		sz, ok := s.items[i].child.(core.Sizeable)
 		if !ok {
@@ -137,6 +190,14 @@ func (s *Split) GetSize() (width, height int) {
 	return s.width, s.height
 }
 
+// gutterCells returns the size of each gutter (1 if gutterColor set, else 0).
+func (s *Split) gutterCells() int {
+	if s.gutterColor == "" || len(s.items) < 2 {
+		return 0
+	}
+	return 1
+}
+
 func (s *Split) allocations() []int {
 	count := len(s.items)
 	if count == 0 {
@@ -150,6 +211,10 @@ func (s *Split) allocations() []int {
 	if total < 0 {
 		total = 0
 	}
+
+	// Subtract gutter cells from the total before distributing to children.
+	gutterTotal := s.gutterCells() * max(0, count-1)
+	total = max(0, total-gutterTotal)
 
 	out := make([]int, count)
 	remaining := total

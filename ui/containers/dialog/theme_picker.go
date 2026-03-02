@@ -7,7 +7,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/core/surface"
+
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/primitives"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
@@ -231,8 +231,8 @@ func inputContainer(view string, width int, t theme.Theme) string {
 		return ""
 	}
 	input := styles.New(t).InputColors()
-	content := surface.FitWidth(view, maxInt(1, width-2))
-	return primitives.RenderInputRowInset(width, input.BG, input.FG, content, 1)
+	content := primitives.FitWidth(view, maxInt(1, width-2))
+	return primitives.RenderRow(width, input.BG, input.FG, " "+content)
 }
 
 func pick(values ...string) string {

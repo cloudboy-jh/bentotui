@@ -4,8 +4,8 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/router"
 	"github.com/cloudboy-jh/bentotui/core/shell"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/containers/footer"
-	"github.com/cloudboy-jh/bentotui/ui/containers/header"
+	"github.com/cloudboy-jh/bentotui/ui/containers/bar"
+	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
 )
 
 // Deprecated: use package core/shell directly for new code.
@@ -22,10 +22,12 @@ func WithPages(routes ...router.Route) Option { return shell.WithPages(routes...
 
 func WithHeaderBar(v bool) Option { return shell.WithHeaderBar(v) }
 
-func WithHeader(model *header.Model) Option { return shell.WithHeader(model) }
+func WithHeader(model *bar.Model) Option { return shell.WithHeader(model) }
 
 func WithFooterBar(v bool) Option { return shell.WithFooterBar(v) }
 
 func WithFullScreen(v bool) Option { return shell.WithFullScreen(v) }
 
-func WithFooter(model *footer.Model) Option { return shell.WithFooter(model) }
+func WithFooter(model *bar.Model) Option { return shell.WithFooter(model) }
+
+func WithCommands(commands ...dialog.Command) Option { return shell.WithCommands(commands...) }

@@ -9,12 +9,12 @@ import (
 	uv "github.com/charmbracelet/ultraviolet"
 	"github.com/charmbracelet/ultraviolet/screen"
 	"github.com/cloudboy-jh/bentotui/core"
+	"github.com/cloudboy-jh/bentotui/core/palette"
 	"github.com/cloudboy-jh/bentotui/core/router"
-	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
+	"github.com/cloudboy-jh/bentotui/ui/containers/bar"
 	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
-	"github.com/cloudboy-jh/bentotui/ui/containers/footer"
-	"github.com/cloudboy-jh/bentotui/ui/containers/header"
+	"github.com/cloudboy-jh/bentotui/ui/primitives"
 )
 
 type Option func(*Model)
@@ -22,22 +22,23 @@ type Option func(*Model)
 type Model struct {
 	router     *router.Model
 	dialogs    *dialog.Manager
-	header     *header.Model
-	footer     *footer.Model
+	header     *bar.Model
+	footer     *bar.Model
 	theme      theme.Theme
 	showHeader bool
 	showFooter bool
 	fullScreen bool
 	width      int
 	height     int
+	commands   []dialog.Command
 }
 
 func New(opts ...Option) *Model {
 	m := &Model{
 		router:     router.New(),
 		dialogs:    dialog.New(),
-		header:     header.New(),
-		footer:     footer.New(),
+		header:     bar.New(),
+		footer:     bar.New(),
 		theme:      theme.CurrentTheme(),
 		showHeader: true,
 		showFooter: true,
@@ -75,7 +76,7 @@ func WithFooterBar(v bool) Option {
 	return func(m *Model) { m.showFooter = v }
 }
 
-func WithHeader(model *header.Model) Option {
+func WithHeader(model *bar.Model) Option {
 	return func(m *Model) {
 		if model != nil {
 			m.header = model
@@ -88,12 +89,21 @@ func WithFullScreen(v bool) Option {
 	return func(m *Model) { m.fullScreen = v }
 }
 
-func WithFooter(model *footer.Model) Option {
+func WithFooter(model *bar.Model) Option {
 	return func(m *Model) {
 		if model != nil {
 			m.footer = model
 			m.footer.SetTheme(m.theme)
 		}
+	}
+}
+
+// WithCommands registers commands that appear in the command palette when
+// opened via palette.OpenCommandPaletteMsg. App-level commands are merged
+// with any built-in shell commands.
+func WithCommands(commands ...dialog.Command) Option {
+	return func(m *Model) {
+		m.commands = append(m.commands, commands...)
 	}
 }
 
@@ -105,6 +115,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	forwardTheme := false
 	syncThemeAfterRoute := false
 	openThemeDialog := false
+	openPaletteDialog := false
 	switch v := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.syncViewport(v.Width, v.Height)
@@ -113,6 +124,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case theme.OpenThemePickerMsg:
 		if !m.dialogs.IsOpen() {
 			openThemeDialog = true
+		}
+	case palette.OpenCommandPaletteMsg:
+		if !m.dialogs.IsOpen() {
+			openPaletteDialog = true
 		}
 	case theme.ThemeChangedMsg:
 		m.theme = v.Theme
@@ -124,6 +139,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if openThemeDialog {
 		return m, openThemeDialogCmd(m.width, m.height)
+	}
+	if openPaletteDialog {
+		return m, openCommandPaletteCmd(m.width, m.height, m.commands)
 	}
 
 	_, dialogCmd := m.dialogs.Update(msg)
@@ -209,7 +227,7 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 		bodyHeight = 0
 	}
 
-	shellBG := surface.Fill(w, h, m.theme.Surface.Canvas)
+	shellBG := primitives.Fill(w, h, m.theme.Surface.Canvas)
 	bodyView := m.router.View()
 
 	layers := []*lipgloss.Layer{
@@ -238,7 +256,7 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 	}
 
 	if m.dialogs.IsOpen() {
-		scrim := surface.Fill(w, h, m.theme.Dialog.Scrim)
+		scrim := primitives.Fill(w, h, m.theme.Dialog.Scrim)
 		dlgView := m.dialogs.View()
 		dlg := core.ViewString(dlgView)
 		dlgW, dlgH := lipgloss.Size(dlg)
@@ -262,6 +280,30 @@ func max(a, b int) int {
 
 func min(a, b int) int {
 	if a < b {
+		return a
+	}
+	return b
+}
+
+func openCommandPaletteCmd(width, height int, commands []dialog.Command) tea.Cmd {
+	p := dialog.NewCommandPalette(commands)
+	maxWidth := max(44, width-8)
+	maxHeight := max(12, height-6)
+	modalWidth := clampInt(72, min(52, maxWidth), min(88, maxWidth))
+	modalHeight := clampInt(height-10, min(14, maxHeight), min(28, maxHeight))
+	p.SetSize(maxInt(1, modalWidth-4), maxInt(1, modalHeight-4))
+	return func() tea.Msg {
+		return dialog.Open(dialog.Custom{
+			DialogTitle: "Commands",
+			Content:     p,
+			Width:       modalWidth,
+			Height:      modalHeight,
+		})
+	}
+}
+
+func maxInt(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b

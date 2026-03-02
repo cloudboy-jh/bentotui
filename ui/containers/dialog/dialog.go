@@ -5,8 +5,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
+	"github.com/cloudboy-jh/bentotui/ui/primitives"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
@@ -244,8 +244,8 @@ func renderDialogFrame(title, content string, width, height int, t theme.Theme) 
 
 	rightWidth := 3
 	leftWidth := max(1, innerWidth-rightWidth-1)
-	header := sys.DialogHeader().Render(surface.FitWidth(headerTitle, leftWidth)) + " " + sys.DialogEscHint().Render(surface.FitWidth("esc", rightWidth))
-	header = surface.FitWidth(header, innerWidth)
+	header := sys.DialogHeader().Render(primitives.FitWidth(headerTitle, leftWidth)) + " " + sys.DialogEscHint().Render(primitives.FitWidth("esc", rightWidth))
+	header = primitives.FitWidth(header, innerWidth)
 
 	body := strings.TrimRight(content, "\n")
 	if strings.TrimSpace(body) == "" {
@@ -265,7 +265,7 @@ func clipLines(content string, width int) []string {
 	lines := strings.Split(content, "\n")
 	clipped := make([]string, 0, len(lines))
 	for _, line := range lines {
-		clipped = append(clipped, surface.FitWidth(line, width))
+		clipped = append(clipped, primitives.FitWidth(line, width))
 	}
 	return clipped
 }

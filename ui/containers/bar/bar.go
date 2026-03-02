@@ -1,4 +1,8 @@
-package footer
+// Package bar provides the single themed bar component used for both
+// header and footer positions. The shell places two instances: one at the
+// top of the viewport and one at the bottom. Both share identical API,
+// rendering, and card truncation behavior.
+package bar
 
 import (
 	"strings"
@@ -8,14 +12,12 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/focus"
-	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 	"github.com/cloudboy-jh/bentotui/ui/primitives"
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
-type Option func(*Model)
-
+// CardVariant controls the visual weight of a card's command badge.
 type CardVariant string
 
 const (
@@ -25,6 +27,7 @@ const (
 	CardDanger  CardVariant = "danger"
 )
 
+// Card is a single keybinding hint rendered inside a bar.
 type Card struct {
 	Command string
 	Label   string
@@ -32,6 +35,12 @@ type Card struct {
 	Enabled bool
 }
 
+// Option configures a Model at construction time.
+type Option func(*Model)
+
+// Model is the bar component. Instantiate it twice — once for the header
+// position and once for the footer position. The shell determines placement
+// via layer Z-order; the bar itself is position-agnostic.
 type Model struct {
 	left      string
 	right     string
@@ -45,6 +54,7 @@ type Model struct {
 	focusIdx  int
 }
 
+// New constructs a Model with the given options.
 func New(opts ...Option) *Model {
 	m := &Model{theme: theme.Preset(theme.DefaultName), focusIdx: -1}
 	for _, opt := range opts {
@@ -53,22 +63,23 @@ func New(opts ...Option) *Model {
 	return m
 }
 
+// ── options ───────────────────────────────────────────────────────────────────
+
 func Left(v string) Option  { return func(m *Model) { m.left = v } }
 func Right(v string) Option { return func(m *Model) { m.right = v } }
-func LeftCard(c Card) Option {
-	return func(m *Model) { m.leftCard = copyCard(c) }
-}
-func RightCard(c Card) Option {
-	return func(m *Model) { m.rightCard = copyCard(c) }
-}
+
+func LeftCard(c Card) Option  { return func(m *Model) { m.leftCard = copyCard(c) } }
+func RightCard(c Card) Option { return func(m *Model) { m.rightCard = copyCard(c) } }
+
 func Cards(cards ...Card) Option {
-	return func(m *Model) {
-		m.cards = append([]Card(nil), cards...)
-	}
+	return func(m *Model) { m.cards = append([]Card(nil), cards...) }
 }
+
 func HelpFrom(b core.Bindable) Option {
 	return func(m *Model) { m.help = b }
 }
+
+// ── tea.Model ─────────────────────────────────────────────────────────────────
 
 func (m *Model) Init() tea.Cmd { return nil }
 
@@ -86,10 +97,12 @@ func (m *Model) View() tea.View {
 	left := m.renderLeftSegment()
 	cards := m.renderCardBlock(-1)
 	rightRaw := m.renderRightSegment()
+
 	if m.width == 0 {
 		line := strings.TrimSpace(strings.Join(nonEmpty(left, cards, rightRaw), "  "))
 		return tea.NewView(styles.New(m.theme).StatusBar().Render(line))
 	}
+
 	right := rightRaw
 	rightWidth := lipgloss.Width(right)
 	if rightWidth > m.width {
@@ -122,18 +135,20 @@ func (m *Model) View() tea.View {
 	return m.renderLine(line)
 }
 
-func (m *Model) SetSize(width, height int) {
+// ── sizing ────────────────────────────────────────────────────────────────────
+
+func (m *Model) SetSize(width, _ int) {
 	m.width = width
 	m.height = 1
 }
 
-func (m *Model) GetSize() (width, height int) {
-	return m.width, m.height
-}
+func (m *Model) GetSize() (int, int) { return m.width, m.height }
 
-func (m *Model) SetTheme(t theme.Theme) {
-	m.theme = t
-}
+// ── theme ─────────────────────────────────────────────────────────────────────
+
+func (m *Model) SetTheme(t theme.Theme) { m.theme = t }
+
+// ── mutations ─────────────────────────────────────────────────────────────────
 
 func (m *Model) SetCards(cards []Card) {
 	m.cards = append([]Card(nil), cards...)
@@ -147,23 +162,14 @@ func (m *Model) SetRightCard(c Card) {
 	m.rightCard = copyCard(c)
 }
 
-func (m *Model) helpText() string {
-	if m.help == nil {
-		return ""
+// ── rendering ─────────────────────────────────────────────────────────────────
+
+func (m *Model) renderLine(text string) tea.View {
+	if m.width == 0 {
+		return tea.NewView(styles.New(m.theme).StatusBar().Render(text))
 	}
-	bindings := m.help.Bindings()
-	parts := make([]string, 0, len(bindings))
-	for _, b := range bindings {
-		if !b.Enabled() {
-			continue
-		}
-		h := b.Help()
-		if h.Key == "" || h.Desc == "" {
-			continue
-		}
-		parts = append(parts, key.NewBinding(key.WithKeys(h.Key), key.WithHelp(h.Key, h.Desc)).Help().Key+": "+h.Desc)
-	}
-	return strings.Join(parts, " • ")
+	bar := styles.New(m.theme).BarColors()
+	return tea.NewView(primitives.RenderRow(m.width, bar.BG, bar.FG, text))
 }
 
 func (m *Model) renderLeftSegment() string {
@@ -190,19 +196,13 @@ func (m *Model) renderRightSegment() string {
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
 
-func (m *Model) renderLine(text string) tea.View {
-	style := styles.New(m.theme).StatusBar()
-	if m.width == 0 {
-		return tea.NewView(style.Render(text))
+func (m *Model) renderCardBlock(width int) string {
+	full, allFit := m.renderCardsForWidth(width, false)
+	if allFit {
+		return full
 	}
-	bar := styles.New(m.theme).BarColors()
-	line := primitives.RenderRow(m.width, bar.BG, bar.FG, text)
-	return tea.NewView(line)
-}
-
-func (m *Model) renderCards(width int, commandOnly bool) string {
-	rendered, _ := m.renderCardsForWidth(width, commandOnly)
-	return rendered
+	commandOnly, _ := m.renderCardsForWidth(width, true)
+	return commandOnly
 }
 
 func (m *Model) renderCardsForWidth(width int, commandOnly bool) (string, bool) {
@@ -223,7 +223,6 @@ func (m *Model) renderCardsForWidth(width int, commandOnly bool) (string, bool) 
 			cardModel.Variant = CardPrimary
 		}
 		card := m.renderCard(cardModel, commandOnly)
-
 		if width >= 0 {
 			w := lipgloss.Width(card)
 			sep := 0
@@ -244,18 +243,30 @@ func (m *Model) renderCardsForWidth(width int, commandOnly bool) (string, bool) 
 	return strings.Join(rendered, " "), allFit
 }
 
-func (m *Model) renderCardBlock(width int) string {
-	full, allFit := m.renderCardsForWidth(width, false)
-	if allFit {
-		return full
-	}
-	commandOnly, _ := m.renderCardsForWidth(width, true)
-	return commandOnly
-}
-
 func (m *Model) renderCard(c Card, commandOnly bool) string {
 	return primitives.Card(m.theme, string(c.Variant), c.Enabled, c.Command, c.Label, commandOnly)
 }
+
+func (m *Model) helpText() string {
+	if m.help == nil {
+		return ""
+	}
+	bindings := m.help.Bindings()
+	parts := make([]string, 0, len(bindings))
+	for _, b := range bindings {
+		if !b.Enabled() {
+			continue
+		}
+		h := b.Help()
+		if h.Key == "" || h.Desc == "" {
+			continue
+		}
+		parts = append(parts, key.NewBinding(key.WithKeys(h.Key), key.WithHelp(h.Key, h.Desc)).Help().Key+": "+h.Desc)
+	}
+	return strings.Join(parts, " • ")
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 func nonEmpty(parts ...string) []string {
 	out := make([]string, 0, len(parts))
@@ -267,10 +278,6 @@ func nonEmpty(parts ...string) []string {
 	return out
 }
 
-func fitWidth(s string, width int) string {
-	return surface.FitWidth(s, width)
-}
-
 func clipWidth(s string, width int) string {
 	if width <= 0 {
 		return ""
@@ -278,14 +285,11 @@ func clipWidth(s string, width int) string {
 	return lipgloss.NewStyle().MaxWidth(width).Render(s)
 }
 
+func copyCard(c Card) *Card { b := c; return &b }
+
 func max(a, b int) int {
 	if a > b {
 		return a
 	}
 	return b
-}
-
-func copyCard(c Card) *Card {
-	b := c
-	return &b
 }
