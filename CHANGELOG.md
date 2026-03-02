@@ -6,30 +6,69 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
-### Added
-
-- introduced `ui/styles` as a dedicated style layer for semantic UI styling
-- added searchable theme picker dialog with selection highlight and current-theme marker
-- added explicit theme tokens for layered surfaces and interaction states
-- expanded theme tests for token completeness and preset stability
-- added shared UI render primitives under `ui/primitives` (`chip`, `row`, `frame`, `inputrow`)
-- added `ui/containers/header` as a top statusline twin of footer card behavior
-- added focus manager event contract with `FocusChangedMsg {From, To}`
-- added non-persistent theme preview flow with enter commit and esc revert
+## [0.2.0] - 2026-03-02
 
 ### Changed
 
-- moved UI packages into `ui/containers/*` (`dialog`, `footer`, `panel`)
-- promoted footer-first shell API (`WithFooterBar`, `WithFooter`)
-- updated shell composition to treat footer as a first-class layer
-- refreshed `cmd/starter-app` starter app around header/footer, dialogs, and theme interactions
-- rewrote README to reflect the new architecture and usage paths
-- finalized footer statusline behavior with deterministic truncation and one-row chip rendering
-- updated starter app shell layering to `header -> body -> footer -> scrim -> dialog`
+- **Breaking — ShadCN model replaces the framework API.**
+  `bentotui.New()`, `core/`, `app/`, `ui/`, and `bentotui.go` are deleted.
+  BentoTUI is now a registry of copy-and-own components, not an opinionated shell.
+
+- `core/theme/` moved to `theme/` — import path is now `github.com/cloudboy-jh/bentotui/theme`
+- `ui/styles/` moved to `styles/` — import path is now `github.com/cloudboy-jh/bentotui/styles`
+- `core/layout/` moved to `layout/` — import path is now `github.com/cloudboy-jh/bentotui/layout`
+
+- `theme.CurrentTheme()` is now goroutine-safe (`sync.RWMutex` on every read/write).
+  `theme.SetTheme(name)` is safe to call from `main()` before `tea.NewProgram().Run()`.
+
+- All registry components read `theme.CurrentTheme()` in `View()` — no stored theme
+  state, no `SetTheme()` propagation chains.
+
+- Every rendered row uses a single `lipgloss.NewStyle().Background().Width().Render(plain)`
+  call. ANSI is stripped before rendering. Eliminates background color bleed-through
+  where inner escape codes previously fought outer background cells.
+
+- `layout/` exports a conservative public surface:
+  `Horizontal`, `Vertical`, `Fixed`, `Flex`, `Split`, `Item`, `Model`, `Sizeable`.
+  `Kind` is unexported. `ViewString` and `Fill` are inlined — no `core` dep.
+
+- `bar` no longer stores `m.theme` or handles `focus.FocusChangedMsg`. Row and card
+  rendering are inlined. `theme.CurrentTheme()` called in `View()`.
+
+- `dialog.Custom` wraps any `tea.Model` as content — no `panel` import required.
+  `dialog.Manager` no longer stores or propagates theme.
+
+- `input.View()` calls `styles.New(theme.CurrentTheme()).InputStyles()` on every
+  render so live theme switching works without any `SetTheme()` call.
+
+### Added
+
+- `registry/` — clean rewrites of all components:
+  `panel`, `bar`, `dialog` (manager + confirm + custom + theme_picker + command_palette),
+  `list`, `table`, `text`, `input`
+
+- `theme/theme_test.go` — ported all tests from `core/theme/`, added goroutine-safety
+  smoke test (`TestCurrentThemeConcurrentAccess`)
+
+- `docs/next-steps.md` — 3 concrete known gaps: `bento add` embed wiring,
+  `bento init` template, `input.View()` style caching
+
+- `.gitignore`
 
 ### Removed
 
-- removed top-level UI package paths (`dialog`, `statusbar`, `panel`, `styles`)
+- `app/` — monolithic app shell
+- `core/` — shell, router, focus, palette, interfaces, messages, view helpers
+- `ui/` — containers, widgets, primitives, styles (all replaced by `registry/`)
+- `bentotui.go` — public API facade
+
+### Fixed
+
+- Background bleed-through on panel content rows (canvas Z-layer approach replaced
+  with single lipgloss render call)
+- Theme picker selection highlight now fills full row width
+- `Custom.View()` and `Confirm.View()` now use `theme.CurrentTheme()` instead of
+  a stale cached value — dialog frame and content colors stay in sync during live preview
 
 ## [0.1.0-initial] - 2026-02-23
 
@@ -38,3 +77,8 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 - initial BentoTUI framework foundation
 - core app shell, router, layout, focus, and theme modules
 - early dialog/footer/panel component set
+- canvas-based layout system (Horizontal/Vertical with Fixed/Flex/Min/Max constraints)
+- global theme system with 15 professional presets via bubbletint
+- complete widget library (Input, List, Text, Card, Table)
+- container components (Panel, Bar, Dialog with theme picker)
+- reactive theme propagation across all components

@@ -11,10 +11,9 @@ import (
 )
 
 func runInit(args []string) {
-	fmt.Println("🍱 bento")
+	fmt.Println("bento init")
 	fmt.Println()
 
-	// Determine app name — from args or interactive prompt
 	appName := ""
 	if len(args) > 0 && args[0] != "--help" && args[0] != "-h" {
 		appName = strings.TrimSpace(args[0])
@@ -26,7 +25,6 @@ func runInit(args []string) {
 		appName = "my-bento-app"
 	}
 
-	// Module path — interactive with placeholder default
 	modulePath := prompt("  Module path", fmt.Sprintf("example.com/%s", appName))
 	if modulePath == "" {
 		modulePath = fmt.Sprintf("example.com/%s", appName)
@@ -35,7 +33,6 @@ func runInit(args []string) {
 	fmt.Println()
 	fmt.Printf("  Creating %s/\n", appName)
 
-	// Refuse to clobber an existing directory
 	if _, err := os.Stat(appName); err == nil {
 		fatal("directory %q already exists", appName)
 	}
@@ -45,15 +42,11 @@ func runInit(args []string) {
 	data := struct {
 		AppName string
 		Module  string
-	}{
-		AppName: appName,
-		Module:  modulePath,
-	}
+	}{AppName: appName, Module: modulePath}
 
 	writeTemplate(filepath.Join(appName, "go.mod"), goModTemplate, data)
 	writeTemplate(filepath.Join(appName, "main.go"), mainGoTemplate, data)
 
-	// Run go mod tidy inside the new directory
 	fmt.Println()
 	fmt.Println("  Running go mod tidy...")
 	tidyCmd := exec.Command("go", "mod", "tidy")
@@ -64,40 +57,34 @@ func runInit(args []string) {
 		fmt.Fprintf(os.Stderr, "  warning: go mod tidy failed: %v\n", err)
 		fmt.Println("  You may need to run it manually after editing go.mod.")
 	} else {
-		fmt.Printf("    🍱 %s/go.sum\n", appName)
+		fmt.Printf("  %s/go.sum\n", appName)
 	}
 
 	fmt.Println()
-	fmt.Println("  Done. Your BentoTUI app is ready.")
+	fmt.Println("  Done. Next steps:")
 	fmt.Println()
 	fmt.Printf("    cd %s\n", appName)
+	fmt.Println("    bento add panel bar  # copy components you want")
 	fmt.Println("    go run .")
 	fmt.Println()
 }
 
-// writeTemplate executes a text/template string and writes the result to path,
-// printing a 🍱 confirmation line on success.
 func writeTemplate(path, tmplStr string, data any) {
 	t, err := template.New("").Parse(tmplStr)
 	check(err, "parse template for "+path)
-
 	f, err := os.Create(path)
 	check(err, "create "+path)
 	defer f.Close()
-
 	check(t.Execute(f, data), "write "+path)
-	fmt.Printf("    🍱 %s\n", path)
+	fmt.Printf("  %s\n", path)
 }
 
-// prompt prints a question, shows a default in parens, reads a line.
-// Returns the default if the user hits enter with no input.
 func prompt(question, defaultVal string) string {
 	if defaultVal != "" {
 		fmt.Printf("%s (%s): ", question, defaultVal)
 	} else {
 		fmt.Printf("%s: ", question)
 	}
-
 	reader := bufio.NewReader(os.Stdin)
 	line, _ := reader.ReadString('\n')
 	line = strings.TrimSpace(line)
@@ -107,100 +94,118 @@ func prompt(question, defaultVal string) string {
 	return line
 }
 
-// ── embedded template strings ────────────────────────────────────────────────
+// ── templates ─────────────────────────────────────────────────────────────────
 
 const goModTemplate = `module {{.Module}}
 
-go 1.25
+go 1.23
 
 require (
-	github.com/cloudboy-jh/bentotui latest
+	charm.land/bubbletea/v2 v2.0.0-rc.2
+	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106192539-4b304240aab7
+	github.com/cloudboy-jh/bentotui v0.2.0
 )
 `
 
+// mainGoTemplate generates a minimal but complete BentoTUI app.
+// It uses only the stable module deps (layout, theme) so it compiles
+// without requiring any `bento add` step. Users add registry components
+// as needed.
 const mainGoTemplate = `package main
 
 import (
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/cloudboy-jh/bentotui"
-	"github.com/cloudboy-jh/bentotui/core"
-	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/containers/bar"
-	"github.com/cloudboy-jh/bentotui/ui/containers/panel"
+	"charm.land/lipgloss/v2"
+	"github.com/cloudboy-jh/bentotui/layout"
+	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 func main() {
-	t := theme.CurrentTheme()
-
-	hd := bar.New(
-		bar.LeftCard(bar.Card{Command: "{{.AppName}}", Variant: bar.CardMuted, Enabled: true}),
-		bar.RightCard(bar.Card{Command: "theme", Label: theme.CurrentThemeName(), Variant: bar.CardPrimary, Enabled: true}),
-	)
-
-	ft := bar.New(
-		bar.Cards(
-			bar.Card{Command: "/theme", Label: "switch theme", Variant: bar.CardPrimary, Enabled: true},
-		),
-		bar.RightCard(bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true}),
-	)
-
-	m := bentotui.New(
-		bentotui.WithTheme(t),
-		bentotui.WithHeader(hd),
-		bentotui.WithFooter(ft),
-		bentotui.WithPages(
-			bentotui.Page("home", func() core.Page { return newHomePage(theme.CurrentTheme()) }),
-		),
-		bentotui.WithHeaderBar(true),
-		bentotui.WithFooterBar(true),
-		bentotui.WithFullScreen(true),
-	)
-
-	p := tea.NewProgram(m)
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("{{.AppName}} failed: %v\n", err)
+	if _, err := tea.NewProgram(newModel()).Run(); err != nil {
+		fmt.Printf("error: %v\n", err)
 	}
 }
 
-type homePage struct {
-	panel  *panel.Model
-	theme  theme.Theme
-	width  int
-	height int
+// model is the root Bubble Tea model. Add your panels and widgets here.
+type model struct {
+	root *layout.Split
+	w, h int
 }
 
-func newHomePage(t theme.Theme) *homePage {
-	p := &homePage{theme: t}
-	p.panel = panel.New(panel.Theme(t), panel.Title("Home"))
-	return p
+func newModel() *model {
+	// Placeholder content — replace with real registry components.
+	// Run: bento add panel bar
+	placeholder := &placeholder{}
+
+	root := layout.Vertical(
+		layout.Flex(1, placeholder),
+	)
+	return &model{root: root}
 }
 
-func (p *homePage) Init() tea.Cmd { return nil }
+func (m *model) Init() tea.Cmd { return m.root.Init() }
 
-func (p *homePage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch v := msg.(type) {
-	case theme.ThemeChangedMsg:
-		p.theme = v.Theme
-		p.panel.SetTheme(v.Theme)
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.w, m.h = msg.Width, msg.Height
+		m.root.SetSize(m.w, m.h)
+		return m, nil
 	case tea.KeyMsg:
-		if v.String() == "ctrl+c" {
-			return p, tea.Quit
+		if msg.String() == "ctrl+c" {
+			return m, tea.Quit
 		}
 	}
-	_, cmd := p.panel.Update(msg)
-	return p, cmd
+	updated, cmd := m.root.Update(msg)
+	m.root = updated.(*layout.Split)
+	return m, cmd
 }
 
-func (p *homePage) View() tea.View { return p.panel.View() }
-
-func (p *homePage) SetSize(w, h int) {
-	p.width = w
-	p.height = h
-	p.panel.SetSize(w, h)
+func (m *model) View() tea.View {
+	t := theme.CurrentTheme()
+	v := m.root.View()
+	result := tea.NewView(viewString(v))
+	result.AltScreen = true
+	result.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
+	return result
 }
 
-func (p *homePage) GetSize() (int, int) { return p.width, p.height }
-func (p *homePage) Title() string       { return "Home" }
+// placeholder renders a welcome message until you add real components.
+type placeholder struct{ w, h int }
+
+func (p *placeholder) Init() tea.Cmd                          { return nil }
+func (p *placeholder) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return p, nil }
+func (p *placeholder) View() tea.View {
+	t := theme.CurrentTheme()
+	lines := []string{
+		"{{.AppName}}",
+		"",
+		"Add components:  bento add panel bar dialog",
+		"Switch theme:    theme.SetTheme(\"dracula\")",
+		"Quit:            ctrl+c",
+	}
+	style := lipgloss.NewStyle().
+		Foreground(lipgloss.Color(t.Text.Primary)).
+		Background(lipgloss.Color(t.Surface.Panel)).
+		Width(p.w).Height(p.h)
+	return tea.NewView(style.Render(strings.Join(lines, "\n")))
+}
+func (p *placeholder) SetSize(w, h int) { p.w = w; p.h = h }
+func (p *placeholder) GetSize() (int, int) { return p.w, p.h }
+
+func viewString(v tea.View) string {
+	if v.Content == nil {
+		return ""
+	}
+	if r, ok := v.Content.(interface{ Render() string }); ok {
+		return r.Render()
+	}
+	if s, ok := v.Content.(interface{ String() string }); ok {
+		return s.String()
+	}
+	return fmt.Sprint(v.Content)
+}
 `

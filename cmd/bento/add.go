@@ -7,9 +7,22 @@ import (
 	"strings"
 )
 
-// knownComponents lists components available via `bento add`.
-// The actual source is fetched from the live module, not embedded stale copies.
-var knownComponents = []string{"bar", "panel", "dialog"}
+// component describes a registry entry available via `bento add`.
+type component struct {
+	name  string
+	desc  string
+	files []string // file names inside registry/<name>/
+}
+
+var registry = []component{
+	{name: "panel", desc: "Titled, focusable content container", files: []string{"panel.go"}},
+	{name: "bar", desc: "Header/footer row with keybind cards", files: []string{"bar.go"}},
+	{name: "dialog", desc: "Modal manager, Confirm, Custom, ThemePicker, CommandPalette", files: []string{"dialog.go", "theme_picker.go", "command_palette.go"}},
+	{name: "list", desc: "Scrollable log-style list (plain text output)", files: []string{"list.go"}},
+	{name: "table", desc: "Header row + data rows", files: []string{"table.go"}},
+	{name: "text", desc: "Static text label", files: []string{"text.go"}},
+	{name: "input", desc: "Single-line text field wrapping bubbles/textinput", files: []string{"input.go"}},
+}
 
 func runAdd(args []string) {
 	if len(args) == 0 || args[0] == "--help" || args[0] == "-h" {
@@ -17,51 +30,67 @@ func runAdd(args []string) {
 		return
 	}
 
-	component := strings.ToLower(strings.TrimSpace(args[0]))
+	name := strings.ToLower(strings.TrimSpace(args[0]))
 
-	known := false
-	for _, k := range knownComponents {
-		if k == component {
-			known = true
+	var comp *component
+	for i := range registry {
+		if registry[i].name == name {
+			comp = &registry[i]
 			break
 		}
 	}
-	if !known {
-		fmt.Fprintf(os.Stderr, "unknown component: %q\n\nAvailable components:\n", component)
-		for _, k := range knownComponents {
-			fmt.Fprintf(os.Stderr, "  %s\n", k)
+	if comp == nil {
+		fmt.Fprintf(os.Stderr, "unknown component: %q\n\nAvailable components:\n", name)
+		for _, c := range registry {
+			fmt.Fprintf(os.Stderr, "  %-10s %s\n", c.name, c.desc)
 		}
 		os.Exit(1)
 	}
 
-	// Source is the real component directory in the bentotui module cache.
-	// We locate it via GOPATH/pkg/mod or the module source in the vendor dir.
-	fmt.Printf("🍱 bento add %s\n\n", component)
-	fmt.Printf("  Component: ui/containers/%s\n\n", component)
-	fmt.Println("  Run the following to copy the component source into your project:")
-	fmt.Println()
+	// Destination: components/<name>/ relative to cwd (where go.mod lives).
+	dest := filepath.Join("components", comp.name)
+	fmt.Printf("bento add %s\n\n", comp.name)
 
-	destDir := filepath.Join("ui", "containers", component)
-	fmt.Printf("    mkdir -p %s\n", destDir)
-	fmt.Printf("    cp $(go env GOPATH)/pkg/mod/github.com/cloudboy-jh/bentotui*/ui/containers/%s/*.go %s/\n", component, destDir)
+	// Locate the bentotui module source in the module cache.
+	// GOPATH/pkg/mod/github.com/cloudboy-jh/bentotui@<version>/registry/<name>/
+	// We print the commands rather than executing them so the user can inspect
+	// and redirect to a different destination if needed.
+	//
+	// NOTE: Once `//go:embed registry` is wired into this binary (see
+	// docs/next-steps.md) this will write files directly. For now it prints
+	// the equivalent shell commands.
+	fmt.Printf("  Writing to %s/\n\n", dest)
+	fmt.Println("  Run these commands to copy the component source:")
 	fmt.Println()
-	fmt.Println("  Or with Go workspace/vendor setup:")
-	fmt.Printf("    cp vendor/github.com/cloudboy-jh/bentotui/ui/containers/%s/*.go %s/\n", component, destDir)
+	fmt.Printf("    mkdir -p %s\n", dest)
+	for _, f := range comp.files {
+		src := fmt.Sprintf("$(go env GOPATH)/pkg/mod/github.com/cloudboy-jh/bentotui*/registry/%s/%s", comp.name, f)
+		fmt.Printf("    cp %s %s/\n", src, dest)
+	}
 	fmt.Println()
-	fmt.Println("  After copying, update the package declaration if needed.")
+	fmt.Printf("  Then import from your module: \"yourmodule/%s\"\n", dest)
+	fmt.Println()
+	fmt.Println("  Required module deps (already in your go.mod if you ran bento init):")
+	fmt.Println("    charm.land/bubbletea/v2")
+	fmt.Println("    charm.land/lipgloss/v2")
+	fmt.Println("    github.com/cloudboy-jh/bentotui  (theme, styles, layout)")
 	fmt.Println()
 }
 
 func printAddHelp() {
 	fmt.Print(`Usage: bento add <component>
 
-Copy-and-own a BentoTUI component into your project.
-Files are written to ui/containers/<component>/ and are yours to modify.
+Copy-and-own a registry component into your project.
+Files are written to components/<name>/ and are yours to modify.
 
 Available components:
 `)
-	for _, k := range knownComponents {
-		fmt.Printf("  %s\n", k)
+	for _, c := range registry {
+		fmt.Printf("  %-10s %s\n", c.name, c.desc)
 	}
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  bento add panel")
+	fmt.Println("  bento add dialog")
 	fmt.Println()
 }
