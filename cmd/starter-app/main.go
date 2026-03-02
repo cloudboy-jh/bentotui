@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bar"
+	"github.com/cloudboy-jh/bentotui/registry/dialog"
 	"github.com/cloudboy-jh/bentotui/registry/input"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
@@ -37,18 +38,23 @@ func main() {
 type model struct {
 	inputBox  *input.Model
 	statusBar *bar.Model
+	dialogs   *dialog.Manager
 	width     int
 	height    int
 }
 
 func newModel() *model {
 	inp := input.New()
-	inp.SetPlaceholder(`Ask anything… "bento add panel"`)
+	inp.SetPlaceholder(`Ask anything… /theme  /dialog`)
 	sb := bar.New(
 		bar.Left("~  bentotui:main"),
-		bar.Right(version),
+		bar.Right(fmt.Sprintf("theme: %s  %s", theme.CurrentThemeName(), version)),
 	)
-	return &model{inputBox: inp, statusBar: sb}
+	return &model{
+		inputBox:  inp,
+		statusBar: sb,
+		dialogs:   dialog.New(),
+	}
 }
 
 func (m *model) Init() tea.Cmd {
@@ -56,25 +62,50 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Dialog manager gets first shot — it owns esc/enter while open.
+	if m.dialogs.IsOpen() {
+		updated, cmd := m.dialogs.Update(msg)
+		m.dialogs = updated.(*dialog.Manager)
+		if tc, ok := msg.(theme.ThemeChangedMsg); ok {
+			m.onThemeChange(tc)
+		}
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusBar.SetSize(msg.Width, 1)
-		// Input inner width: 60% of terminal, clamped, minus border+padding (5).
+		m.dialogs.SetSize(msg.Width, max(0, msg.Height-1))
 		inputW := clamp(m.width*6/10, 50, 90)
 		m.inputBox.SetSize(inputW-5, 1)
+		return m, nil
+
+	case theme.ThemeChangedMsg:
+		m.onThemeChange(msg)
 		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "ctrl+t":
+			return m, openThemePicker()
 		case "ctrl+k", "tab":
-			// ctrl+k: command palette (future). tab: no-op for now.
 			return m, nil
 		case "enter":
+			val := strings.TrimSpace(m.inputBox.Value())
+			if val == "" {
+				return m, nil
+			}
 			m.inputBox.SetValue("")
+			switch val {
+			case "/theme":
+				return m, openThemePicker()
+			case "/dialog":
+				return m, openSampleDialog()
+			}
 			return m, nil
 		}
 		updated, cmd := m.inputBox.Update(msg)
@@ -99,7 +130,6 @@ func (m *model) View() tea.View {
 		lipgloss.PlaceHorizontal(m.width, lipgloss.Center, wm), "\n")
 
 	// ── input block ───────────────────────────────────────────────────────────
-	// Left-border-only panel: ┃ accent bar, padding inside, input + badge row.
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
 	badges := dim.Render("add   panel   list   input   table   dialog")
 	inputStr := viewString(m.inputBox.View())
@@ -124,10 +154,10 @@ func (m *model) View() tea.View {
 	tip := lipgloss.PlaceHorizontal(m.width, lipgloss.Center,
 		dot+dim.Render("  Run bento init to scaffold a new TUI app"))
 
-	// ── vertical centering ────────────────────────────────────────────────────
+	// ── assemble body ─────────────────────────────────────────────────────────
 	// Content rows: wordmark(6) + 2 blank + inputBlock(4) + 1 blank + kbd(1) + 1 blank + tip(1) = 16
 	const contentH = 16
-	bodyH := max(0, m.height-1) // minus status bar row
+	bodyH := max(0, m.height-1) // minus status bar
 	topPad := max(0, (bodyH-contentH)/2)
 	botPad := max(0, bodyH-contentH-topPad)
 
@@ -145,16 +175,48 @@ func (m *model) View() tea.View {
 	for i := 0; i < botPad; i++ {
 		rows = append(rows, "")
 	}
-	body := strings.Join(rows, "\n")
+	bodyStr := strings.Join(rows, "\n")
+
+	// ── dialog overlay ────────────────────────────────────────────────────────
+	if m.dialogs.IsOpen() {
+		dlgStr := viewString(m.dialogs.View())
+		bodyStr = lipgloss.PlaceHorizontal(m.width, lipgloss.Center,
+			lipgloss.PlaceVertical(bodyH, lipgloss.Center, dlgStr))
+	}
 
 	// ── status bar ────────────────────────────────────────────────────────────
 	statusStr := viewString(m.statusBar.View())
-	screen := lipgloss.JoinVertical(lipgloss.Top, body, statusStr)
+	screen := lipgloss.JoinVertical(lipgloss.Top, bodyStr, statusStr)
 
 	v := tea.NewView(screen)
 	v.AltScreen = true
 	v.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
 	return v
+}
+
+// onThemeChange keeps the status bar in sync with the active theme.
+func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
+	m.statusBar.SetRight(fmt.Sprintf("theme: %s  %s", msg.Name, version))
+}
+
+// ── commands ──────────────────────────────────────────────────────────────────
+
+func openThemePicker() tea.Cmd {
+	return func() tea.Msg {
+		return dialog.Open(dialog.Custom{
+			DialogTitle: "Themes",
+			Content:     dialog.NewThemePicker(),
+		})
+	}
+}
+
+func openSampleDialog() tea.Cmd {
+	return func() tea.Msg {
+		return dialog.Open(dialog.Confirm{
+			DialogTitle: "Hello from BentoTUI",
+			Message:     "This is a Confirm dialog.\nPress Enter to confirm or Esc to cancel.",
+		})
+	}
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
