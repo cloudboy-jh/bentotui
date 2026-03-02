@@ -95,17 +95,14 @@ func availableThemeNames() []string {
 	defer mu.RUnlock()
 	names := make([]string, 0, len(registry))
 	for name := range registry {
-		names = append(names, name)
+		if name != DefaultName {
+			names = append(names, name)
+		}
 	}
 	sort.Strings(names)
-	if len(names) <= 1 || names[0] == DefaultName {
-		return names
-	}
-	for i := range names {
-		if names[i] == DefaultName {
-			names[0], names[i] = names[i], names[0]
-			break
-		}
+	// Default is always first; the rest are sorted.
+	if _, ok := registry[DefaultName]; ok {
+		names = append([]string{DefaultName}, names...)
 	}
 	return names
 }

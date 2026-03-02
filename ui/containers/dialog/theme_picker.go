@@ -111,14 +111,18 @@ func (p *ThemePicker) View() tea.View {
 	sys := styles.New(t)
 	contentWidth := maxInt(24, p.width)
 	rows := make([]string, 0, 10)
-	rows = append(rows, primitives.RenderRow(contentWidth, "", t.Text.Primary, "Search"))
+
+	// Use dialog background for consistency
+	dialogBG := t.Dialog.BG
+
+	// Just the search input (no duplicate label)
 	rows = append(rows, inputContainer(p.search.View(), contentWidth, t))
-	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""))
+	rows = append(rows, primitives.RenderRow(contentWidth, dialogBG, "", ""))
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, primitives.RenderRow(contentWidth, "", t.Text.Muted, "No matching themes"))
+		rows = append(rows, primitives.RenderRow(contentWidth, dialogBG, t.Text.Muted, "No matching themes"))
 	} else {
-		maxRows := maxInt(1, p.height-5)
+		maxRows := maxInt(1, p.height-4)
 		start := 0
 		if p.selected >= maxRows {
 			start = p.selected - maxRows + 1
@@ -127,16 +131,34 @@ func (p *ThemePicker) View() tea.View {
 		for i := start; i < end; i++ {
 			name := p.filtered[i]
 			selected := i == p.selected
-			marker := " "
-			if name == p.themeName {
-				marker = sys.CurrentMarker().Render("●")
+			isCurrent := name == p.themeName
+
+			// Show dot marker for current theme, arrow for selected
+			marker := "  "
+			if isCurrent {
+				marker = sys.CurrentMarker().Render("● ")
+			} else if selected {
+				marker = "> "
 			}
-			line := fmt.Sprintf("%s %s", marker, name)
-			rows = append(rows, primitives.RenderStyledRow(sys.ListItem(selected), contentWidth, line))
+			line := fmt.Sprintf("%s%s", marker, name)
+
+			// More subtle selection styling
+			var itemStyle lipgloss.Style
+			if selected {
+				// Use a more subtle highlight - slightly different background
+				itemStyle = lipgloss.NewStyle().
+					Background(lipgloss.Color(pick(t.Surface.Interactive, t.Border.Subtle))).
+					Foreground(lipgloss.Color(t.Text.Primary))
+			} else {
+				itemStyle = lipgloss.NewStyle().
+					Background(lipgloss.Color(dialogBG)).
+					Foreground(lipgloss.Color(t.Text.Primary))
+			}
+
+			rows = append(rows, primitives.RenderStyledRow(itemStyle, contentWidth, line))
 		}
 	}
 
-	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""), primitives.RenderRow(contentWidth, "", t.Text.Muted, "enter apply  esc close"))
 	return tea.NewView(strings.Join(rows, "\n"))
 }
 

@@ -1,6 +1,7 @@
 package styles
 
 import (
+	"charm.land/bubbles/v2/textinput"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core/theme"
 )
@@ -149,6 +150,26 @@ func (s System) ActionButton(active bool) lipgloss.Style {
 		MarginRight(1)
 }
 
+// PanelBorder returns a rounded-border style colored by focus/elevation state.
+//
+//	focused (any):        Border.Focus  — active panel draws the eye
+//	unfocused + elevated: Border.Subtle — secondary panels recede
+//	unfocused + normal:   Border.Normal — default panel boundary
+func (s System) PanelBorder(focused, elevated bool) lipgloss.Style {
+	var color string
+	switch {
+	case focused:
+		color = pick(s.Theme.Border.Focus, s.Theme.Text.Accent)
+	case elevated:
+		color = pick(s.Theme.Border.Subtle, s.Theme.Border.Normal)
+	default:
+		color = pick(s.Theme.Border.Normal, s.Theme.Border.Subtle)
+	}
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(color))
+}
+
 // ── missing token methods ─────────────────────────────────────────────────────
 
 // Divider returns a style for full-width separator lines (─── rows).
@@ -184,6 +205,35 @@ func pick(v, fallback string) string {
 		return fallback
 	}
 	return v
+}
+
+// InputStyles returns a fully-themed textinput.Styles struct.
+// Callers use styles.New(t).InputStyles() instead of building textinput
+// styles by hand, keeping all theme-to-widget mapping in the styles layer.
+func (s System) InputStyles() textinput.Styles {
+	st := textinput.DefaultStyles(true)
+
+	st.Focused.Prompt = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Border.Focus)).Bold(true)
+	st.Focused.Text = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Input.FG))
+	st.Focused.Placeholder = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Input.Placeholder))
+	st.Focused.Suggestion = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Text.Accent))
+
+	st.Blurred.Prompt = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Text.Muted))
+	st.Blurred.Text = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Input.FG))
+	st.Blurred.Placeholder = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Input.Placeholder))
+	st.Blurred.Suggestion = lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Text.Muted))
+
+	st.Cursor.Color = lipgloss.Color(s.Theme.Input.Cursor)
+	st.Cursor.Blink = true
+	return st
 }
 
 func (s System) footerCardColors(variant string, enabled bool, commandPart bool) (fg string, bg string) {

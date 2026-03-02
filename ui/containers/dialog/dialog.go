@@ -67,13 +67,20 @@ func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	// Only intercept esc/enter for Confirm dialogs
+	// Let other dialog types (ThemePicker, CommandPalette, Custom) handle their own keys
 	if m.active != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			switch keyMsg.String() {
 			case "esc":
-				m.active = nil
-				return m, nil
+				// Only auto-close Confirm dialogs, let others handle esc themselves
+				switch m.active.(type) {
+				case Confirm, *Confirm:
+					m.active = nil
+					return m, nil
+				}
 			case "enter":
+				// Only auto-confirm Confirm dialogs
 				switch active := m.active.(type) {
 				case Confirm:
 					m.active = nil
@@ -122,6 +129,11 @@ func (m *Manager) IsOpen() bool { return m.active != nil }
 
 func (m *Manager) SetTheme(t theme.Theme) {
 	m.theme = t
+	if m.active != nil {
+		if d, ok := m.active.(interface{ SetTheme(theme.Theme) }); ok {
+			d.SetTheme(t)
+		}
+	}
 }
 
 type Confirm struct {

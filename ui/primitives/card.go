@@ -7,6 +7,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
+// Card renders a command card for the bar component.
 func Card(t theme.Theme, variant string, enabled bool, command, label string, commandOnly bool) string {
 	sys := styles.New(t)
 	commandPart := sys.FooterCardCommand(variant, enabled).Render(command)

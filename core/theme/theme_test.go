@@ -4,13 +4,21 @@ import "testing"
 
 func TestAvailableThemesStableOrder(t *testing.T) {
 	got := AvailableThemes()
-	want := []string{CatppuccinMochaName, DraculaName, OsakaJadeName}
-	if len(got) != len(want) {
-		t.Fatalf("expected %d themes, got %d", len(want), len(got))
+
+	// Must have exactly as many entries as registered builtins.
+	if len(got) != len(builtinThemes) {
+		t.Fatalf("expected %d themes, got %d", len(builtinThemes), len(got))
 	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("expected theme[%d]=%q, got %q", i, want[i], got[i])
+
+	// Default theme must always be first.
+	if len(got) == 0 || got[0] != DefaultName {
+		t.Fatalf("expected first theme to be %q, got %q", DefaultName, got[0])
+	}
+
+	// Remaining entries (index 1 onward) must be sorted ascending.
+	for i := 1; i < len(got)-1; i++ {
+		if got[i] > got[i+1] {
+			t.Fatalf("themes not sorted at index %d/%d: %q > %q", i, i+1, got[i], got[i+1])
 		}
 	}
 }

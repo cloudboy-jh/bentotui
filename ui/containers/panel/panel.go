@@ -176,10 +176,15 @@ func (m *Model) GetSize() (int, int) { return m.width, m.height }
 
 // ── focus + theme ─────────────────────────────────────────────────────────────
 
-func (m *Model) Focus()                 { m.focused = true }
-func (m *Model) Blur()                  { m.focused = false }
-func (m *Model) IsFocused() bool        { return m.focused }
-func (m *Model) SetTheme(t theme.Theme) { m.theme = t }
+func (m *Model) Focus()          { m.focused = true }
+func (m *Model) Blur()           { m.focused = false }
+func (m *Model) IsFocused() bool { return m.focused }
+func (m *Model) SetTheme(t theme.Theme) {
+	m.theme = t
+	if s, ok := m.content.(interface{ SetTheme(theme.Theme) }); ok {
+		s.SetTheme(t)
+	}
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
