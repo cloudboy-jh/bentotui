@@ -8,15 +8,15 @@ Status: Active (early production)
 BentoTUI has moved from a rough harness into a structured framework baseline with a clear runtime/UI split:
 
 - runtime/core: `shell`, `router`, `layout`, `focus`, `surface`, `theme`, `core`
-- UI layer: `ui/components/*`
+- UI layer: `ui/containers/*`
 - shared primitives: `ui/primitives`
 - style layer: `ui/styles`
 
 This separation is now documented and enforced through:
 
-- `project-docs/component-system-reference.md`
-- `project-docs/next-steps.md`
-- `project-docs/framework-roadmap.md`
+- `project-docs/design/component-system-reference.md`
+- `project-docs/roadmap/next-steps.md`
+- `project-docs/roadmap/framework-roadmap.md`
 
 ## Shipped Progress
 
@@ -29,10 +29,10 @@ This separation is now documented and enforced through:
   - `osaka-jade`
 - Theme persistence and reload behavior are active.
 - Starter app command flow is now command-string based:
-  - type `/pr`, `/issue`, `/branch` in input, run on Enter
+- type `/dialog`, `/theme`, `/page` in input, run on Enter
   - legacy aliases (`/dialog`, `/theme`, `/page`) still resolve
   - `/` no longer auto-opens a modal
-- Starter app footer cards are command-first (`/pr`, `/issue`, `/branch`) and no longer tied to hotkeys.
+- Starter app footer cards are command-first (`/dialog`, `/theme`, `/page`) and no longer tied to hotkeys.
 - UI naming is now card-first across the stack (`Card`, `Cards`, `LeftCard`, `RightCard`).
 - Shared primitive verbs are standardized as `Render*` (`RenderRow`, `RenderFrame`, `RenderInputRow`).
 - README and changelog discipline are in place (`CHANGELOG.md`, early-production warning tag).
@@ -67,9 +67,9 @@ Recent framework passes are consistently validated with:
 
 ## Reference Docs
 
-- Main spec: `project-docs/bentotui-main-spec.md`
-- Layer architecture: `project-docs/layer-architecture.md`
-- Next execution list: `project-docs/next-steps.md`
-- Component contract: `project-docs/component-system-reference.md`
-- Framework roadmap: `project-docs/framework-roadmap.md`
-- Rendering ADR: `project-docs/rendering-system-design.md`
+- Main spec: `project-docs/spec/bentotui-main-spec.md`
+- Layer architecture: `project-docs/spec/layer-architecture.md`
+- Next execution list: `project-docs/roadmap/next-steps.md`
+- Component contract: `project-docs/design/component-system-reference.md`
+- Framework roadmap: `project-docs/roadmap/framework-roadmap.md`
+- Rendering ADR: `project-docs/design/rendering-system-design.md`

@@ -8,7 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
 )
 
 func keyPress(text string) tea.Msg {
@@ -89,6 +89,41 @@ func TestHarnessPageCommandNavigatesToSecondary(t *testing.T) {
 	}
 }
 
+func TestHarnessLegacyAliasesRemainSupported(t *testing.T) {
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p.SetSize(120, 40)
+
+	p.input.SetValue("/pr")
+	_, dialogCmd := p.Update(specialKey(tea.KeyEnter))
+	if dialogCmd == nil {
+		t.Fatal("expected dialog command for /pr alias")
+	}
+	dialogMsg := dialogCmd()
+	if _, ok := dialogMsg.(dialog.OpenMsg); !ok {
+		t.Fatalf("expected dialog.OpenMsg for /pr alias, got %T", dialogMsg)
+	}
+
+	p.input.SetValue("/issue")
+	_, themeCmd := p.Update(specialKey(tea.KeyEnter))
+	if themeCmd == nil {
+		t.Fatal("expected theme command for /issue alias")
+	}
+	themeMsg := themeCmd()
+	if _, ok := themeMsg.(theme.OpenThemePickerMsg); !ok {
+		t.Fatalf("expected theme.OpenThemePickerMsg for /issue alias, got %T", themeMsg)
+	}
+
+	p.input.SetValue("/branch")
+	_, navCmd := p.Update(specialKey(tea.KeyEnter))
+	if navCmd == nil {
+		t.Fatal("expected navigate command for /branch alias")
+	}
+	navMsg := navCmd()
+	if _, ok := navMsg.(core.NavigateMsg); !ok {
+		t.Fatalf("expected core.NavigateMsg for /branch alias, got %T", navMsg)
+	}
+}
+
 func TestHarnessInputAcceptsDAndQCharacters(t *testing.T) {
 	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
 	p.SetSize(120, 40)
@@ -143,5 +178,17 @@ func TestHarnessViewRowsMatchViewportWidth(t *testing.T) {
 		if w := lipgloss.Width(line); w != 120 {
 			t.Fatalf("expected row %d width 120, got %d", i, w)
 		}
+	}
+}
+
+func TestHarnessPromotesCanonicalCommandsInCopy(t *testing.T) {
+	p := newStarterPage(theme.Preset(theme.DefaultName), "harness", "secondary")
+	p.SetSize(120, 40)
+	content := core.ViewString(p.View())
+	if !strings.Contains(content, "Commands: /dialog  /theme  /page") {
+		t.Fatal("expected canonical command copy in starter view")
+	}
+	if strings.Contains(content, "Cards:   /pr pull requests") {
+		t.Fatal("did not expect legacy command copy in starter view")
 	}
 }

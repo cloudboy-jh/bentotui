@@ -7,7 +7,7 @@ import (
 	"github.com/cloudboy-jh/bentotui"
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/layout"
-	"github.com/cloudboy-jh/bentotui/ui/components/panel"
+	"github.com/cloudboy-jh/bentotui/ui/containers/panel"
 )
 
 func main() {

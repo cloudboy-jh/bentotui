@@ -7,12 +7,12 @@
 
 This document is a pre-implementation research snapshot.
 For current framework behavior and roadmap, use:
-- `project-docs/bentotui-main-spec.md`
-- `project-docs/next-steps.md`
+- `project-docs/spec/bentotui-main-spec.md`
+- `project-docs/roadmap/next-steps.md`
 
 Implementation note (2026-02-26):
 - shared UI render primitives now live in `ui/primitives`
-- harness/footer behavior is card-first with command cards (`/pr`, `/issue`, `/branch`)
+- harness/footer behavior is card-first with canonical command cards (`/dialog`, `/theme`, `/page`)
 
 ---
 

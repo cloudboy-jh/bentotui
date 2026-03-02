@@ -4,7 +4,7 @@ Status: Active
 Date: 2026-02-25
 
 This list is intentionally component-focused and execution-oriented.
-Use this with `project-docs/component-system-reference.md`.
+Use this with `project-docs/design/component-system-reference.md`.
 
 ## 1. Footer Statusline Contract
 
@@ -53,7 +53,7 @@ Use this with `project-docs/component-system-reference.md`.
 
 - [ ] Add command palette dialog component.
 - [ ] Route `/` to command-entry/palette workflow (as finalized behavior).
-- [ ] Keep slash command aliases coherent (`/pr`, `/issue`, `/branch` + legacy aliases).
+- [ ] Keep canonical slash commands coherent (`/dialog`, `/theme`, `/page`) while supporting legacy aliases.
 
 ## 9. Component Regression Coverage
 
@@ -65,11 +65,26 @@ Use this with `project-docs/component-system-reference.md`.
 ## 10. Harness + Docs Sync
 
 - [x] Update `cmd/starter-app` to consume structured footer cards.
-- [x] Keep `project-docs/component-system-reference.md` aligned.
-- [x] Keep `project-docs/framework-roadmap.md` and `CHANGELOG.md` updated.
+- [x] Keep `project-docs/design/component-system-reference.md` aligned.
+- [x] Keep `project-docs/roadmap/framework-roadmap.md` and `CHANGELOG.md` updated.
 
 ## 11. Footer Design Language
 
 - [x] Rename footer model from action/hotkey semantics to card semantics.
 - [x] Rename shared primitive from legacy naming to card language.
 - [x] Align harness footer copy to command-first GitHub-style card examples.
+
+## 12. Design + Sizing Governance
+
+- [x] Add `project-docs/design/bento-color-design-system.md` with strict documented token policy.
+- [x] Add `project-docs/design/component-sizing-contract.md` for width/height invariants.
+- [x] Align component reference and rendering ADR with new governance docs.
+
+## 13. CLI + Distribution MVP
+
+- [ ] Add `cmd/bento` CLI entrypoint.
+- [ ] Implement `bento init` (scaffold minimal Bento app shell).
+- [ ] Implement `bento add <component>` for copy-and-own component installs.
+- [ ] Implement `bento doctor` for theme token + layering + sizing contract checks.
+- [ ] Add GitHub Actions tag workflow for GoReleaser CLI releases.
+- [ ] Keep module semver tagging flow as canonical package distribution path.

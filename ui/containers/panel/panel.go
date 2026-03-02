@@ -137,8 +137,7 @@ func renderTitleRow(title string, width int, t theme.Theme, focused bool) string
 	}
 	sys := styles.New(t)
 	badge := sys.PanelTitleBadge(focused).Render(title)
-	content := lipgloss.PlaceHorizontal(width, lipgloss.Left, badge)
-	return primitives.RenderStyledRow(sys.PanelTitleBar(focused), width, content)
+	return primitives.RenderStyledRow(sys.PanelTitleBar(focused), width, badge)
 }
 
 func fitWidth(s string, width int) string {

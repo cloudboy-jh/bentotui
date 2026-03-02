@@ -14,11 +14,12 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/layout"
 	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
-	"github.com/cloudboy-jh/bentotui/ui/components/footer"
-	"github.com/cloudboy-jh/bentotui/ui/components/header"
-	"github.com/cloudboy-jh/bentotui/ui/components/panel"
+	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/containers/footer"
+	"github.com/cloudboy-jh/bentotui/ui/containers/header"
+	"github.com/cloudboy-jh/bentotui/ui/containers/panel"
 	"github.com/cloudboy-jh/bentotui/ui/primitives"
+	"github.com/cloudboy-jh/bentotui/ui/styles"
 )
 
 func main() {
@@ -31,11 +32,11 @@ func main() {
 		header.RightCard(header.Card{Command: "theme", Label: theme.CurrentThemeName(), Variant: header.CardPrimary, Enabled: true}),
 	)
 	ft := footer.New(
-		footer.LeftCard(footer.Card{Command: "/pr", Label: " pull requests", Variant: footer.CardNormal, Enabled: true}),
+		footer.LeftCard(footer.Card{Command: "/dialog", Label: "open dialog", Variant: footer.CardNormal, Enabled: true}),
 		footer.Cards(
-			footer.Card{Command: "/issue", Label: " issues", Variant: footer.CardPrimary, Enabled: true},
+			footer.Card{Command: "/theme", Label: "switch theme", Variant: footer.CardPrimary, Enabled: true},
 		),
-		footer.RightCard(footer.Card{Command: "/branch", Label: " branches", Variant: footer.CardMuted, Enabled: true}),
+		footer.RightCard(footer.Card{Command: "/page", Label: "next page", Variant: footer.CardMuted, Enabled: true}),
 	)
 
 	m := bentotui.New(
@@ -43,8 +44,8 @@ func main() {
 		app.WithHeader(hd),
 		app.WithFooter(ft),
 		bentotui.WithPages(
-			bentotui.Page("harness", func() core.Page { return newStarterPage(t, "harness", "secondary") }),
-			bentotui.Page("secondary", func() core.Page { return newStarterPage(t, "secondary", "harness") }),
+			bentotui.Page("harness", func() core.Page { return newStarterPage(theme.CurrentTheme(), "harness", "secondary") }),
+			bentotui.Page("secondary", func() core.Page { return newStarterPage(theme.CurrentTheme(), "secondary", "harness") }),
 		),
 		bentotui.WithHeaderBar(true),
 		bentotui.WithFooterBar(true),
@@ -105,9 +106,9 @@ type starterPage struct {
 func newStarterPage(t theme.Theme, pageName, nextPage string) *starterPage {
 	in := textinput.New()
 	in.Prompt = "> "
-	in.Placeholder = "Type text, /pr, /issue, or /branch"
+	in.Placeholder = "Type text, /dialog, /theme, or /page"
 	in.ShowSuggestions = true
-	in.SetSuggestions([]string{"/pr", "/issue", "/branch", "/dialog", "/theme", "/page"})
+	in.SetSuggestions([]string{"/dialog", "/theme", "/page"})
 	in.SetStyles(inputStyles(t))
 
 	p := &starterPage{
@@ -202,16 +203,16 @@ func (p *starterPage) submitInput() tea.Cmd {
 
 	switch text {
 	case "/theme", "/issue":
-		p.log("command accepted: /issue")
+		p.log("command accepted: /theme")
 		return openThemePickerCmd()
 	case "/dialog", "/pr":
-		p.log("command accepted: /pr")
+		p.log("command accepted: /dialog")
 		return openCustomDialogCmd()
 	case "/page", "/branch":
-		p.log("command accepted: /branch -> " + p.nextPage)
+		p.log("command accepted: /page -> " + p.nextPage)
 		return navigateToCmd(p.nextPage)
 	case "/":
-		p.log("command pending: type /pr, /issue, or /branch")
+		p.log("command pending: type /dialog, /theme, or /page")
 		return nil
 	default:
 		if strings.HasPrefix(text, "/") {
@@ -224,8 +225,7 @@ func (p *starterPage) submitInput() tea.Cmd {
 }
 
 func (p *starterPage) updateInputWidth() {
-	panelWidth, _ := p.mainPanel.GetSize()
-	p.input.SetWidth(max(20, panelWidth-8))
+	p.input.SetWidth(max(20, p.mainContentWidth()-2))
 }
 
 func (p *starterPage) refresh() {
@@ -241,10 +241,7 @@ func (p *starterPage) refresh() {
 		"Prompt",
 		inputSurface(p.input.View(), p.mainContentWidth(), p.theme),
 		sectionDivider(p.mainContentWidth(), p.theme),
-		"",
-		"Cards:   /pr pull requests  /issue issues  /branch branches",
-		"Slash:   /pr               /issue         /branch",
-		"",
+		"Commands: /dialog  /theme  /page",
 		"Recent Events:",
 	}
 	if len(p.events) == 0 {
@@ -259,8 +256,8 @@ func inputSurface(view string, width int, t theme.Theme) string {
 	if width <= 0 {
 		return ""
 	}
-	bg := pick(t.InputBG, t.ElementBG, t.SurfaceMuted)
-	return primitives.RenderInputRow(width, bg, t.Text, view)
+	input := styles.New(t).InputColors()
+	return primitives.RenderInputRow(width, input.BG, input.FG, view)
 }
 
 func sectionDivider(width int, t theme.Theme) string {
@@ -268,7 +265,7 @@ func sectionDivider(width int, t theme.Theme) string {
 		return ""
 	}
 	line := strings.Repeat("-", width)
-	return lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.BorderSubtle, t.Muted))).Render(line)
+	return lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Border.Subtle, t.Text.Muted))).Render(line)
 }
 
 func (p *starterPage) mainContentWidth() int {
@@ -308,17 +305,17 @@ func navigateToCmd(page string) tea.Cmd {
 
 func inputStyles(t theme.Theme) textinput.Styles {
 	s := textinput.DefaultStyles(true)
-	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.BorderFocused)).Bold(true)
-	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text))
-	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
-	s.Focused.Suggestion = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Accent))
+	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Border.Focus)).Bold(true)
+	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.FG))
+	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.Placeholder))
+	s.Focused.Suggestion = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Accent))
 
-	s.Blurred.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
-	s.Blurred.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text))
-	s.Blurred.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
-	s.Blurred.Suggestion = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
+	s.Blurred.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
+	s.Blurred.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.FG))
+	s.Blurred.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.Placeholder))
+	s.Blurred.Suggestion = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
 
-	s.Cursor.Color = lipgloss.Color(t.BorderFocused)
+	s.Cursor.Color = lipgloss.Color(t.Input.Cursor)
 	s.Cursor.Blink = true
 	return s
 }

@@ -19,7 +19,7 @@ import "github.com/cloudboy-jh/bentotui"
 
 ### Implementation Update (Current)
 
-- v0.1 foundation is implemented in code (`core/shell`, `core/router`, `core/layout`, `core/focus`, `core/theme`, `core/surface`, `ui/components/dialog`, `ui/components/footer`, `ui/components/panel`, `ui/primitives`)
+- v0.1 foundation is implemented in code (`core/shell`, `core/router`, `core/layout`, `core/focus`, `core/theme`, `core/surface`, `ui/containers/dialog`, `ui/containers/footer`, `ui/containers/panel`, `ui/primitives`)
 - Public facade package `bentotui` remains the recommended app entrypoint; `app` currently aliases `core/shell` for compatibility
 - Rendering moved from plain string concatenation to styled surfaces with Lip Gloss v2
 - Horizontal composition now uses ANSI-aware joining to avoid escape-sequence width drift
@@ -212,7 +212,7 @@ focus := focus.New(
 
 // Focus state affects rendering
 if panel.IsFocused() {
-    style = style.BorderForeground(theme.Accent)
+    style = style.BorderForeground(appTheme.Border.Focus)
 }
 ```
 
@@ -220,27 +220,23 @@ if panel.IsFocused() {
 Coordinated color definitions with presets and semantic surface tokens for shell/component rendering.
 
 ```go
-theme := theme.New(
-    theme.Accent("#F59E0B"),
-    theme.Text("#F8FAFC"),
-    theme.Muted("#94A3B8"),
-    theme.Background("#171717"),
-    theme.Success("#10B981"),
-    theme.Warning("#F59E0B"),
-    theme.Error("#EF4444"),
-)
+// Use a registered preset
+appTheme := theme.Preset("catppuccin-mocha")
 
-// Or use a preset
-theme := theme.Preset("catppuccin-mocha")
+// Or switch active theme from the registry
+applied, err := theme.SetTheme("osaka-jade")
+if err != nil {
+    // unknown or invalid theme
+}
 
-// Theme also carries surface tokens used by panel/footer/dialog rendering:
-// Surface, SurfaceMuted, Border, BorderFocused, TitleText, TitleBG,
-// StatusText, StatusBG, DialogText, DialogBG, DialogBorder, Scrim.
+// Themes use strict semantic token groups:
+// surface, text, border, state, selection, input, bar, dialog
+_ = applied
 ```
 
 ### Components
 
-#### `ui/components/dialog` — Modal Overlay System
+#### `ui/containers/dialog` — Modal Overlay System
 Modal dialogs that capture input and render above content via lipgloss layers.
 
 ```go
@@ -297,18 +293,18 @@ picker := picker.New(
 )
 ```
 
-#### `ui/components/footer` — Context-Aware Footer Bar
+#### `ui/containers/footer` — Context-Aware Footer Bar
 Bottom layer showing command cards, status messages, and contextual info.
 
 ```go
 footer := footer.New(
-    footer.LeftCard(footer.Card{Command: "/pr", Label: "pull requests", Variant: footer.CardNormal, Enabled: true}),
-    footer.Cards(footer.Card{Command: "/issue", Label: "issues", Variant: footer.CardPrimary, Enabled: true}),
-    footer.RightCard(footer.Card{Command: "/branch", Label: "branches", Variant: footer.CardMuted, Enabled: true}),
+    footer.LeftCard(footer.Card{Command: "/dialog", Label: "open dialog", Variant: footer.CardNormal, Enabled: true}),
+    footer.Cards(footer.Card{Command: "/theme", Label: "switch theme", Variant: footer.CardPrimary, Enabled: true}),
+    footer.RightCard(footer.Card{Command: "/page", Label: "next page", Variant: footer.CardMuted, Enabled: true}),
 )
 ```
 
-#### `ui/components/panel` — Bordered Content Panel
+#### `ui/containers/panel` — Bordered Content Panel
 A themed surface container with optional title, focused border state, and content sizing.
 
 ```go
@@ -370,11 +366,11 @@ Veil (encrypted secrets manager TUI) is built on BentoTUI as the first real cons
 |---|---|
 | Home / Projects / Settings pages | `router` |
 | Sidebar + main content layout | `layout` |
-| Secrets table with grouped sections | `layout` + `ui/components/panel` |
-| Add/edit/import overlays | `ui/components/dialog` |
-| Init wizard | `ui/components/dialog` (multi-step) |
+| Secrets table with grouped sections | `layout` + `ui/containers/panel` |
+| Add/edit/import overlays | `ui/containers/dialog` |
+| Init wizard | `ui/containers/dialog` (multi-step) |
 | Project tab navigation | `focus` |
-| Command card bar | `ui/components/footer` |
+| Command card bar | `ui/containers/footer` |
 | Catppuccin/Dracula/Osaka Jade themes | `theme` |
 
 ### Internal Harness (Current)
@@ -390,8 +386,8 @@ go run ./cmd/starter-app
 It currently validates:
 
 - single-page shell composition (`header` + `main input` + `footer`)
-- theme switching via `/issue` (`/theme` alias) with live repaint + persistence
-- dialog overlays via slash commands (`/pr`, `/dialog`, `/confirm`)
+- theme switching via `/theme` (legacy aliases still accepted)
+- dialog overlays via `/dialog`
 - focus handling between input and action controls (`tab`, `shift+tab`)
 - primitive-first rendering behavior on fullscreen alt-screen
 
@@ -399,9 +395,9 @@ It currently validates:
 
 | Tool | Description | Key BentoTUI Modules |
 |---|---|---|
-| Pretty Log | Clean log output viewer | `layout`, `ui/components/panel`, `theme` |
+| Pretty Log | Clean log output viewer | `layout`, `ui/containers/panel`, `theme` |
 | File Tree | Terminal file navigator | `layout`, `focus`, `keys` |
-| Diff Viewer | Side-by-side diff display | `layout`, `ui/components/panel`, `theme` |
+| Diff Viewer | Side-by-side diff display | `layout`, `ui/containers/panel`, `theme` |
 
 ---
 
@@ -414,9 +410,9 @@ The minimum surface to ship and build Veil on:
 - [x] `layout` — horizontal/vertical splits with fixed/flex
 - [x] `focus` — focus ring with tab cycling
 - [x] `theme` — color system with presets + semantic surface tokens
-- [x] `ui/components/dialog` — modal overlay with confirm/custom
-- [x] `ui/components/footer` — command cards + themed footer surface
-- [x] `ui/components/panel` — themed bordered content container with focus state
+- [x] `ui/containers/dialog` — modal overlay with confirm/custom
+- [x] `ui/containers/footer` — command cards + themed footer surface
+- [x] `ui/containers/panel` — themed bordered content container with focus state
 
 **Not in v0.1:**
 - Command palette (v0.2)
@@ -438,9 +434,12 @@ The minimum surface to ship and build Veil on:
 
 ## References
 
-- [Rendering System Design (ADR-0001)](./rendering-system-design.md)
-- [Implementation Next Steps](./next-steps.md)
-- [TUI Framework Research Doc](./tui-framework-research.md)
+- [Rendering System Design (ADR-0001)](../architecture/rendering-system-design.md)
+- [Component System Reference](../architecture/component-system-reference.md)
+- [Component Sizing Contract](../architecture/component-sizing-contract.md)
+- [Bento Color Design System](../design/bento-color-design-system.md)
+- [Implementation Next Steps](../roadmap/next-steps.md)
+- [TUI Framework Research Doc](../research/tui-framework-research.md)
 - [Crush TUI Architecture (DeepWiki)](https://deepwiki.com/charmbracelet/crush/5.1-tui-architecture)
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 - [Bubbles](https://github.com/charmbracelet/bubbles)

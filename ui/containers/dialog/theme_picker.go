@@ -111,12 +111,12 @@ func (p *ThemePicker) View() tea.View {
 	sys := styles.New(t)
 	contentWidth := maxInt(24, p.width)
 	rows := make([]string, 0, 10)
-	rows = append(rows, primitives.RenderRow(contentWidth, "", t.Text, "Search"))
+	rows = append(rows, primitives.RenderRow(contentWidth, "", t.Text.Primary, "Search"))
 	rows = append(rows, inputContainer(p.search.View(), contentWidth, t))
 	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""))
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, primitives.RenderRow(contentWidth, "", t.Muted, "No matching themes"))
+		rows = append(rows, primitives.RenderRow(contentWidth, "", t.Text.Muted, "No matching themes"))
 	} else {
 		maxRows := maxInt(1, p.height-5)
 		start := 0
@@ -136,7 +136,7 @@ func (p *ThemePicker) View() tea.View {
 		}
 	}
 
-	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""), primitives.RenderRow(contentWidth, "", t.Muted, "enter apply  esc close"))
+	rows = append(rows, primitives.RenderRow(contentWidth, "", "", ""), primitives.RenderRow(contentWidth, "", t.Text.Muted, "enter apply  esc close"))
 	return tea.NewView(strings.Join(rows, "\n"))
 }
 
@@ -153,11 +153,11 @@ func (p *ThemePicker) Title() string { return "Themes" }
 func (p *ThemePicker) syncStyles() {
 	t := theme.CurrentTheme()
 	s := textinput.DefaultStyles(true)
-	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
-	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text))
-	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Muted))
+	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
+	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
+	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.Placeholder))
 	s.Blurred = s.Focused
-	s.Cursor.Color = lipgloss.Color(t.Accent)
+	s.Cursor.Color = lipgloss.Color(t.Input.Cursor)
 	p.search.SetStyles(s)
 	p.search.SetWidth(maxInt(10, p.width-2))
 }
@@ -230,8 +230,9 @@ func inputContainer(view string, width int, t theme.Theme) string {
 	if width <= 0 {
 		return ""
 	}
-	content := surface.FitWidth(view, maxInt(1, width-1))
-	return primitives.RenderInputRowInset(width, pick(t.InputBG, t.ElementBG, t.SurfaceMuted), t.Text, content, 1)
+	input := styles.New(t).InputColors()
+	content := surface.FitWidth(view, maxInt(1, width-2))
+	return primitives.RenderInputRowInset(width, input.BG, input.FG, content, 1)
 }
 
 func pick(values ...string) string {

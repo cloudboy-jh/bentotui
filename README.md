@@ -21,7 +21,7 @@ BentoTUI is in active `v0.1` development and evolving quickly.
 Current focus:
 
 - shell architecture and rendering correctness
-- UI layer structure (`ui/components/*`, `ui/styles`)
+- UI layer structure (`ui/containers/*`, `ui/styles`)
 - footer-first shell contract
 - theme system and dialog-driven theme switching
 
@@ -34,9 +34,9 @@ Current focus:
 - modal dialog manager (`confirm`, `custom`, theme picker)
 - semantic theme presets (`catppuccin-mocha`, `dracula`, `osaka-jade`)
 - structured UI layer:
-  - `ui/components/dialog`
-  - `ui/components/footer`
-  - `ui/components/panel`
+  - `ui/containers/dialog`
+  - `ui/containers/footer`
+  - `ui/containers/panel`
   - `ui/styles`
 
 ## Install
@@ -58,7 +58,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/layout"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/components/panel"
+	"github.com/cloudboy-jh/bentotui/ui/containers/panel"
 )
 
 func main() {
@@ -127,13 +127,17 @@ Harness validates:
 
 ## Docs
 
-- main spec: `project-docs/bentotui-main-spec.md`
-- layer architecture: `project-docs/layer-architecture.md`
-- framework roadmap: `project-docs/framework-roadmap.md`
-- rendering ADR: `project-docs/rendering-system-design.md`
-- roadmap: `project-docs/next-steps.md`
-- 1.0 component queue: `project-docs/next-components-tobuild.md`
-- research notes: `project-docs/tui-framework-research.md`
+- docs index: `project-docs/README.md`
+- main spec: `project-docs/spec/bentotui-main-spec.md`
+- color design system: `project-docs/design/bento-color-design-system.md`
+- component system: `project-docs/design/component-system-reference.md`
+- component sizing contract: `project-docs/design/component-sizing-contract.md`
+- layer architecture: `project-docs/spec/layer-architecture.md`
+- framework roadmap: `project-docs/roadmap/framework-roadmap.md`
+- rendering ADR: `project-docs/design/rendering-system-design.md`
+- roadmap: `project-docs/roadmap/next-steps.md`
+- 1.0 component queue: `project-docs/roadmap/next-components-tobuild.md`
+- research notes: `project-docs/research/tui-framework-research.md`
 - changelog: `CHANGELOG.md`
 
 Agent integration assets:

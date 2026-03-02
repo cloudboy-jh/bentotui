@@ -29,23 +29,34 @@ func TestSetThemeRejectsUnknownName(t *testing.T) {
 	}
 }
 
-func TestPresetsHaveSolidSurfaceTokens(t *testing.T) {
+func TestPresetsDefineAllRequiredTokens(t *testing.T) {
 	for _, name := range AvailableThemes() {
 		theme := Preset(name)
-		if theme.Background == "" || theme.PanelBG == "" || theme.ElementBG == "" || theme.ModalBG == "" {
-			t.Fatalf("theme %q missing layered background tokens", name)
+		if err := validateTheme(theme); err != nil {
+			t.Fatalf("theme %q invalid: %v", name, err)
 		}
-		if theme.Surface == "" || theme.SurfaceMuted == "" {
-			t.Fatalf("theme %q missing background/surface tokens", name)
+	}
+}
+
+func TestRegisterThemeRejectsMissingRequiredToken(t *testing.T) {
+	theme := Preset(DefaultName)
+	theme.Input.Border = ""
+	if err := RegisterTheme("bad-theme", theme); err == nil {
+		t.Fatal("expected register to fail when required token is missing")
+	}
+}
+
+func TestBuiltinsPreserveStitchedSurfaceSeparation(t *testing.T) {
+	for _, name := range AvailableThemes() {
+		th := Preset(name)
+		if th.Input.BG == th.Surface.Panel {
+			t.Fatalf("theme %q input bg must differ from panel bg", name)
 		}
-		if theme.Border == "" || theme.BorderSubtle == "" || theme.BorderFocused == "" {
-			t.Fatalf("theme %q missing border tokens", name)
+		if th.Selection.BG == th.Surface.Panel {
+			t.Fatalf("theme %q selection bg must differ from panel bg", name)
 		}
-		if theme.SelectionBG == "" || theme.SelectionText == "" || theme.InputBG == "" || theme.InputBorder == "" {
-			t.Fatalf("theme %q missing interaction tokens", name)
-		}
-		if theme.StatusBG == "" || theme.DialogBG == "" || theme.Scrim == "" {
-			t.Fatalf("theme %q missing status/dialog/scrim tokens", name)
+		if th.Dialog.BG == th.Surface.Panel {
+			t.Fatalf("theme %q dialog bg must differ from panel bg", name)
 		}
 	}
 }

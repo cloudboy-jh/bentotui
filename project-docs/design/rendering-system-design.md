@@ -121,6 +121,10 @@ Decision:
 4. Region anchoring
    - Every allocated layout region paints its own background before content.
 
+4.1 Row composition contract
+   - Shared row primitives must paint a full-width base row first, then overlay styled content.
+   - ANSI/styled child content must never reduce parent background coverage.
+
 5. Deterministic layering
    - Exact order: `shell-bg -> body-bg -> body-content -> footer -> scrim -> dialog`.
 
@@ -137,7 +141,11 @@ Decision:
    - Framework defaults to fullscreen app mode.
 
 10. Debuggability
-    - Render dimensions and major layer bounds must be introspectable.
+     - Render dimensions and major layer bounds must be introspectable.
+
+11. Color and sizing governance
+    - Color roles must follow `project-docs/design/bento-color-design-system.md`.
+    - Component width/height behavior must follow `project-docs/design/component-sizing-contract.md`.
 
 ---
 
@@ -148,7 +156,7 @@ Decision:
 Root view must set:
 
 - `AltScreen = true` by default (configurable)
-- `BackgroundColor = theme.Background`
+- `BackgroundColor = theme.surface.canvas`
 - `Content = root drawable`
 
 ### 6.2 Root drawable contract

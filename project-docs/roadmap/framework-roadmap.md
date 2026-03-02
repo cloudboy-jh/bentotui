@@ -3,8 +3,8 @@
 Status: Active
 Date: 2026-02-25
 
-This roadmap defines the framework-level plan for BentoTUI. It is separate from `project-docs/next-steps.md`, which tracks immediate execution items.
-The locked 1.0 component queue lives in `project-docs/next-components-tobuild.md`.
+This roadmap defines the framework-level plan for BentoTUI. It is separate from `project-docs/roadmap/next-steps.md`, which tracks immediate execution items.
+The locked 1.0 component queue lives in `project-docs/roadmap/next-components-tobuild.md`.
 
 ## Vision
 
@@ -18,9 +18,12 @@ BentoTUI is a framework layer over Bubble Tea for building complete terminal app
 ## Principles
 
 - contract-first implementation (no ad hoc components)
-- runtime/core separated from UI layer (`ui/components/*`, `ui/styles`)
+- runtime/core separated from UI layer (`ui/containers/*`, `ui/styles`)
 - shared UI primitives centralized in `ui/primitives`
 - semantic styles only (no scattered raw color literals in components)
+- strict documented theme tokens only (no color derivation)
+- explicit component sizing contract for all bounded rendering
+- dual distribution model: Go module for library users + CLI binary for copy/scaffold workflows
 - test-backed behavior before API expansion
 
 ## Status Legend
@@ -40,7 +43,7 @@ Goals:
 - router, layout, focus baseline
 - dialog manager with confirm/custom flows
 - theme presets and persistence
-- initial UI layer split under `ui/components/*` and `ui/styles`
+- initial UI layer split under `ui/containers/*` and `ui/styles`
 
 Remaining focus to close v0.1:
 
@@ -69,6 +72,18 @@ Goals:
 - command palette workflow as first-class slash UX
 - command/action registry and discoverability
 - unified command execution model across harness and real apps
+
+## v0.3 CLI Distribution (MVP)
+
+Status: `planned`
+
+Goals:
+
+- ship `bento` CLI for shadcn-style copy-and-own workflows
+- provide `bento init` for project scaffolding
+- provide `bento add <component>` for local component source install
+- provide `bento doctor` for token/layer/sizing contract checks
+- publish CLI binaries via GitHub Actions + GoReleaser while keeping module tags as primary package distribution
 
 ## v0.4 Theme Registry and Extensibility
 

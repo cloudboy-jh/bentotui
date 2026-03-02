@@ -6,7 +6,7 @@ Date: 2026-02-26
 This document captures the top-down BentoTUI architecture across the four UI/runtime layers:
 
 - `core`
-- `ui/components`
+- `ui/containers`
 - `ui/primitives`
 - `ui/styles`
 
@@ -27,7 +27,7 @@ App / Feature Code
                           |
                           v
 +------------------------------------------------------+
-| ui/components (composed UI units)                    |
+| ui/containers (composed UI units)                    |
 |------------------------------------------------------|
 | panel                footer                dialog    |
 | - bounded models implementing tea.Model + SetSize    |
@@ -63,7 +63,7 @@ App / Feature Code
 - Composes shell layers and update/view flow.
 - Defines deterministic layer order and sizing behavior.
 
-### 2) `ui/components`
+### 2) `ui/containers`
 
 - Hosts composed UI models (`footer`, `panel`, `dialog`).
 - Implements bounded behavior with `SetSize`/`GetSize`.
@@ -84,6 +84,6 @@ App / Feature Code
 ## Design Rule of Thumb
 
 - If it controls runtime flow: `core`.
-- If it is a composed UI model: `ui/components`.
+- If it is a composed UI model: `ui/containers`.
 - If it is a small reusable render piece: `ui/primitives`.
 - If it defines visual semantics: `ui/styles`.

@@ -7,7 +7,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/core"
 	"github.com/cloudboy-jh/bentotui/core/router"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
 )
 
 type testPage struct {

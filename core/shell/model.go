@@ -12,9 +12,9 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/router"
 	"github.com/cloudboy-jh/bentotui/core/surface"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/components/dialog"
-	"github.com/cloudboy-jh/bentotui/ui/components/footer"
-	"github.com/cloudboy-jh/bentotui/ui/components/header"
+	"github.com/cloudboy-jh/bentotui/ui/containers/dialog"
+	"github.com/cloudboy-jh/bentotui/ui/containers/footer"
+	"github.com/cloudboy-jh/bentotui/ui/containers/header"
 )
 
 type Option func(*Model)
@@ -103,10 +103,13 @@ func (m *Model) Init() tea.Cmd {
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	forwardTheme := false
+	syncThemeAfterRoute := false
 	openThemeDialog := false
 	switch v := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.syncViewport(v.Width, v.Height)
+	case core.NavigateMsg:
+		syncThemeAfterRoute = true
 	case theme.OpenThemePickerMsg:
 		if !m.dialogs.IsOpen() {
 			openThemeDialog = true
@@ -128,6 +131,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var pageCmd tea.Cmd
 	if forwardTheme || !m.dialogs.IsOpen() {
 		_, pageCmd = m.router.Update(msg)
+		if syncThemeAfterRoute {
+			_, themeCmd := m.router.Update(theme.ThemeChangedMsg{Name: theme.CurrentThemeName(), Theme: m.theme})
+			pageCmd = tea.Batch(pageCmd, themeCmd)
+		}
 	}
 
 	_, headerCmd := m.header.Update(msg)
@@ -139,7 +146,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() tea.View {
 	v := tea.NewView("")
 	v.AltScreen = m.fullScreen
-	v.BackgroundColor = lipgloss.Color(m.theme.Background)
+	v.BackgroundColor = lipgloss.Color(m.theme.Surface.Canvas)
 	if m.width <= 0 || m.height <= 0 {
 		return v
 	}
@@ -202,7 +209,7 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 		bodyHeight = 0
 	}
 
-	shellBG := surface.Fill(w, h, m.theme.Background)
+	shellBG := surface.Fill(w, h, m.theme.Surface.Canvas)
 	bodyView := m.router.View()
 
 	layers := []*lipgloss.Layer{
@@ -231,7 +238,7 @@ func (m *Model) draw(scr uv.Screen, area image.Rectangle) {
 	}
 
 	if m.dialogs.IsOpen() {
-		scrim := surface.Fill(w, h, m.theme.Scrim)
+		scrim := surface.Fill(w, h, m.theme.Dialog.Scrim)
 		dlgView := m.dialogs.View()
 		dlg := core.ViewString(dlgView)
 		dlgW, dlgH := lipgloss.Size(dlg)
@@ -262,10 +269,10 @@ func min(a, b int) int {
 
 func openThemeDialogCmd(width, height int) tea.Cmd {
 	picker := dialog.NewThemePicker()
-	maxWidth := max(36, width-4)
-	maxHeight := max(10, height-4)
-	modalWidth := clampInt(width-12, min(48, maxWidth), maxWidth)
-	modalHeight := clampInt(height-8, min(18, maxHeight), maxHeight)
+	maxWidth := max(44, width-8)
+	maxHeight := max(12, height-6)
+	modalWidth := clampInt(72, min(52, maxWidth), min(88, maxWidth))
+	modalHeight := clampInt(height-10, min(14, maxHeight), min(24, maxHeight))
 	return func() tea.Msg {
 		return dialog.Open(dialog.Custom{
 			DialogTitle: "Theme",

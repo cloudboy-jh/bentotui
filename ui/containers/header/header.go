@@ -191,7 +191,8 @@ func (m *Model) renderLine(text string) tea.View {
 	if m.width == 0 {
 		return tea.NewView(style.Render(text))
 	}
-	line := primitives.RenderRow(m.width, m.theme.StatusBG, m.theme.StatusText, text)
+	bar := styles.New(m.theme).BarColors()
+	line := primitives.RenderRow(m.width, bar.BG, bar.FG, text)
 	return tea.NewView(line)
 }
 

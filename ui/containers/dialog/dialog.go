@@ -146,7 +146,7 @@ func (c Confirm) View() tea.View {
 		text = "Confirm?"
 	}
 	t := c.theme
-	if t.Accent == "" {
+	if t.Name == "" {
 		t = theme.Preset(theme.DefaultName)
 	}
 	content := strings.Join([]string{text, "", "Enter confirm  Esc cancel"}, "\n")
@@ -189,7 +189,7 @@ func (c Custom) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c Custom) View() tea.View {
 	t := c.theme
-	if t.Accent == "" {
+	if t.Name == "" {
 		t = theme.Preset(theme.DefaultName)
 	}
 	body := ""

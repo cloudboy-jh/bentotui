@@ -4,8 +4,8 @@ import (
 	"github.com/cloudboy-jh/bentotui/core/router"
 	"github.com/cloudboy-jh/bentotui/core/shell"
 	"github.com/cloudboy-jh/bentotui/core/theme"
-	"github.com/cloudboy-jh/bentotui/ui/components/footer"
-	"github.com/cloudboy-jh/bentotui/ui/components/header"
+	"github.com/cloudboy-jh/bentotui/ui/containers/footer"
+	"github.com/cloudboy-jh/bentotui/ui/containers/header"
 )
 
 // Deprecated: use package core/shell directly for new code.
