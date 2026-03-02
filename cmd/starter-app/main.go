@@ -9,9 +9,10 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/registry/bar"
-	"github.com/cloudboy-jh/bentotui/registry/dialog"
-	"github.com/cloudboy-jh/bentotui/registry/input"
+	"github.com/cloudboy-jh/bentotui/registry/components/bar"
+	"github.com/cloudboy-jh/bentotui/registry/components/dialog"
+	"github.com/cloudboy-jh/bentotui/registry/components/input"
+	"github.com/cloudboy-jh/bentotui/registry/components/surface"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -73,6 +74,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	// OpenMsg must reach the manager even when no dialog is currently open.
+	case dialog.OpenMsg:
+		updated, cmd := m.dialogs.Update(msg)
+		m.dialogs = updated.(*dialog.Manager)
+		return m, cmd
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -90,9 +97,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-		case "ctrl+t":
-			return m, openThemePicker()
-		case "ctrl+k", "tab":
+		case "tab":
 			return m, nil
 		case "enter":
 			val := strings.TrimSpace(m.inputBox.Value())
@@ -116,21 +121,37 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() tea.View {
-	if m.width == 0 {
-		return tea.NewView("")
-	}
 	t := theme.CurrentTheme()
+	canvasColor := lipgloss.Color(t.Surface.Canvas)
+
+	// Always enter alt screen from frame 1 — before WindowSizeMsg arrives.
+	if m.width == 0 {
+		v := tea.NewView("")
+		v.AltScreen = true
+		v.BackgroundColor = canvasColor
+		return v
+	}
+
+	bodyH := max(0, m.height-1) // minus status bar row
+
+	// ── Surface: every cell is explicitly painted — no ANSI whitespace resets ──
+	// Fill paints each cell with the canvas background color first, then we
+	// draw lipgloss-rendered blocks on top via Ultraviolet's StyledString draw.
+	surf := surface.New(m.width, bodyH)
+	surf.Fill(canvasColor)
+
+	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
+	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
 
 	// ── wordmark ──────────────────────────────────────────────────────────────
 	wm := lipgloss.NewStyle().
 		Foreground(lipgloss.Color(t.Text.Accent)).
 		Bold(true).
 		Render(wordmark)
-	wmLines := strings.Split(
-		lipgloss.PlaceHorizontal(m.width, lipgloss.Center, wm), "\n")
+	wmW := lipgloss.Width(wm)
+	wmH := strings.Count(wm, "\n") + 1
 
 	// ── input block ───────────────────────────────────────────────────────────
-	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
 	badges := dim.Render("add   panel   list   input   table   dialog")
 	inputStr := viewString(m.inputBox.View())
 	inner := lipgloss.JoinVertical(lipgloss.Left, inputStr, badges)
@@ -140,57 +161,60 @@ func (m *model) View() tea.View {
 		PaddingTop(1).PaddingBottom(1).
 		PaddingLeft(2).PaddingRight(2).
 		Render(inner)
-	blockLines := strings.Split(
-		lipgloss.PlaceHorizontal(m.width, lipgloss.Center, block), "\n")
+	blockW := lipgloss.Width(block)
+	blockH := lipgloss.Height(block)
 
 	// ── kbd hints ─────────────────────────────────────────────────────────────
-	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
 	kbdStr := dim.Render("tab ") + bright.Render("components") +
 		dim.Render("   ⌘K ") + bright.Render("commands")
-	kbdLine := lipgloss.PlaceHorizontal(m.width, lipgloss.Right, kbdStr+"  ")
+	kbdW := lipgloss.Width(kbdStr)
 
 	// ── tip ───────────────────────────────────────────────────────────────────
 	dot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("● Tip")
-	tip := lipgloss.PlaceHorizontal(m.width, lipgloss.Center,
-		dot+dim.Render("  Run bento init to scaffold a new TUI app"))
+	tipStr := dot + dim.Render("  Run bento init to scaffold a new TUI app")
+	tipW := lipgloss.Width(tipStr)
 
-	// ── assemble body ─────────────────────────────────────────────────────────
-	// Content rows: wordmark(6) + 2 blank + inputBlock(4) + 1 blank + kbd(1) + 1 blank + tip(1) = 16
+	// ── vertical centering ────────────────────────────────────────────────────
+	// Layout: wordmark(6) + gap(2) + block(4) + gap(1) + kbd(1) + gap(1) + tip(1) = 16
 	const contentH = 16
-	bodyH := max(0, m.height-1) // minus status bar
 	topPad := max(0, (bodyH-contentH)/2)
-	botPad := max(0, bodyH-contentH-topPad)
 
-	rows := make([]string, 0, bodyH+2)
-	for i := 0; i < topPad; i++ {
-		rows = append(rows, "")
-	}
-	rows = append(rows, wmLines...)
-	rows = append(rows, "", "")
-	rows = append(rows, blockLines...)
-	rows = append(rows, "")
-	rows = append(rows, kbdLine)
-	rows = append(rows, "")
-	rows = append(rows, tip)
-	for i := 0; i < botPad; i++ {
-		rows = append(rows, "")
-	}
-	bodyStr := strings.Join(rows, "\n")
+	// Draw each element at its centered X, calculated Y position.
+	// surface.Draw(x, y, content) — no whitespace padding needed.
+	y := topPad
+
+	// wordmark — centered horizontally
+	surf.Draw(max(0, (m.width-wmW)/2), y, wm)
+	y += wmH + 2
+
+	// input block — centered horizontally
+	surf.Draw(max(0, (m.width-blockW)/2), y, block)
+	y += blockH + 1
+
+	// kbd hints — right-aligned (2 cell margin from edge)
+	surf.Draw(max(0, m.width-kbdW-2), y, kbdStr)
+	y += 2
+
+	// tip — centered
+	surf.Draw(max(0, (m.width-tipW)/2), y, tipStr)
 
 	// ── dialog overlay ────────────────────────────────────────────────────────
 	if m.dialogs.IsOpen() {
 		dlgStr := viewString(m.dialogs.View())
-		bodyStr = lipgloss.PlaceHorizontal(m.width, lipgloss.Center,
-			lipgloss.PlaceVertical(bodyH, lipgloss.Center, dlgStr))
+		surf.DrawCenter(dlgStr)
 	}
 
 	// ── status bar ────────────────────────────────────────────────────────────
 	statusStr := viewString(m.statusBar.View())
-	screen := lipgloss.JoinVertical(lipgloss.Top, bodyStr, statusStr)
+
+	// Render the surface, append a newline + status bar row.
+	// surface.Render() uses \r\n between lines (raw buffer output);
+	// Bubble Tea normalises this correctly.
+	screen := surf.Render() + "\r\n" + statusStr
 
 	v := tea.NewView(screen)
 	v.AltScreen = true
-	v.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
+	v.BackgroundColor = canvasColor
 	return v
 }
 
@@ -203,9 +227,12 @@ func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
 
 func openThemePicker() tea.Cmd {
 	return func() tea.Msg {
+		h := len(theme.AvailableThemes()) + 8
 		return dialog.Open(dialog.Custom{
 			DialogTitle: "Themes",
 			Content:     dialog.NewThemePicker(),
+			Width:       44,
+			Height:      h,
 		})
 	}
 }
