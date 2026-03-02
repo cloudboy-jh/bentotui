@@ -16,14 +16,22 @@ Charm gives you bricks. BentoTUI gives you rooms.
 
 ## Status
 
-BentoTUI is in active `v0.1` development and evolving quickly.
+BentoTUI is in active `v0.1` development with a stable core architecture.
 
-Current focus:
+**Completed:**
 
-- shell architecture and rendering correctness
-- UI layer structure (`core/layout`, `ui/containers`, `ui/widgets`, `ui/styles`)
-- canvas-based layout system for proper panel rendering
-- theme system with 15+ professional presets via bubbletint
+- Canvas-based layout system (Horizontal/Vertical with Fixed/Flex/Min/Max constraints)
+- Global theme system with 15 professional presets via bubbletint
+- Complete widget library (Input, List, Text, Card, Table)
+- Container components (Panel, Bar, Dialog with theme picker)
+- Reactive theme propagation across all components
+
+**Current focus:**
+
+- Additional container components (Tabs, Sidebar, Split)
+- Widget enhancements (ScrollableList, RichText)
+- Performance optimizations
+- Documentation and examples
 
 ## Feature Snapshot
 
@@ -161,7 +169,7 @@ root := layout.Horizontal(
 ).WithGutterColor(theme.Border.Subtle)
 ```
 
-See [docs/bentotui-components.md](./docs/bentotui-components.md) for complete API documentation.
+See [docs/components.md](./docs/components.md) for complete component documentation and [docs/architecture.md](./docs/architecture.md) for system design.
 
 ## License
 
