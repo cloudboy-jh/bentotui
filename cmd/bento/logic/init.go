@@ -1,100 +1,83 @@
-package main
+// Package logic provides business logic for the bento CLI.
+// These functions are UI-agnostic and can be used by both CLI and TUI modes.
+package logic
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"text/template"
 )
 
-func runInit(args []string) {
-	fmt.Println("bento init")
-	fmt.Println()
+// ProjectConfig holds the configuration for a new project.
+type ProjectConfig struct {
+	AppName string
+	Module  string
+}
 
-	appName := ""
-	if len(args) > 0 && args[0] != "--help" && args[0] != "-h" {
-		appName = strings.TrimSpace(args[0])
+// ScaffoldProject creates a new BentoTUI project with the given configuration.
+// Returns a slice of created file paths and any error encountered.
+func ScaffoldProject(cfg ProjectConfig) ([]string, error) {
+	if cfg.AppName == "" {
+		cfg.AppName = "my-bento-app"
 	}
-	if appName == "" {
-		appName = prompt("  App name", "my-bento-app")
-	}
-	if appName == "" {
-		appName = "my-bento-app"
-	}
-
-	modulePath := prompt("  Module path", fmt.Sprintf("example.com/%s", appName))
-	if modulePath == "" {
-		modulePath = fmt.Sprintf("example.com/%s", appName)
+	if cfg.Module == "" {
+		cfg.Module = fmt.Sprintf("example.com/%s", cfg.AppName)
 	}
 
-	fmt.Println()
-	fmt.Printf("  Creating %s/\n", appName)
-
-	if _, err := os.Stat(appName); err == nil {
-		fatal("directory %q already exists", appName)
+	// Check if directory already exists
+	if _, err := os.Stat(cfg.AppName); err == nil {
+		return nil, fmt.Errorf("directory %q already exists", cfg.AppName)
 	}
 
-	check(os.MkdirAll(appName, 0755), "create app directory")
+	// Create project directory
+	if err := os.MkdirAll(cfg.AppName, 0755); err != nil {
+		return nil, fmt.Errorf("create app directory: %w", err)
+	}
 
-	data := struct {
-		AppName string
-		Module  string
-	}{AppName: appName, Module: modulePath}
+	created := []string{}
 
-	writeTemplate(filepath.Join(appName, "go.mod"), goModTemplate, data)
-	writeTemplate(filepath.Join(appName, "main.go"), mainGoTemplate, data)
+	// Write go.mod
+	goModPath := filepath.Join(cfg.AppName, "go.mod")
+	if err := writeTemplate(goModPath, goModTemplate, cfg); err != nil {
+		return created, fmt.Errorf("write go.mod: %w", err)
+	}
+	created = append(created, goModPath)
 
-	fmt.Println()
-	fmt.Println("  Running go mod tidy...")
+	// Write main.go
+	mainPath := filepath.Join(cfg.AppName, "main.go")
+	if err := writeTemplate(mainPath, mainGoTemplate, cfg); err != nil {
+		return created, fmt.Errorf("write main.go: %w", err)
+	}
+	created = append(created, mainPath)
+
+	// Run go mod tidy
 	tidyCmd := exec.Command("go", "mod", "tidy")
-	tidyCmd.Dir = appName
-	tidyCmd.Stdout = os.Stdout
-	tidyCmd.Stderr = os.Stderr
+	tidyCmd.Dir = cfg.AppName
 	if err := tidyCmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "  warning: go mod tidy failed: %v\n", err)
-		fmt.Println("  You may need to run it manually after editing go.mod.")
-	} else {
-		fmt.Printf("  %s/go.sum\n", appName)
+		// Don't fail - warn only
+		return created, nil
 	}
 
-	fmt.Println()
-	fmt.Println("  Done. Next steps:")
-	fmt.Println()
-	fmt.Printf("    cd %s\n", appName)
-	fmt.Println("    bento add panel bar  # copy components you want")
-	fmt.Println("    go run .")
-	fmt.Println()
+	// go.sum was created
+	created = append(created, filepath.Join(cfg.AppName, "go.sum"))
+
+	return created, nil
 }
 
-func writeTemplate(path, tmplStr string, data any) {
+func writeTemplate(path, tmplStr string, data any) error {
 	t, err := template.New("").Parse(tmplStr)
-	check(err, "parse template for "+path)
+	if err != nil {
+		return err
+	}
 	f, err := os.Create(path)
-	check(err, "create "+path)
+	if err != nil {
+		return err
+	}
 	defer f.Close()
-	check(t.Execute(f, data), "write "+path)
-	fmt.Printf("  %s\n", path)
+	return t.Execute(f, data)
 }
-
-func prompt(question, defaultVal string) string {
-	if defaultVal != "" {
-		fmt.Printf("%s (%s): ", question, defaultVal)
-	} else {
-		fmt.Printf("%s: ", question)
-	}
-	reader := bufio.NewReader(os.Stdin)
-	line, _ := reader.ReadString('\n')
-	line = strings.TrimSpace(line)
-	if line == "" {
-		return defaultVal
-	}
-	return line
-}
-
-// ── templates ─────────────────────────────────────────────────────────────────
 
 const goModTemplate = `module {{.Module}}
 
@@ -107,10 +90,6 @@ require (
 )
 `
 
-// mainGoTemplate generates a minimal but complete BentoTUI app.
-// It uses only the stable module deps (layout, theme) so it compiles
-// without requiring any `bento add` step. Users add registry components
-// as needed.
 const mainGoTemplate = `package main
 
 import (

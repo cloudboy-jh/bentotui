@@ -3,23 +3,28 @@ package main
 import (
 	"fmt"
 	"os"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/cloudboy-jh/bentotui/cmd/bento/tui"
 )
 
 const version = "0.2.0"
 
 func main() {
+	// No args = TUI mode
 	if len(os.Args) < 2 {
-		printHelp()
-		os.Exit(1)
+		runTUI()
+		return
 	}
 
+	// CLI mode
 	switch os.Args[1] {
 	case "init":
-		runInit(os.Args[2:])
+		runInitCLI(os.Args[2:])
 	case "add":
-		runAdd(os.Args[2:])
+		runAddCLI(os.Args[2:])
 	case "doctor":
-		runDoctor(os.Args[2:])
+		runDoctorCLI(os.Args[2:])
 	case "version", "--version", "-v":
 		fmt.Printf("🍱 bento v%s\n", version)
 	case "help", "--help", "-h":
@@ -31,19 +36,29 @@ func main() {
 	}
 }
 
+func runTUI() {
+	app := tui.NewApp()
+	if _, err := tea.NewProgram(app).Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error running TUI: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 func printHelp() {
 	fmt.Print(`🍱 bento — BentoTUI project CLI
 
 Usage:
-  bento <command> [arguments]
+  bento                Launch interactive TUI
+  bento <command>      Run CLI command
 
 Commands:
-  init [name]        Scaffold a new BentoTUI app
-  add <component>    Copy-and-own a component into your project
-  doctor             Check your project for common issues
-  version            Print the bento version
+  init [name]          Scaffold a new BentoTUI app
+  add <component>      Copy-and-own a component into your project
+  doctor               Check your project for common issues
+  version              Print the bento version
+  help                 Show this help message
 
-Run 'bento <command> --help' for details on a specific command.
+Run 'bento' with no arguments to use the interactive TUI.
 `)
 }
 

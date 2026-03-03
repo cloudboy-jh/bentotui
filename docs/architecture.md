@@ -19,7 +19,7 @@ bubbletint (palette registry)
      ▼
 theme/ (semantic token adapter + runtime store)
      │  CurrentTheme(), SetTheme(), PreviewTheme()
-     │  15 built-in palettes via bubbletint
+     │  16 built-in palettes (incl. bento-rose)
      │  Contrast validation: key layer pairs guaranteed distinct
      ▼
 styles/ (token → lipgloss.Style mapping)

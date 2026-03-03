@@ -12,7 +12,7 @@ All components are copy-and-own — run `bento add <name>` to copy source into y
 ```go
 import "github.com/cloudboy-jh/bentotui/theme"
 
-theme.SetTheme("dracula")            // persist choice
+theme.SetTheme("bento-rose")         // persist choice
 theme.PreviewTheme("nord")           // live preview, no persist
 theme.CurrentTheme() theme.Theme     // always read in View()
 theme.CurrentThemeName() string

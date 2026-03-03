@@ -191,6 +191,7 @@ var builtinThemes = map[string]Theme{
 	"nord": fromTint(tint.TintNord, "nord"),
 
 	// Warm / retro
+	"bento-rose":   bentoRoseTheme(),
 	"gruvbox-dark": fromTint(tint.TintGruvboxDark, "gruvbox-dark"),
 	"monokai-pro":  fromTint(tint.TintMonokaiPro, "monokai-pro"),
 

@@ -134,13 +134,13 @@ These are stable module deps your project imports directly:
 
 | Package | Import path | What it is |
 |---------|-------------|------------|
-| `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 15 presets, goroutine-safe |
+| `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 16 presets, goroutine-safe |
 | `styles` | `github.com/cloudboy-jh/bentotui/styles` | Theme → Lip Gloss style mapping |
 | `layout` | `github.com/cloudboy-jh/bentotui/layout` | `Horizontal` / `Vertical` split layout |
 
 ## Theme System
 
-15 built-in presets:
+16 built-in presets:
 
 ```go
 // Set once at startup
@@ -152,7 +152,7 @@ t := theme.CurrentTheme()
 
 Available themes: `catppuccin-mocha` (default), `catppuccin-macchiato`,
 `catppuccin-frappe`, `dracula`, `tokyo-night`, `tokyo-night-storm`, `nord`,
-`gruvbox-dark`, `monokai-pro`, `kanagawa`, `rose-pine`, `ayu-mirage`,
+`bento-rose`, `gruvbox-dark`, `monokai-pro`, `kanagawa`, `rose-pine`, `ayu-mirage`,
 `one-dark`, `material-ocean`, `github-dark`.
 
 Switch themes at runtime via the `/theme` command in the starter app.
