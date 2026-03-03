@@ -114,20 +114,20 @@ func (p *ThemePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p *ThemePicker) View() tea.View {
 	t := theme.CurrentTheme()
+	sys := styles.New(t)
 	contentWidth := maxv(24, p.width)
 	rows := make([]string, 0, 10)
 
-	dialogBG := t.Dialog.BG
-	inputColors := styles.New(t).InputColors()
-
-	// Search input row
-	inputContent := fitWidth(p.search.View(), maxv(1, contentWidth-2))
-	rows = append(rows, renderRow(contentWidth, inputColors.BG, inputColors.FG, " "+inputContent))
-	// Blank separator
-	rows = append(rows, renderRow(contentWidth, dialogBG, "", ""))
+	// Search row — rendered entirely with Dialog.BG so no dark cells bleed through.
+	// We build the display manually from Value()/Position() instead of using
+	// p.search.View(), which may produce cells with Bg=nil or a dark default Bg.
+	searchRow := p.renderSearchRow(t, sys, contentWidth)
+	rows = append(rows, searchRow)
+	// Blank separator using dialog bg
+	rows = append(rows, sys.DialogListRow().Width(contentWidth).Render(""))
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, renderRow(contentWidth, dialogBG, t.Text.Muted, "No matching themes"))
+		rows = append(rows, sys.DialogListRow().Width(contentWidth).Render("  No matching themes"))
 	} else {
 		maxRows := maxv(1, p.height-4)
 		start := 0
@@ -140,32 +140,27 @@ func (p *ThemePicker) View() tea.View {
 			selected := i == p.selected
 			isCurrent := name == p.themeName
 
-			rowBG := dialogBG
-			rowFG := t.Text.Primary
-			if selected {
-				rowBG = pick(t.Border.Focus, t.Selection.BG)
-				rowFG = pick(t.Text.Inverse, t.Selection.FG)
-			}
-
 			var row string
-			if isCurrent {
-				bulletStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color(pick(t.Text.Accent, t.Border.Focus))).
-					Background(lipgloss.Color(rowBG))
-				nameStyle := lipgloss.NewStyle().
-					Foreground(lipgloss.Color(rowFG)).
-					Background(lipgloss.Color(rowBG))
-				row = bulletStyle.Render("● ") + nameStyle.Width(contentWidth-2).Render(name)
-			} else {
-				marker := "  "
-				if selected {
-					marker = "> "
+			if selected {
+				// Selected row: Selection.BG/FG — always highest contrast
+				rowStyle := sys.DialogListRowSelected()
+				if isCurrent {
+					bullet := rowStyle.Render("● ")
+					rest := rowStyle.Width(contentWidth - 2).Render(name)
+					row = bullet + rest
+				} else {
+					row = rowStyle.Width(contentWidth).Render("  " + name)
 				}
-				row = lipgloss.NewStyle().
-					Foreground(lipgloss.Color(rowFG)).
-					Background(lipgloss.Color(rowBG)).
-					Width(contentWidth).
-					Render(marker + name)
+			} else if isCurrent {
+				// Current (not selected): accent bullet, dialog bg
+				bullet := lipgloss.NewStyle().
+					Foreground(lipgloss.Color(t.Text.Accent)).
+					Background(lipgloss.Color(t.Dialog.BG)).
+					Render("● ")
+				rest := sys.DialogListRow().Width(contentWidth - 2).Render(name)
+				row = bullet + rest
+			} else {
+				row = sys.DialogListRow().Width(contentWidth).Render("  " + name)
 			}
 			rows = append(rows, row)
 		}
@@ -183,13 +178,70 @@ func (p *ThemePicker) SetSize(width, height int) {
 func (p *ThemePicker) GetSize() (int, int) { return p.width, p.height }
 func (p *ThemePicker) Title() string       { return "Themes" }
 
+// renderSearchRow builds the search input row entirely from Dialog.BG-backed
+// styles. We never use p.search.View() because textinput may produce cells with
+// Bg=nil or a dark default background that bleeds through the UV surface overlay.
+func (p *ThemePicker) renderSearchRow(t theme.Theme, sys styles.System, width int) string {
+	dbg := t.Dialog.BG
+	dfg := t.Text.Primary
+	muted := t.Text.Muted
+	cursor := t.Input.Cursor
+
+	val := []rune(p.search.Value())
+	pos := p.search.Position()
+	if pos > len(val) {
+		pos = len(val)
+	}
+
+	// Available text width = width - 2 (leading spaces).
+	textW := maxv(1, width-2)
+
+	base := lipgloss.NewStyle().Background(lipgloss.Color(dbg))
+	textStyle := base.Foreground(lipgloss.Color(dfg))
+	mutedStyle := base.Foreground(lipgloss.Color(muted))
+	cursorStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color(cursor)).
+		Foreground(lipgloss.Color(dbg))
+
+	var result string
+	if len(val) == 0 {
+		// Placeholder: cursor on first char, rest muted.
+		ph := []rune(p.search.Placeholder)
+		if len(ph) == 0 {
+			ph = []rune{' '}
+		}
+		cursorChar := string(ph[0])
+		rest := ""
+		if len(ph) > 1 {
+			rest = string(ph[1:])
+		}
+		result = cursorStyle.Render(cursorChar) + mutedStyle.Render(rest)
+	} else {
+		before := string(val[:pos])
+		after := ""
+		cursorChar := " " // cursor at end — block on space
+		if pos < len(val) {
+			cursorChar = string(val[pos])
+			after = string(val[pos+1:])
+		}
+		result = textStyle.Render(before) + cursorStyle.Render(cursorChar) + textStyle.Render(after)
+	}
+
+	// Clip + pad to textW, then add the 2-space indent — all on Dialog.BG.
+	clipped := lipgloss.NewStyle().
+		Background(lipgloss.Color(dbg)).
+		MaxWidth(textW).
+		Width(textW).
+		Render(result)
+
+	return sys.DialogListRow().Width(width).Render("  " + clipped)
+}
+
 func (p *ThemePicker) syncStyles() {
 	t := theme.CurrentTheme()
+	// The textinput model handles key input only — View() is never called on it.
+	// Minimal styles: just keep cursor color for any internal blinking state.
 	s := textinput.DefaultStyles(true)
-	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
-	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
-	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.Placeholder))
-	s.Blurred = s.Focused
 	s.Cursor.Color = lipgloss.Color(t.Input.Cursor)
 	p.search.SetStyles(s)
 	p.search.SetWidth(maxv(10, p.width-2))

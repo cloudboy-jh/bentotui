@@ -42,6 +42,7 @@ type model struct {
 	dialogs   *dialog.Manager
 	width     int
 	height    int
+	inputW    int // cached input block width — set on WindowSizeMsg
 }
 
 func newModel() *model {
@@ -85,8 +86,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.statusBar.SetSize(msg.Width, 1)
 		m.dialogs.SetSize(msg.Width, max(0, msg.Height-1))
-		inputW := clamp(m.width*6/10, 50, 90)
-		m.inputBox.SetSize(inputW-5, 1)
+		m.inputW = clamp(m.width*6/10, 50, 90)
+		m.inputBox.SetSize(m.inputW-5, 1)
 		return m, nil
 
 	case theme.ThemeChangedMsg:
@@ -132,12 +133,13 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	bodyH := max(0, m.height-1) // minus status bar row
+	bodyH := max(0, m.height-1) // rows available for body content
 
-	// ── Surface: every cell is explicitly painted — no ANSI whitespace resets ──
-	// Fill paints each cell with the canvas background color first, then we
-	// draw lipgloss-rendered blocks on top via Ultraviolet's StyledString draw.
-	surf := surface.New(m.width, bodyH)
+	// ── Surface covers the full terminal (width x height) ─────────────────────
+	// Fill paints every cell first. All components draw on top of this layer.
+	// Status bar is drawn as the last row inside the same surface — no string
+	// concatenation outside surface.Render().
+	surf := surface.New(m.width, m.height)
 	surf.Fill(canvasColor)
 
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
@@ -149,17 +151,53 @@ func (m *model) View() tea.View {
 		Bold(true).
 		Render(wordmark)
 	wmW := lipgloss.Width(wm)
-	wmH := strings.Count(wm, "\n") + 1
+	wmH := lipgloss.Height(wm)
 
 	// ── input block ───────────────────────────────────────────────────────────
-	badges := dim.Render("add   panel   list   input   table   dialog")
+	// inputW is the total block width. innerW is the text area inside padding+border.
+	// Every row is explicitly sized so every cell has Input.BG set — no transparent
+	// padding cells that would inherit canvas color via the surface overlay.
+	inputBlockW := m.inputW
+	if inputBlockW == 0 {
+		inputBlockW = clamp(m.width*6/10, 50, 90)
+	}
+	// Block layout — all rows are rendered explicitly so every cell has Input.BG.
+	// Lipgloss PaddingTop/PaddingBottom rows carry Bg=nil which the UV overlay
+	// treats as canvas color, so we use explicit blank rows instead.
+	//
+	// Anatomy:
+	//   total block width = inputBlockW
+	//   left border (1) + row content = inputBlockW
+	//   row = PaddingLeft(2) + Width(contentW) + PaddingRight(2)
+	//   → contentW = inputBlockW - 1(border) - 2(PL) - 2(PR) = inputBlockW - 5
+	//
+	// block.Width(inputBlockW-1): lipgloss content-area width + 1(border) = inputBlockW total.
+	contentW := max(1, inputBlockW-5)
 	inputStr := viewString(m.inputBox.View())
-	inner := lipgloss.JoinVertical(lipgloss.Left, inputStr, badges)
+
+	mkRow := func(fg, content string) string {
+		return lipgloss.NewStyle().
+			Background(lipgloss.Color(t.Input.BG)).
+			Foreground(lipgloss.Color(fg)).
+			PaddingLeft(2).PaddingRight(2).
+			Width(contentW).
+			Render(content)
+	}
+	// Use a space, not "", so the row has a real rune — some lipgloss/JoinVertical
+	// paths collapse a fully-empty render to zero height.
+	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(t.Input.BG)).Width(contentW + 4).Render(" ")
+	inner := lipgloss.JoinVertical(lipgloss.Left,
+		blankRow,
+		mkRow(t.Input.FG, inputStr),
+		mkRow(t.Text.Muted, "add   panel   list   input   table   dialog"),
+		blankRow,
+	)
+	// Width(inputBlockW-1): lipgloss adds 1 for the left border, so total = inputBlockW. ✓
 	block := lipgloss.NewStyle().
+		Background(lipgloss.Color(t.Input.BG)).
 		Border(lipgloss.Border{Left: "┃"}, false, false, false, true).
 		BorderForeground(lipgloss.Color(t.Border.Focus)).
-		PaddingTop(1).PaddingBottom(1).
-		PaddingLeft(2).PaddingRight(2).
+		Width(inputBlockW - 1).
 		Render(inner)
 	blockW := lipgloss.Width(block)
 	blockH := lipgloss.Height(block)
@@ -204,15 +242,11 @@ func (m *model) View() tea.View {
 		surf.DrawCenter(dlgStr)
 	}
 
-	// ── status bar ────────────────────────────────────────────────────────────
+	// ── status bar — drawn as the last row inside the surface ─────────────────
 	statusStr := viewString(m.statusBar.View())
+	surf.Draw(0, m.height-1, statusStr)
 
-	// Render the surface, append a newline + status bar row.
-	// surface.Render() uses \r\n between lines (raw buffer output);
-	// Bubble Tea normalises this correctly.
-	screen := surf.Render() + "\r\n" + statusStr
-
-	v := tea.NewView(screen)
+	v := tea.NewView(surf.Render())
 	v.AltScreen = true
 	v.BackgroundColor = canvasColor
 	return v

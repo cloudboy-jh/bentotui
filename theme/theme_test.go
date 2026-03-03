@@ -51,17 +51,30 @@ func TestRegisterThemeRejectsMissingRequiredToken(t *testing.T) {
 	}
 }
 
-func TestBuiltinsPreserveStitchedSurfaceSeparation(t *testing.T) {
+// TestBuiltinsLayerContrast verifies that key token pairs in every built-in
+// theme meet the minimum luminance-delta thresholds defined in validateTheme.
+// This replaces the old string-equality check — two tokens can share a hex
+// value only if the adapter deliberately maps them to the same palette slot,
+// which validateTheme will catch via lumDelta.
+func TestBuiltinsLayerContrast(t *testing.T) {
 	for _, name := range AvailableThemes() {
 		th := Preset(name)
-		if th.Input.BG == th.Surface.Panel {
-			t.Fatalf("theme %q input bg must differ from panel bg", name)
+		pairs := []struct {
+			a, b     string
+			la, lb   string
+			minDelta float64
+		}{
+			{th.Input.BG, th.Surface.Canvas, "input.bg", "surface.canvas", 0.03},
+			{th.Selection.BG, th.Surface.Canvas, "selection.bg", "surface.canvas", 0.05},
+			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
+			{th.Dialog.BG, th.Surface.Canvas, "dialog.bg", "surface.canvas", 0.03},
 		}
-		if th.Selection.BG == th.Surface.Panel {
-			t.Fatalf("theme %q selection bg must differ from panel bg", name)
-		}
-		if th.Dialog.BG == th.Surface.Panel {
-			t.Fatalf("theme %q dialog bg must differ from panel bg", name)
+		for _, p := range pairs {
+			delta := lumDelta(p.a, p.b)
+			if delta < p.minDelta {
+				t.Errorf("theme %q: %s vs %s luminance delta %.3f < %.3f",
+					name, p.la, p.lb, delta, p.minDelta)
+			}
 		}
 	}
 }

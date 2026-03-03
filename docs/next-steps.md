@@ -1,75 +1,175 @@
-# Next Steps
+# BentoTUI — Next Steps
 
-Three concrete items that are either partially done or blocked on a decision.
-Everything else in the backlog lives in `roadmap.md`.
+## Current state: v0.2
+
+Core deps (`theme`, `layout`, `panel`, `statusbar`) are working. Starter app in progress. Registry concept established.
 
 ---
 
-## 1. Finish `bento add <component>` — wire the embed
+## Naming
 
-**Status:** The CLI scaffolding exists (`cmd/bento/add.go`) but currently only
-prints shell `cp` commands instead of copying files.
+| Term | What it is |
+|------|-----------|
+| **component** | Atomic UI piece. `bento add input` copies it into your project. |
+| **bento** | Pre-built layout composition. A complete screen pattern, ready to run. |
 
-**What it needs:**
+```
+registry/components/   ← what bento add copies
+bentos/                ← complete screen patterns users copy wholesale
+```
+
+---
+
+## 1. Starter App
+
+**File:** `cmd/starter-app/main.go`
+**Goal:** Single-screen app that looks like the opencode home screen. Ships with the repo as the first thing anyone runs.
+
+**Components it demonstrates:**
+- Wordmark (large ASCII centered text via lipgloss)
+- Accented input panel (left-border-only panel variant)
+- Badge row (dim inline component names)
+- Kbd hints (right-aligned shortcut display)
+- Tip line (colored dot + dim text)
+- Status bar (bottom, left + right content)
+
+---
+
+## 2. Components
+
+Live in `registry/components/` and are copied into user projects via `bento add <name>`.
+
+Each component:
+- Only imports `bubbletea`, `lipgloss`, and `bentotui/theme` + `bentotui/styles`
+- Reads `theme.CurrentTheme()` at render time — no stored theme field
+- One lipgloss call per row — background + foreground + width in a single chain
+- Returns plain string from `View()`
+
+### Tier 1 — Ship with starter app (build these first)
+
+| Component | Description |
+|-----------|-------------|
+| `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
+| `badge` | Inline colored label. Used in input rows, statusbars, anywhere. |
+| `kbd` | Keyboard shortcut display. Styled dim/bright pair — `tab`, `⌘K`. |
+| `statusbar` | Bottom bar with left + right slots. Registry version of existing package. |
+| `wordmark` | Large centered app name. Lipgloss bold + theme color, responsive to width. |
+
+### Tier 2 — Core interactive components
+
+| Component | Description |
+|-----------|-------------|
+| `list` | Scrollable selectable list. Keyboard nav. |
+| `table` | Data table with headers + row selection. Column widths via layout constraints. |
+| `select` | Single-choice picker. Opens inline. |
+| `checkbox` | Togglable boolean item. Used in forms and settings. |
+| `textarea` | Multi-line text input. Wraps `bubbles/textarea`. |
+| `spinner` | Loading indicator. Wraps `bubbles/spinner`, theme colored. |
+| `progress` | Progress bar. Percentage + optional label. |
+
+### Tier 3 — Overlay + complex components
+
+| Component | Description |
+|-----------|-------------|
+| `dialog` | Modal with confirm/cancel. Clean registry version of existing package. |
+| `command` | Command palette with fuzzy search. `⌘K` trigger, filterable action list. |
+| `toast` | Ephemeral notification. Auto-dismisses, stacks, theme colored. |
+| `tabs` | Horizontal tab switcher. Active tab highlighted, keyboard navigable. |
+| `separator` | Horizontal or vertical rule. Theme border color. |
+
+---
+
+## 3. Bentos
+
+**Folder:** `bentos/`
+
+Pre-built layout compositions users copy wholesale. Each bento is a single self-contained `.go` file — a complete runnable screen demonstrating real component usage in a named pattern.
+
+```
+bentos/
+  app-shell/    app_shell.go
+  dashboard/    dashboard.go
+  detail-view/  detail_view.go
+  form/         form.go
+  log-viewer/   log_viewer.go
+  home-screen/  home_screen.go
+  settings/     settings.go
+  command-view/ command_view.go
+```
+
+### Bento list
+
+| Bento | Description | Components used |
+|-------|-------------|-----------------|
+| `home-screen` | Wordmark + input + tips (opencode style) | `wordmark`, `input`, `kbd`, `badge`, `statusbar` |
+| `app-shell` | Header + sidebar + main + statusbar | `panel`, `layout`, `statusbar`, `tabs` |
+| `dashboard` | 2-col stats cards + data table | `panel`, `badge`, `table`, `layout` |
+| `detail-view` | Sidebar list + detail pane | `list`, `panel`, `layout` |
+| `form` | Centered form with labeled inputs | `input`, `textarea`, `checkbox`, `badge` |
+| `log-viewer` | Full-width scrollable output + filter input | `input`, `panel`, `spinner`, `badge` |
+| `settings` | Two-col: nav list + settings panel | `list`, `panel`, `checkbox`, `layout` |
+| `command-view` | Fullscreen command palette | `command`, `input`, `list` |
+
+Each bento:
+- Is a complete runnable app (`go run ./bentos/dashboard`)
+- Has a comment header explaining what it demonstrates
+- Uses only registry components + bentotui core deps
+- Is under 150 lines
+
+---
+
+## 4. CLI — `bento add` embed wiring
+
+`cmd/bento/add.go` needs `//go:embed registry` so all component source is baked into the binary.
 
 ```go
-//go:embed ../../registry
+//go:embed registry
 var registryFS embed.FS
+
+// bento add panel
+// → reads registry/components/panel/panel.go from embed
+// → writes to ./components/panel/panel.go in user's project
 ```
 
-Added to `cmd/bento/add.go`, then the `add` command walks `registryFS` for the
-requested component directory and writes each file into the user's
-`components/<name>/` directory. Import paths stay as-is — they already point at
-the real `bentotui` module deps, not local copies.
-
-**Decision needed:** Should `bento add panel` write to `components/panel/` (relative
-to `go.mod`) or ask the user for a destination? The registry default is a configurable
-`components/ui/` path. Recommend: default to `components/<name>/`, flag to
-override.
-
-**File to edit:** `cmd/bento/add.go`
+Steps:
+1. All registry components exist and compile
+2. Add `//go:embed registry` to `add.go`
+3. Write extraction logic: create `./components/<name>/` dir, write files
+4. Test: `bento add input` in a fresh project produces a working file
 
 ---
 
-## 2. Finish `bento init` — update the generated template
+## 5. `bento init` template update
 
-**Status:** `cmd/bento/init.go` generates a starter `main.go` that still imports
-the old `bentotui.New()` monolithic API (which no longer exists).
+The generated `main.go` from `bento init` should match the starter app pattern — not the old framework pattern.
 
-**What it needs:** The template should produce a minimal app that:
-
-1. Imports `github.com/cloudboy-jh/bentotui/layout` and at least one registry
-   component.
-2. Optionally runs `bento add panel` and `bento add bar` before generating so
-   the generated app has actual local copies to import.
-
-The simplest correct template is essentially the starter-app in
-`cmd/starter-app/main.go` trimmed down to ~60 lines.
-
-**File to edit:** `cmd/bento/init.go` (the `starterTemplate` const)
+Generated template should:
+- Be a single-screen app (no router, no page system)
+- Import only `bubbletea`, `lipgloss`, `bentotui/theme`, `bentotui/layout`
+- Show a placeholder panel with "Your app goes here"
+- Be under 60 lines
+- Have comments pointing to `bento add` for next steps
 
 ---
 
-## 3. `input.View()` calls `SetStyles()` on every frame
+## Execution order
 
-**Status:** Working correctly but allocates a `textinput.Styles` struct on every
-render. For most apps this is fine. Under heavy update rates (e.g. streaming
-output) it could show in a profile.
+1. **Starter app** — opencode prompt running now
+2. **Tier 1 components** — `input`, `badge`, `kbd`, `wordmark` (statusbar already exists)
+3. **`home-screen` bento** — first bento, mirrors starter app, validates the pattern
+4. **Tier 2 components** — `list`, `table`, `select` unblock the most bentos
+5. **Remaining bentos** — `app-shell`, `dashboard`, `detail-view` next
+6. **Tier 3 components** — `command`, `dialog`, `toast` last
+7. **CLI embed wiring** — once all registry components exist
+8. **`bento init` template** — final cleanup
 
-**Fix (when needed):** Add a `lastTheme string` field to `registry/input/input.go`.
-In `View()`, check `theme.CurrentThemeName() != m.lastTheme` before calling
-`SetStyles`. Only re-derive styles on theme change.
+---
 
-```go
-func (m *Model) View() tea.View {
-    if name := theme.CurrentThemeName(); name != m.lastTheme {
-        m.input.SetStyles(styles.New(theme.CurrentTheme()).InputStyles())
-        m.lastTheme = name
-    }
-    return tea.NewView(m.input.View())
-}
-```
+## Non-goals (for now)
 
-This is a micro-optimisation — do it only if a profiler actually points here.
-
-**File to edit:** `registry/input/input.go`
+- No web renderer or browser output
+- No mouse-only interactions (keyboard-first always)
+- No animation system beyond spinner
+- No built-in routing (users write their own)
+- No data fetching utilities
+- No `bento add bento <name>` CLI command — copy bentos manually for now

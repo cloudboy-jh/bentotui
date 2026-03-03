@@ -25,7 +25,7 @@ Two things live in this repo:
 | Thing | What it is |
 |-------|-----------|
 | **component** | Atomic UI piece. `bento add input` copies it into your project. |
-| **bento** | Pre-built layout composition. A complete screen pattern you copy wholesale. |
+| **bentos** | Pre-built layout composition. A complete screen pattern you copy wholesale. |
 
 ```
 registry/components/   ← copied into your project by `bento add`

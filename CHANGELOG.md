@@ -10,7 +10,7 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ### Changed
 
-- **Breaking — ShadCN model replaces the framework API.**
+- **Breaking — registry model replaces the framework API.**
   `bentotui.New()`, `core/`, `app/`, `ui/`, and `bentotui.go` are deleted.
   BentoTUI is now a registry of copy-and-own components, not an opinionated shell.
 

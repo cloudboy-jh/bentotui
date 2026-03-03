@@ -101,7 +101,8 @@ func presetTheme(name string) (Theme, bool) {
 }
 
 func validateTheme(t Theme) error {
-	checks := []struct {
+	// ── required tokens ───────────────────────────────────────────────────────
+	required := []struct {
 		label string
 		value string
 	}{
@@ -135,11 +136,38 @@ func validateTheme(t Theme) error {
 		{"dialog.border", t.Dialog.Border},
 		{"dialog.scrim", t.Dialog.Scrim},
 	}
-	for _, c := range checks {
+	for _, c := range required {
 		if c.value == "" {
 			return fmt.Errorf("theme token %q is required", c.label)
 		}
 	}
+
+	// ── layer separation checks ───────────────────────────────────────────────
+	// Key layer pairs must be visually distinct. Thresholds are calibrated to
+	// the minimum detectable contrast in dark terminal themes:
+	//   - input.bg vs canvas: 0.03 (raised surface, subtle but visible)
+	//   - selection.bg vs canvas: 0.05 (must pop clearly)
+	//   - selection.bg vs input.bg: 0.05 (selected row must stand out from field)
+	//   - dialog.bg vs canvas: 0.03 (dialog body is a raised surface)
+	layerPairs := []struct {
+		labelA, labelB string
+		a, b           string
+		minDelta       float64
+	}{
+		{"input.bg", "surface.canvas", t.Input.BG, t.Surface.Canvas, 0.03},
+		{"selection.bg", "surface.canvas", t.Selection.BG, t.Surface.Canvas, 0.05},
+		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
+		{"dialog.bg", "surface.canvas", t.Dialog.BG, t.Surface.Canvas, 0.03},
+	}
+	for _, p := range layerPairs {
+		if lumDelta(p.a, p.b) < p.minDelta {
+			return fmt.Errorf(
+				"theme tokens %q and %q are too similar (luminance delta %.3f < %.3f) — increase contrast",
+				p.labelA, p.labelB, lumDelta(p.a, p.b), p.minDelta,
+			)
+		}
+	}
+
 	return nil
 }
 

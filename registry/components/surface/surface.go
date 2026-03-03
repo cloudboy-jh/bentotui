@@ -1,26 +1,22 @@
-// Package surface provides a deterministic full-screen paint surface backed
-// by the Ultraviolet cell buffer. It is the registry-level answer to ANSI
-// whitespace-reset bleed: instead of composing styled strings with
-// PlaceHorizontal, callers draw lipgloss-rendered blocks onto a pre-filled
-// cell buffer so every cell is explicitly painted before Bubble Tea flushes
-// the frame.
+// Package surface provides a deterministic full-terminal paint surface backed
+// by the Ultraviolet cell buffer.
 //
-// Usage pattern (in your root model's View):
+// Surface is the root canvas for every bento and full-screen layout.
+// The contract:
 //
-//	s := surface.New(m.width, m.height)
-//	s.Fill(t.Surface.Canvas)          // paint every cell with bg color
-//	s.Draw(0, 0, bodyContent)         // place body string at top-left
-//	s.DrawCenter(m.width, m.height, dialogStr) // center a dialog overlay
+//  1. Create one surface per frame sized to the full terminal (width x height).
+//  2. Call Fill(bg) once — paints every cell with the canvas background.
+//  3. Call Draw(x, y, content) for each component — overlays only the content's
+//     own styled cells; surrounding filled cells are never touched.
+//  4. Call Render() once and pass the result to tea.NewView.
 //
-//	v := tea.NewView(s.Render())
-//	v.AltScreen = true
-//	v.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
-//	return v
+// This keeps the Ultraviolet cell buffer as the single source of truth for
+// what every terminal cell contains on each frame — no ANSI whitespace-reset
+// bleed, no partial clears, no string concatenation outside this surface.
 //
 // Copy this file into your project: bento add surface
 //
 // Dependencies:
-//   - charm.land/bubbletea/v2
 //   - github.com/charmbracelet/ultraviolet
 package surface
 
@@ -31,16 +27,16 @@ import (
 	uv "github.com/charmbracelet/ultraviolet"
 )
 
-// Surface is a full-screen cell buffer. Build one per frame in View(),
-// fill it with a background color, draw your rendered component strings
-// onto it, then call Render() to get the final frame string.
+// Surface is the full-terminal cell buffer. Build one per frame in View(),
+// fill it, draw components onto it, then call Render().
 type Surface struct {
 	buf    uv.ScreenBuffer
 	width  int
 	height int
 }
 
-// New creates a Surface sized to width × height cells.
+// New creates a Surface sized to the full terminal (width x height).
+// Call this at the top of every View() with the current terminal dimensions.
 func New(width, height int) *Surface {
 	if width < 1 {
 		width = 1
@@ -55,10 +51,9 @@ func New(width, height int) *Surface {
 	}
 }
 
-// Fill paints every cell in the surface with a space character styled with
-// the given background color. Pass a lipgloss.Color string value cast to
-// color.Color, or use image/color directly.
-// Typically called once at the start of View() before any Draw calls.
+// Fill paints every cell of the surface with a space styled with bg.
+// Always call this first — it is the root canvas layer that every
+// component draws on top of.
 func (s *Surface) Fill(bg color.Color) {
 	cell := &uv.Cell{
 		Content: " ",
@@ -68,42 +63,69 @@ func (s *Surface) Fill(bg color.Color) {
 	s.buf.Fill(cell)
 }
 
-// Draw places a pre-rendered ANSI string at position (x, y) on the surface.
-// The string is parsed cell-by-cell so styled blocks from lipgloss land
-// exactly where you intend them, with no surrounding whitespace resets.
-func (s *Surface) Draw(x, y int, content string) {
-	if content == "" {
-		return
-	}
-	area := uv.Rect(x, y, s.width, s.height)
-	uv.NewStyledString(content).Draw(s.buf, area)
+// overlayScreen wraps the real ScreenBuffer but intercepts SetCell so that
+// nil cells (which StyledString.Draw uses to pre-clear its area) are silently
+// dropped. Only real glyph cells are written through. This makes Draw an
+// overlay operation — the filled background beneath is never wiped.
+type overlayScreen struct {
+	uv.ScreenBuffer
 }
 
-// DrawCenter places a pre-rendered ANSI string centered within the surface.
-// Use this for dialogs and overlays.
+func (o overlayScreen) SetCell(x, y int, c *uv.Cell) {
+	if c == nil {
+		// Drop the pre-clear — preserve the filled background beneath.
+		return
+	}
+	// If the incoming cell has no background set, inherit the background
+	// from the already-filled cell beneath it. This prevents dark seams
+	// around inline text whose Bg is nil after lipgloss renders it.
+	if c.Style.Bg == nil {
+		if beneath := o.ScreenBuffer.CellAt(x, y); beneath != nil {
+			clone := *c
+			clone.Style.Bg = beneath.Style.Bg
+			c = &clone
+		}
+	}
+	o.ScreenBuffer.SetCell(x, y, c)
+}
+
+// Draw places a pre-rendered ANSI string at (x, y) as an overlay.
+// Only the content's own styled cells are written; all surrounding cells
+// filled by Fill() are left completely untouched.
+func (s *Surface) Draw(x, y int, content string) {
+	if content == "" || x >= s.width || y >= s.height {
+		return
+	}
+	ss := uv.NewStyledString(content)
+	b := ss.Bounds()
+	w := min(b.Dx(), s.width-x)
+	h := min(b.Dy(), s.height-y)
+	if w <= 0 || h <= 0 {
+		return
+	}
+	// Use the overlay screen so pre-clear SetCell(nil) calls are dropped.
+	ov := overlayScreen{s.buf}
+	ss.Draw(ov, uv.Rect(x, y, w, h))
+}
+
+// DrawCenter places a pre-rendered ANSI string centered on the surface.
+// Use this for dialogs and overlays — they draw on top of the filled bg.
 func (s *Surface) DrawCenter(content string) {
 	if content == "" {
 		return
 	}
-	lines := strings.Split(content, "\n")
-	contentH := len(lines)
-	contentW := 0
-	for _, l := range lines {
-		// Use lipgloss width-aware measurement via the styled string.
-		ss := uv.NewStyledString(l)
-		if w := ss.UnicodeWidth(); w > contentW {
-			contentW = w
-		}
-	}
-	x := max(0, (s.width-contentW)/2)
-	y := max(0, (s.height-contentH)/2)
+	ss := uv.NewStyledString(content)
+	b := ss.Bounds()
+	x := max(0, (s.width-b.Dx())/2)
+	y := max(0, (s.height-b.Dy())/2)
 	s.Draw(x, y, content)
 }
 
-// Render returns the final ANSI frame string to pass to tea.NewView.
-// Bubble Tea normalises \r\n, so we emit raw buffer output.
+// Render serializes the cell buffer to an ANSI string for tea.NewView.
+// uv.Buffer.Render() emits \r\n; we normalize to \n so Bubble Tea does
+// not emit a raw carriage return that resets the cursor column mid-frame.
 func (s *Surface) Render() string {
-	return s.buf.Render()
+	return strings.ReplaceAll(s.buf.Render(), "\r\n", "\n")
 }
 
 // Width returns the surface width in cells.
@@ -111,6 +133,13 @@ func (s *Surface) Width() int { return s.width }
 
 // Height returns the surface height in cells.
 func (s *Surface) Height() int { return s.height }
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 func max(a, b int) int {
 	if a > b {

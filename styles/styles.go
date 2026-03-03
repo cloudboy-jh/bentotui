@@ -80,22 +80,48 @@ func (s System) FooterCardLabel(variant string, enabled bool) lipgloss.Style {
 		Background(lipgloss.Color(bg))
 }
 
+// DialogFrame returns the base style for the dialog outer box.
+// No padding is set here — padding rows are rendered explicitly by
+// renderDialogFrame so every cell carries Dialog.BG via a Width() call.
 func (s System) DialogFrame() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Background(lipgloss.Color(s.Theme.Dialog.BG)).
-		Foreground(lipgloss.Color(s.Theme.Dialog.FG)).
-		Padding(1, 2)
+		Foreground(lipgloss.Color(s.Theme.Dialog.FG))
 }
 
 func (s System) DialogHeader() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary)).
-		Background(lipgloss.Color(pick(s.Theme.Surface.Interactive, s.Theme.Surface.Elevated)))
+		Background(lipgloss.Color(s.Theme.Dialog.BG))
 }
 
 func (s System) DialogEscHint() lipgloss.Style {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color(s.Theme.Text.Muted))
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color(s.Theme.Text.Muted)).
+		Background(lipgloss.Color(s.Theme.Dialog.BG))
+}
+
+// DialogSearchRow is the style for the search input row inside a dialog.
+// Uses Input.BG so it clearly stands out from the dialog body (Dialog.BG).
+func (s System) DialogSearchRow() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(s.Theme.Input.BG)).
+		Foreground(lipgloss.Color(s.Theme.Input.FG))
+}
+
+// DialogListRow is the style for an unselected list row inside a dialog.
+func (s System) DialogListRow() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(s.Theme.Dialog.BG)).
+		Foreground(lipgloss.Color(s.Theme.Text.Primary))
+}
+
+// DialogListRowSelected is the style for a selected list row.
+func (s System) DialogListRowSelected() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(s.Theme.Selection.BG)).
+		Foreground(lipgloss.Color(s.Theme.Selection.FG))
 }
 
 func (s System) ListItem(selected bool) lipgloss.Style {
@@ -191,30 +217,61 @@ func (s System) ElevatedFrame() lipgloss.Style {
 }
 
 // InputStyles returns a fully-themed textinput.Styles struct.
+// Every sub-style carries Background(Input.BG) so that UV cell-level compositing
+// sees an explicit Bg on every character — no cell falls back to canvas color.
 func (s System) InputStyles() textinput.Styles {
 	st := textinput.DefaultStyles(true)
+	ibg := lipgloss.Color(s.Theme.Input.BG)
 
 	st.Focused.Prompt = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Border.Focus)).Bold(true)
 	st.Focused.Text = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Input.FG))
 	st.Focused.Placeholder = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Input.Placeholder))
 	st.Focused.Suggestion = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Text.Accent))
 
 	st.Blurred.Prompt = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Text.Muted))
 	st.Blurred.Text = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Input.FG))
 	st.Blurred.Placeholder = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Input.Placeholder))
 	st.Blurred.Suggestion = lipgloss.NewStyle().
+		Background(ibg).
 		Foreground(lipgloss.Color(s.Theme.Text.Muted))
 
 	st.Cursor.Color = lipgloss.Color(s.Theme.Input.Cursor)
 	st.Cursor.Blink = true
 	return st
+}
+
+// Row returns a fully-painted row string of exactly width cells.
+//
+// This is the canonical way to render any row in a component or bento.
+// It guarantees every cell has an explicit Bg set so the Ultraviolet surface
+// overlay does not fall back to the canvas color for padding/whitespace cells.
+//
+// Rule: never use lipgloss.PlaceHorizontal or bare Render(content) for rows
+// that sit on a surface — always go through Row() or an equivalent
+// .Background().Width(w).Render() chain.
+func Row(bg, fg string, width int, content string) string {
+	if width <= 0 {
+		return ""
+	}
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(bg)).
+		Foreground(lipgloss.Color(fg)).
+		Width(width).
+		Render(content)
 }
 
 func pick(v, fallback string) string {

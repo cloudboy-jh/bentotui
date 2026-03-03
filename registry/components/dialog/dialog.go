@@ -208,9 +208,11 @@ func (c Custom) Title() string { return c.DialogTitle }
 
 func renderDialogFrame(title, content string, width, height int, t theme.Theme) string {
 	sys := styles.New(t)
-	headerTitle := title
-	if strings.TrimSpace(headerTitle) == "" {
-		headerTitle = "Dialog"
+	bg := t.Dialog.BG
+	fg := t.Dialog.FG
+
+	if strings.TrimSpace(title) == "" {
+		title = "Dialog"
 	}
 	if width <= 0 {
 		width = 48
@@ -218,44 +220,106 @@ func renderDialogFrame(title, content string, width, height int, t theme.Theme) 
 	if height <= 0 {
 		height = 14
 	}
+
+	// Layout: every row is exactly `width` cells wide and carries Dialog.BG explicitly.
+	// No lipgloss Padding() — padding rows are rendered as explicit blank rows so the
+	// UV overlay never sees Bg=nil cells (which would inherit canvas color).
+	//
+	// Horizontal structure:
+	//   width = 2(pad-left) + innerWidth + 2(pad-right)
+	//   innerWidth = width - 4
+	//
+	// Vertical structure (rows counted top→bottom):
+	//   row 0:          blank top-padding row
+	//   row 1:          header  (title left + "esc" right)
+	//   row 2:          blank separator
+	//   rows 3..h-2:    body lines
+	//   row h-1:        blank bottom-padding row
 	innerWidth := max(1, width-4)
-	innerHeight := max(1, height-2)
 
+	// mkRow renders a single full-width row (total = width cells) with 2-cell
+	// left/right padding baked in. Content area = innerWidth cells. Every cell
+	// carries Dialog.BG explicitly — no lipgloss Padding() on the frame itself.
+	// In lipgloss, Width() sets the content area; padding is added outside.
+	// So: Width(innerWidth) + PaddingLeft(2) + PaddingRight(2) = width total.
+	mkRow := func(rowFG, rowContent string) string {
+		return lipgloss.NewStyle().
+			Background(lipgloss.Color(bg)).
+			Foreground(lipgloss.Color(rowFG)).
+			PaddingLeft(2).PaddingRight(2).
+			Width(innerWidth).
+			Render(rowContent)
+	}
+	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(bg)).Width(width).Render("")
+
+	// Header: title left-aligned + "esc" right-aligned, both cells have Dialog.BG.
+	// They must sum to innerWidth so no gap between them.
 	rightWidth := 3
-	leftWidth := max(1, innerWidth-rightWidth-1)
-	header := sys.DialogHeader().Render(fitWidth(headerTitle, leftWidth)) + " " + sys.DialogEscHint().Render(fitWidth("esc", rightWidth))
-	header = fitWidth(header, innerWidth)
+	leftWidth := max(1, innerWidth-rightWidth)
+	titleCell := sys.DialogHeader().Width(leftWidth).Render(title)
+	escCell := sys.DialogEscHint().Width(rightWidth).Render("esc")
+	// Wrap the already-sized cells in a full outer row to add the 2+2 padding cells.
+	header := mkRow(fg, titleCell+escCell)
 
+	// Body lines — each clipped/padded to innerWidth, then wrapped in mkRow to
+	// add the 2+2 padding cells.
 	body := strings.TrimRight(content, "\n")
 	if strings.TrimSpace(body) == "" {
 		body = " "
 	}
-	bodyLines := clipLines(body, innerWidth)
-	bodyMax := max(1, innerHeight-2)
-	if len(bodyLines) > bodyMax {
-		bodyLines = bodyLines[:bodyMax]
+	rawBodyLines := clipLines(body, innerWidth, bg, fg)
+
+	// Max body rows = height - 4 (top-blank + header + separator + bottom-blank).
+	bodyMax := max(1, height-4)
+	if len(rawBodyLines) > bodyMax {
+		rawBodyLines = rawBodyLines[:bodyMax]
 	}
-	joined := strings.Join(append([]string{header, ""}, bodyLines...), "\n")
-	style := sys.DialogFrame().Width(width).Height(height)
-	return style.Render(joined)
+	bodyRows := make([]string, len(rawBodyLines))
+	for i, line := range rawBodyLines {
+		bodyRows[i] = mkRow(fg, line)
+	}
+
+	// Assemble all rows: top-blank, header, separator, body..., bottom-blank.
+	// Any remaining height beyond the content rows is filled with blank rows.
+	allRows := make([]string, 0, height)
+	allRows = append(allRows, blankRow)    // top padding
+	allRows = append(allRows, header)      // header
+	allRows = append(allRows, blankRow)    // separator
+	allRows = append(allRows, bodyRows...) // body
+	allRows = append(allRows, blankRow)    // bottom padding
+	// Pad to full height if content is shorter.
+	for len(allRows) < height {
+		allRows = append(allRows, blankRow)
+	}
+
+	// Wrap everything in a single Width(width) container that carries Dialog.BG,
+	// so the block itself is one cohesive painted region on the UV surface.
+	return sys.DialogFrame().Width(width).Render(strings.Join(allRows, "\n"))
 }
 
-func clipLines(content string, width int) []string {
+func clipLines(content string, width int, bg, fg string) []string {
 	lines := strings.Split(content, "\n")
 	clipped := make([]string, 0, len(lines))
 	for _, line := range lines {
-		clipped = append(clipped, fitWidth(line, width))
+		clipped = append(clipped, lipgloss.NewStyle().
+			Background(lipgloss.Color(bg)).
+			Foreground(lipgloss.Color(fg)).
+			Width(width).
+			MaxWidth(width).
+			Render(line))
 	}
 	return clipped
 }
 
-// fitWidth clips s to MaxWidth then places it left-aligned at exact width.
+// fitWidth clips s to width and pads to exact width using explicit bg-aware style.
 func fitWidth(s string, width int) string {
 	if width <= 0 {
 		return ""
 	}
-	s = lipgloss.NewStyle().MaxWidth(width).Render(s)
-	return lipgloss.PlaceHorizontal(width, lipgloss.Left, s)
+	return lipgloss.NewStyle().
+		MaxWidth(width).
+		Width(width).
+		Render(s)
 }
 
 // viewString extracts a plain string from a tea.View.
