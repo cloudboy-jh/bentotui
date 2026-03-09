@@ -69,35 +69,20 @@ Once copied they live at `yourmodule/components/<name>` — you own the source.
 | `list` | Scrollable log-style list. |
 | `table` | Header + data rows. |
 | `text` | Static styled label. |
+| `badge` | Inline themed label. |
+| `kbd` | Keyboard shortcut command + label pair. |
+| `wordmark` | Themed heading/title block. |
+| `select` | Single-choice inline picker. |
+| `checkbox` | Boolean toggle input. |
+| `progress` | Horizontal progress bar. |
+| `tabs` | Keyboard-navigable tab row. |
+| `toast` | Stacked notification rows. |
+| `separator` | Horizontal or vertical divider. |
 
-`bento add` currently supports: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`.
+`bento add` currently supports: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`.
 
-### Coming next — Tier 1
-
-| Component | Description |
-|-----------|-------------|
-| `badge` | Inline colored label. |
-| `kbd` | Keyboard shortcut display. Dim/bright pair. |
-| `wordmark` | Large centered app name. Theme-colored, responsive. |
-
-### Tier 2
-
-| Component | Description |
-|-----------|-------------|
-| `select` | Single-choice picker. Opens inline. |
-| `checkbox` | Togglable boolean. |
-| `textarea` | Multi-line input. Wraps `bubbles/textarea`. |
-| `spinner` | Loading indicator. Wraps `bubbles/spinner`. |
-| `progress` | Progress bar with optional label. |
-
-### Tier 3
-
-| Component | Description |
-|-----------|-------------|
-| `command` | Command palette with fuzzy search. |
-| `toast` | Ephemeral notification. Auto-dismisses, stacks. |
-| `tabs` | Horizontal tab switcher. |
-| `separator` | Horizontal or vertical rule. |
+Primitive policy: Bento does not ship a `spinner` registry component. Use
+`charm.land/bubbles/v2/spinner` directly.
 
 ## Bentos
 
@@ -124,10 +109,10 @@ bentos/          ← planned (directory not in repo yet)
 | `app-shell` | `panel`, `layout`, `bar`, `tabs`, `surface` |
 | `dashboard` | `panel`, `badge`, `table`, `layout`, `surface` |
 | `detail-view` | `list`, `panel`, `layout`, `surface` |
-| `form` | `input`, `textarea`, `checkbox`, `badge`, `surface` |
-| `log-viewer` | `input`, `panel`, `spinner`, `badge`, `surface` |
+| `form` | `input`, `checkbox`, `badge`, `progress`, `surface` (+ `bubbles/textarea`) |
+| `log-viewer` | `input`, `panel`, `badge`, `surface` (+ `bubbles/spinner`) |
 | `settings` | `list`, `panel`, `checkbox`, `layout`, `surface` |
-| `command-view` | `command`, `input`, `list`, `surface` |
+| `command-view` | `dialog` command palette, `input`, `list`, `surface` |
 
 ## Core packages (real imports, not copied)
 
@@ -166,7 +151,9 @@ your app code
      ▼
 ┌─────────────────────────────────────────────────────┐
 │  registry/components/  (you own the source)          │
-│  surface  input  bar  dialog  panel  list  table     │
+│  surface  panel  bar  dialog  input  list  table      │
+│  text  badge  kbd  wordmark  select  checkbox         │
+│  progress  tabs  toast  separator                     │
 └─────────────────┬───────────────────────────────────┘
                   │ imports
                   ▼
@@ -204,8 +191,8 @@ Type `/theme` to switch themes live. Type `/dialog` to open a sample dialog.
 ## Next roadmap slice
 
 1. Ship first `bentos/` examples (`home-screen`, then `app-shell` and `dashboard`)
-2. Add Tier 1 display helpers (`badge`, `kbd`, `wordmark`)
-3. Add Tier 2 form/feedback components (`select`, `checkbox`, `textarea`, `spinner`, `progress`)
+2. Expand bento catalog breadth (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`)
+3. Keep primitive policy strict (use established Bubbles primitives like `spinner` directly)
 4. Tighten `bento init` template output and guidance comments
 5. Add component + CLI logic tests (`go test ./registry/...` and command smoke coverage)
 6. Start deterministic `bento wrap` manifest/scaffold pipeline

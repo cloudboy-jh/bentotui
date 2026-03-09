@@ -3,6 +3,9 @@
 API reference for every registry component and module dep.
 All components are copy-and-own — run `bento add <name>` to copy source into your project.
 
+Primitive policy: Bento does not ship a `spinner` component. Use
+`charm.land/bubbles/v2/spinner` directly when you need loading indicators.
+
 ---
 
 ## Module deps (import, don't copy)
@@ -271,6 +274,147 @@ i.SetValue("initial text")
 i.Value() string
 
 i.SetSize(width, height)
+```
+
+---
+
+### `badge`
+
+Inline themed label for compact status/state chips.
+
+```go
+import "yourmodule/components/badge"
+
+b := badge.New("beta")
+b.SetVariant(badge.VariantInfo)
+b.SetBold(true)
+```
+
+Variants: `VariantNeutral`, `VariantInfo`, `VariantSuccess`, `VariantWarning`, `VariantDanger`, `VariantAccent`.
+
+---
+
+### `kbd`
+
+Keyboard shortcut pair (`command label`) matching bar-card visual language.
+
+```go
+import "yourmodule/components/kbd"
+
+k := kbd.New("ctrl+k", "commands")
+k.SetVariant("primary") // normal, primary, muted, danger
+k.SetActive(true)
+```
+
+---
+
+### `wordmark`
+
+Themed title/heading block.
+
+```go
+import "yourmodule/components/wordmark"
+
+w := wordmark.New("BentoTUI")
+w.SetBold(true)
+```
+
+---
+
+### `select`
+
+Single-choice inline picker with open/close and keyboard navigation.
+
+```go
+import selectx "yourmodule/components/select"
+
+s := selectx.New(
+    selectx.Item{Label: "Tokyo Night", Value: "tokyo-night"},
+    selectx.Item{Label: "Nord", Value: "nord"},
+)
+s.Focus()
+s.SetPlaceholder("Choose theme")
+
+// keyboard:
+// - enter/space: open or select current
+// - up/down (or k/j): move cursor
+// - esc: close
+```
+
+---
+
+### `checkbox`
+
+Boolean toggle input with optional focus behavior.
+
+```go
+import "yourmodule/components/checkbox"
+
+c := checkbox.New("Enable live preview")
+c.Focus()
+c.Toggle()
+c.Checked() bool
+```
+
+---
+
+### `progress`
+
+Horizontal progress bar with optional label and percentage text.
+
+```go
+import "yourmodule/components/progress"
+
+p := progress.New(30)   // bar width in cells
+p.SetLabel("Sync")
+p.SetValue(0.42)        // clamped to [0,1]
+p.SetShowPercent(true)
+```
+
+---
+
+### `tabs`
+
+Keyboard-navigable tab row.
+
+```go
+import "yourmodule/components/tabs"
+
+t := tabs.New(
+    tabs.Tab{ID: "overview", Label: "Overview"},
+    tabs.Tab{ID: "logs", Label: "Logs"},
+)
+t.Focus()
+t.SetActive(1)
+t.Active() int
+```
+
+---
+
+### `toast`
+
+Stacked notification rows for non-blocking feedback.
+
+```go
+import "yourmodule/components/toast"
+
+toasts := toast.New(3) // max visible
+id := toasts.Push("Saved settings", toast.Success)
+toasts.Dismiss(id)
+toasts.Clear()
+```
+
+---
+
+### `separator`
+
+Horizontal or vertical divider.
+
+```go
+import "yourmodule/components/separator"
+
+h := separator.New(separator.Horizontal, 40)
+v := separator.New(separator.Vertical, 8)
 ```
 
 ---

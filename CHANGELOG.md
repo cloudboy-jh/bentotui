@@ -6,6 +6,19 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+### Added
+
+- New registry components: `badge`, `kbd`, `wordmark`, `select`, `checkbox`,
+  `progress`, `tabs`, `toast`, `separator`
+
+### Changed
+
+- `bento add` / `bento list` now include the new component catalog entries
+- Component roadmap/docs now treat the component catalog as finalized and shift
+  execution focus toward shipping more `bentos/` examples
+- Removed spinner-from-registry planning; `spinner` is now a direct
+  `charm.land/bubbles/v2/spinner` primitive in app code instead
+
 ## [0.2.0] - 2026-03-02
 
 ### Changed

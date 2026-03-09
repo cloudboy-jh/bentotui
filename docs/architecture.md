@@ -211,7 +211,7 @@ type you are building determines what rendering rules apply.
 
 ### Atomic
 
-Examples: `input`, `badge`, `kbd`, `text`, `spinner`
+Examples: `input`, `badge`, `kbd`, `text`, `wordmark`
 
 - Returns a **styled string** — no awareness of surface position or terminal width
 - Does **not** need `Width()` — the caller sizes and places it

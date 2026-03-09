@@ -39,14 +39,20 @@ See [next-steps.md](./next-steps.md) for the current priorities.
 
 ### New Components
 
-- [ ] `tabs` — keyboard-navigable tab bar with panel content area
-- [ ] `select` — dropdown/select widget (wraps or reimplements bubbles/list)
-- [ ] `spinner` — animated loading indicator
-- [ ] `progress` — horizontal progress bar with theme colors
-- [ ] `checkbox` — boolean toggle
-- [ ] `badge` — inline colored label (useful inside panel titles)
+- [x] `tabs` — keyboard-navigable tab bar with panel content area
+- [x] `select` — dropdown/select widget (wraps or reimplements bubbles/list)
+- [x] `progress` — horizontal progress bar with theme colors
+- [x] `checkbox` — boolean toggle
+- [x] `badge` — inline colored label (useful inside panel titles)
+- [x] `kbd` — keyboard shortcut display pair
+- [x] `wordmark` — large title/header display helper
+- [x] `toast` — ephemeral stacked notifications
+- [x] `separator` — horizontal/vertical divider
 
 Already shipped in registry: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`.
+
+Primitive policy: Bento does not plan a `spinner` registry component; use
+`charm.land/bubbles/v2/spinner` directly.
 
 ### Bento Examples
 

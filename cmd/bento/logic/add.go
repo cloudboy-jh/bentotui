@@ -27,6 +27,15 @@ func Registry() []ComponentInfo {
 		{Name: "table", Desc: "Header row + data rows", Files: []string{"table.go"}},
 		{Name: "text", Desc: "Static text label", Files: []string{"text.go"}},
 		{Name: "input", Desc: "Single-line text field wrapping bubbles/textinput", Files: []string{"input.go"}},
+		{Name: "badge", Desc: "Inline themed label", Files: []string{"badge.go"}},
+		{Name: "kbd", Desc: "Keyboard shortcut command+label pair", Files: []string{"kbd.go"}},
+		{Name: "wordmark", Desc: "Themed heading/title block", Files: []string{"wordmark.go"}},
+		{Name: "select", Desc: "Single-choice inline picker", Files: []string{"select.go"}},
+		{Name: "checkbox", Desc: "Boolean toggle input", Files: []string{"checkbox.go"}},
+		{Name: "progress", Desc: "Horizontal progress bar", Files: []string{"progress.go"}},
+		{Name: "tabs", Desc: "Keyboard-navigable tab row", Files: []string{"tabs.go"}},
+		{Name: "toast", Desc: "Stacked notification rows", Files: []string{"toast.go"}},
+		{Name: "separator", Desc: "Horizontal or vertical divider", Files: []string{"separator.go"}},
 	}
 }
 

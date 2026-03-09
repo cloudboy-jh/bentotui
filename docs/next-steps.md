@@ -7,24 +7,24 @@ Completed in this directory today:
 - Starter app is present and runnable at `cmd/starter-app/main.go`
 - Registry embedding is wired via `registry/embed.go`
 - `bento` CLI has working `init`, `add`, `list`, and `doctor` paths under `cmd/bento/`
-- Registry components currently shipped: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`
+- Registry component catalog is finalized and shipped (`surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`)
 - No `bentos/` directory exists yet (example screen patterns are still pending)
 
 ---
 
 ## Immediate priorities
 
-### 1) Ship first bento examples
+### 1) Ship Wave 1 bentos (next session)
 
-- Create `bentos/home-screen` first, matching the starter app interaction model
-- Add 1-2 follow-up examples (`app-shell`, `dashboard`) to validate composition patterns
-- Keep each bento runnable with `go run ./bentos/<name>`
+- Create `bentos/home-screen` first (canonical starter-style composition)
+- Add `bentos/app-shell` and `bentos/dashboard` in the same wave
+- Keep each bento runnable with `go run ./bentos/<name>` and copy-and-own friendly
 
-### 2) Expand the component registry (next useful set)
+### 2) Expand bento catalog breadth (Wave 2)
 
-- Add display helpers used by the starter-like screens: `badge`, `kbd`, `wordmark`
-- Add common form/feedback controls: `select`, `checkbox`, `textarea`, `spinner`, `progress`
-- Keep each new component copy-and-own compatible with `bento add <name>`
+- Add `detail-view`, `form`, `log-viewer`, `settings`, and `command-view`
+- Prefer direct Bubbles primitives (for example `spinner`) inside bentos where appropriate
+- Only propose new components if at least 2 bentos need the same missing abstraction
 
 ### 3) Tighten `bento init` output
 
@@ -47,28 +47,38 @@ Completed in this directory today:
 
 ## Detailed build backlog (restored)
 
-### Components to build
+### Final component catalog (Bento-owned)
 
-Tier 1 (starter-facing):
+Core layout/container components:
 
-- `badge` — inline colored label
-- `kbd` — keyboard shortcut pair (`tab`, `cmd+k` style)
-- `wordmark` — large centered title component
+- `surface`
+- `panel`
+- `bar`
+- `dialog`
 
-Tier 2 (core form/feedback):
+Display helpers:
 
-- `select` — single-choice picker
-- `checkbox` — toggle boolean input
-- `textarea` — multiline text input
-- `spinner` — loading indicator
-- `progress` — horizontal progress bar
+- `badge`
+- `kbd`
+- `wordmark`
 
-Tier 3 (advanced/overlay):
+Form/feedback components:
 
-- `command` — command palette with fuzzy search
-- `toast` — ephemeral stacked notifications
-- `tabs` — keyboard-navigable tab switcher
-- `separator` — horizontal/vertical divider
+- `select`
+- `checkbox`
+- `progress`
+
+Advanced composition helpers:
+
+- `tabs`
+- `toast`
+- `separator`
+
+Primitive policy:
+
+- Do not add `spinner` as a Bento component; use `charm.land/bubbles/v2/spinner`
+- Default to direct Bubbles primitives unless Bento-specific composition value is clear
+- Existing shipped primitive-like components remain supported, but are not the growth focus
 
 ### Bento examples to build
 
@@ -99,14 +109,12 @@ Tier 3 (advanced/overlay):
 ### Suggested execution order
 
 1. Create `bentos/home-screen`
-2. Build Tier 1 components (`badge`, `kbd`, `wordmark`)
-3. Add `app-shell` and `dashboard` bentos
-4. Build Tier 2 components
-5. Add remaining bentos (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`)
-6. Build Tier 3 components
-7. Add tests for registry rendering + CLI logic
-8. Implement `bento wrap` deterministic pipeline
-9. Layer optional AI enhancement surface
+2. Add `app-shell` and `dashboard` bentos
+3. Add remaining bentos (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`)
+4. Add tests for registry rendering + CLI logic
+5. Improve `bento init` scaffold clarity
+6. Implement `bento wrap` deterministic pipeline
+7. Layer optional AI enhancement surface
 
 ---
 
