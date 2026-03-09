@@ -29,7 +29,7 @@ Two things live in this repo:
 
 ```
 registry/components/   ← copied into your project by `bento add`
-bentos/                ← complete runnable screen patterns
+bentos/                ← planned complete runnable screen patterns
 ```
 
 ## Install
@@ -70,6 +70,8 @@ Once copied they live at `yourmodule/components/<name>` — you own the source.
 | `table` | Header + data rows. |
 | `text` | Static styled label. |
 
+`bento add` currently supports: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`.
+
 ### Coming next — Tier 1
 
 | Component | Description |
@@ -77,7 +79,6 @@ Once copied they live at `yourmodule/components/<name>` — you own the source.
 | `badge` | Inline colored label. |
 | `kbd` | Keyboard shortcut display. Dim/bright pair. |
 | `wordmark` | Large centered app name. Theme-colored, responsive. |
-| `statusbar` | Standalone registry version of `bar`. |
 
 ### Tier 2
 
@@ -100,12 +101,12 @@ Once copied they live at `yourmodule/components/<name>` — you own the source.
 
 ## Bentos
 
-Bentos are complete runnable screen patterns you copy wholesale. Each is a single
-self-contained `.go` file demonstrating real component usage.
+Bentos are complete runnable screen patterns you copy wholesale. Each is planned
+as a single self-contained `.go` file demonstrating real component usage.
 
 ```
-bentos/
-  home-screen/   ← mirrors starter app (coming soon)
+bentos/          ← planned (directory not in repo yet)
+  home-screen/
   app-shell/
   dashboard/
   detail-view/
@@ -193,16 +194,21 @@ go run ./cmd/starter-app
 
 Type `/theme` to switch themes live. Type `/dialog` to open a sample dialog.
 
-## Execution order
+## CLI status
 
-1. ✅ **Starter app** — home screen with surface-backed rendering
-2. **Tier 1 components** — `badge`, `kbd`, `wordmark`, `statusbar`
-3. **`home-screen` bento** — first bento, mirrors starter app
-4. **Tier 2 components** — `select`, `checkbox`, `textarea`, `spinner`, `progress`
-5. **Remaining bentos** — `app-shell`, `dashboard`, `detail-view`, `form`
-6. **Tier 3 components** — `command`, `toast`, `tabs`, `separator`
-7. **CLI embed wiring** — `bento add` copies from embedded registry fs
-8. **`bento init` template** — single-screen starter template
+- `bento init` scaffolds a runnable project
+- `bento add <component...>` copies registry component source into `components/<name>/`
+- `bento list` shows available components
+- `bento doctor` runs environment/project checks
+
+## Next roadmap slice
+
+1. Ship first `bentos/` examples (`home-screen`, then `app-shell` and `dashboard`)
+2. Add Tier 1 display helpers (`badge`, `kbd`, `wordmark`)
+3. Add Tier 2 form/feedback components (`select`, `checkbox`, `textarea`, `spinner`, `progress`)
+4. Tighten `bento init` template output and guidance comments
+5. Add component + CLI logic tests (`go test ./registry/...` and command smoke coverage)
+6. Start deterministic `bento wrap` manifest/scaffold pipeline
 
 ## License
 
