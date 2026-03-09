@@ -23,6 +23,8 @@ func main() {
 		runInitCLI(os.Args[2:])
 	case "add":
 		runAddCLI(os.Args[2:])
+	case "list":
+		runListCLI(os.Args[2:])
 	case "doctor":
 		runDoctorCLI(os.Args[2:])
 	case "version", "--version", "-v":
@@ -54,6 +56,7 @@ Usage:
 Commands:
   init [name]          Scaffold a new BentoTUI app
   add <component>      Copy-and-own a component into your project
+  list                 Show available registry components
   doctor               Check your project for common issues
   version              Print the bento version
   help                 Show this help message

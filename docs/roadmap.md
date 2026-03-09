@@ -23,6 +23,17 @@ See [next-steps.md](./next-steps.md) for the three immediate known gaps.
 - [ ] `bento list` — show available components with one-line descriptions
 - [ ] `bento upgrade <component>` — diff registry version against copied version
 
+### Wrap + AI Scaffold
+
+- [ ] `bento wrap` — scaffold a BentoTUI app from an existing command interface (`--help`, flags, sample output) for rapid prototyping
+- [ ] Deterministic manifest spec — define and validate a stable wrap manifest format used by scaffold generation
+- [ ] `bento wrap --manifest-only` — parse interface data and emit deterministic manifest JSON
+- [ ] `bento wrap --scaffold` — generate owned Go scaffold files from a manifest
+- [ ] Optional enhance pass — `bento wrap --enhance` applies an LLM refinement pass after deterministic scaffold
+- [ ] MCP server tools — expose `bento_wrap`, `bento_scaffold`, `bento_enhance`
+- [ ] `bento.Enhance()` API — first-class API for post-scaffold enhancement workflows
+- [ ] `llms.txt` — ship model context for enhancement and scaffold tooling
+
 ### New Components
 
 - [ ] `tabs` — keyboard-navigable tab bar with panel content area

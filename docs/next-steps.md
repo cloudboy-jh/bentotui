@@ -152,6 +152,34 @@ Generated template should:
 
 ---
 
+## 6. `bento wrap` foundation
+
+**Goal:** Rapidly bootstrap a BentoTUI app from an existing command interface.
+
+Pipeline:
+1. Parse `--help`, flags, and sample output
+2. Produce deterministic manifest
+3. Generate owned Go scaffold files
+
+Initial deliverables:
+- Manifest schema + validator
+- `bento wrap --manifest-only`
+- `bento wrap --scaffold`
+
+---
+
+## 7. AI integration surface
+
+**Goal:** Add optional enhancement on top of deterministic scaffolding.
+
+Deliverables:
+- LLM enhance pass (`bento wrap --enhance`)
+- MCP server tools: `bento_wrap`, `bento_scaffold`, `bento_enhance`
+- First-class `bento.Enhance()` API
+- `llms.txt` for model context
+
+---
+
 ## Execution order
 
 1. **Starter app** — opencode prompt running now
@@ -162,6 +190,8 @@ Generated template should:
 6. **Tier 3 components** — `command`, `dialog`, `toast` last
 7. **CLI embed wiring** — once all registry components exist
 8. **`bento init` template** — final cleanup
+9. **`bento wrap` foundation** — deterministic manifest + scaffold
+10. **AI integration surface** — MCP tools, `bento.Enhance()`, `llms.txt`
 
 ---
 
