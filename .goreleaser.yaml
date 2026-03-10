@@ -24,11 +24,12 @@ builds:
 
 archives:
   - id: bento
-    builds: [bento]
+    ids: [bento]
     name_template: "bento_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     files:
       - README.md
       - CHANGELOG.md

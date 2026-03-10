@@ -8,7 +8,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/cmd/bento/tui"
 )
 
-const version = "0.2.0"
+var version = "dev"
 
 func main() {
 	// No args = TUI mode

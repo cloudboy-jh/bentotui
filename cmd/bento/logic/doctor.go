@@ -38,7 +38,25 @@ func RunDoctor() DoctorReport {
 	}
 
 	// Check for any copied registry components
-	for _, name := range []string{"surface", "panel", "bar", "dialog", "list", "table", "text", "input"} {
+	for _, name := range []string{
+		"surface",
+		"panel",
+		"bar",
+		"dialog",
+		"list",
+		"table",
+		"text",
+		"input",
+		"badge",
+		"kbd",
+		"wordmark",
+		"select",
+		"checkbox",
+		"progress",
+		"tabs",
+		"toast",
+		"separator",
+	} {
 		results = append(results, checkCopiedComponent(name))
 	}
 

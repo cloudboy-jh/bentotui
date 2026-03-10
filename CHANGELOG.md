@@ -16,12 +16,15 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 ### Changed
 
 - `bento add` / `bento list` now include the new component catalog entries
+- Release builds now inject CLI version correctly via GoReleaser `-X main.version`
 - Component roadmap/docs now treat the component catalog as finalized and shift
   execution focus toward shipping more `registry/bentos/` examples
 - Removed spinner-from-registry planning; `spinner` is now a direct
   `charm.land/bubbles/v2/spinner` primitive in app code instead
 - Docs now use `registry/bentos/` as the source-of-truth bento path and mark
   the first wave as shipped
+- `bento doctor` now checks all shipped copy-and-own components
+- README Go badge now matches module Go version floor (`1.25+`)
 
 ## [0.2.0] - 2026-03-02
 
