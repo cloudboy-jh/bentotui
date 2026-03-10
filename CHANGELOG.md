@@ -10,14 +10,18 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 - New registry components: `badge`, `kbd`, `wordmark`, `select`, `checkbox`,
   `progress`, `tabs`, `toast`, `separator`
+- New runnable bento examples in `registry/bentos/`: `home-screen`,
+  `app-shell`, `dashboard`
 
 ### Changed
 
 - `bento add` / `bento list` now include the new component catalog entries
 - Component roadmap/docs now treat the component catalog as finalized and shift
-  execution focus toward shipping more `bentos/` examples
+  execution focus toward shipping more `registry/bentos/` examples
 - Removed spinner-from-registry planning; `spinner` is now a direct
   `charm.land/bubbles/v2/spinner` primitive in app code instead
+- Docs now use `registry/bentos/` as the source-of-truth bento path and mark
+  the first wave as shipped
 
 ## [0.2.0] - 2026-03-02
 

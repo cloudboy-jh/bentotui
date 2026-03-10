@@ -56,10 +56,10 @@ Primitive policy: Bento does not plan a `spinner` registry component; use
 
 ### Bento Examples
 
-- [ ] `bentos/home-screen` — canonical copy-and-own starter screen
-- [ ] `bentos/app-shell` — sidebar + body + status layout pattern
-- [ ] `bentos/dashboard` — cards + table composition pattern
-- [ ] `bentos/form` — form controls and validation flow pattern
+- [x] `registry/bentos/home-screen` — canonical copy-and-own starter screen (starter-app pattern)
+- [x] `registry/bentos/app-shell` — sidebar + body + status layout pattern
+- [x] `registry/bentos/dashboard` — cards + table composition pattern
+- [ ] `registry/bentos/form` — form controls and validation flow pattern
 
 ### Layout Enhancements
 

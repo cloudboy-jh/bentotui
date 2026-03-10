@@ -3,5 +3,5 @@ package registry
 
 import "embed"
 
-//go:embed components/*/*
+//go:embed components/*/* bentos/*/*
 var ComponentsFS embed.FS

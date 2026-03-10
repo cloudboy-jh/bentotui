@@ -8,17 +8,17 @@ Completed in this directory today:
 - Registry embedding is wired via `registry/embed.go`
 - `bento` CLI has working `init`, `add`, `list`, and `doctor` paths under `cmd/bento/`
 - Registry component catalog is finalized and shipped (`surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`)
-- No `bentos/` directory exists yet (example screen patterns are still pending)
+- Wave 1 bento examples are now present under `registry/bentos/` (`home-screen`, `app-shell`, `dashboard`)
 
 ---
 
 ## Immediate priorities
 
-### 1) Ship Wave 1 bentos (next session)
+### 1) Ship Wave 1 bentos (shipped this session)
 
-- Create `bentos/home-screen` first (canonical starter-style composition)
-- Add `bentos/app-shell` and `bentos/dashboard` in the same wave
-- Keep each bento runnable with `go run ./bentos/<name>` and copy-and-own friendly
+- Create `registry/bentos/home-screen` first (canonical starter-style composition)
+- Add `registry/bentos/app-shell` and `registry/bentos/dashboard` in the same wave
+- Keep each bento runnable with `go run ./registry/bentos/<name>` and copy-and-own friendly
 
 ### 2) Expand bento catalog breadth (Wave 2)
 
@@ -82,14 +82,14 @@ Primitive policy:
 
 ### Bento examples to build
 
-- `home-screen` — mirror starter app pattern
-- `app-shell` — header + sidebar + body + footer/status
-- `dashboard` — cards + table composition
-- `detail-view` — list + detail pane
-- `form` — labeled inputs + validation hints
-- `log-viewer` — filter + scrollable output
-- `settings` — left nav + settings content
-- `command-view` — command-palette-first screen
+- `registry/bentos/home-screen` — mirror starter app pattern
+- `registry/bentos/app-shell` — header + sidebar + body + footer/status
+- `registry/bentos/dashboard` — cards + table composition
+- `registry/bentos/detail-view` — list + detail pane
+- `registry/bentos/form` — labeled inputs + validation hints
+- `registry/bentos/log-viewer` — filter + scrollable output
+- `registry/bentos/settings` — left nav + settings content
+- `registry/bentos/command-view` — command-palette-first screen
 
 ### CLI and platform items
 
@@ -108,12 +108,11 @@ Primitive policy:
 
 ### Suggested execution order
 
-1. Create `bentos/home-screen`
-2. Add `app-shell` and `dashboard` bentos
-3. Add remaining bentos (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`)
-4. Add tests for registry rendering + CLI logic
-5. Improve `bento init` scaffold clarity
-6. Implement `bento wrap` deterministic pipeline
+1. Keep `registry/bentos/home-screen` aligned with starter-app behavior
+2. Add remaining bentos (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`) under `registry/bentos/`
+3. Add tests for registry rendering + CLI logic
+4. Improve `bento init` scaffold clarity
+5. Implement `bento wrap` deterministic pipeline
 7. Layer optional AI enhancement surface
 
 ---

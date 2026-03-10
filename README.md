@@ -29,7 +29,7 @@ Two things live in this repo:
 
 ```
 registry/components/   ← copied into your project by `bento add`
-bentos/                ← planned complete runnable screen patterns
+registry/bentos/       ← complete runnable screen patterns
 ```
 
 ## Install
@@ -47,6 +47,11 @@ go install github.com/cloudboy-jh/bentotui/cmd/bento@latest
 ```bash
 # See the home screen
 go run ./cmd/starter-app
+
+# Run bento examples
+go run ./registry/bentos/home-screen
+go run ./registry/bentos/app-shell
+go run ./registry/bentos/dashboard
 
 # Copy components into your project
 bento add input bar surface
@@ -86,33 +91,25 @@ Primitive policy: Bento does not ship a `spinner` registry component. Use
 
 ## Bentos
 
-Bentos are complete runnable screen patterns you copy wholesale. Each is planned
-as a single self-contained `.go` file demonstrating real component usage.
+Bentos are complete runnable screen patterns you copy wholesale. Each bento in
+`registry/bentos/` is a self-contained `main.go` demonstrating real component usage.
 
 ```
-bentos/          ← planned (directory not in repo yet)
+registry/bentos/
   home-screen/
   app-shell/
   dashboard/
-  detail-view/
-  form/
-  log-viewer/
-  settings/
-  command-view/
 ```
 
-### Planned bentos
+### Current bentos
 
 | Bento | Components used |
 |-------|----------------|
 | `home-screen` | `wordmark`, `input`, `kbd`, `badge`, `bar`, `surface` |
-| `app-shell` | `panel`, `layout`, `bar`, `tabs`, `surface` |
-| `dashboard` | `panel`, `badge`, `table`, `layout`, `surface` |
-| `detail-view` | `list`, `panel`, `layout`, `surface` |
-| `form` | `input`, `checkbox`, `badge`, `progress`, `surface` (+ `bubbles/textarea`) |
-| `log-viewer` | `input`, `panel`, `badge`, `surface` (+ `bubbles/spinner`) |
-| `settings` | `list`, `panel`, `checkbox`, `layout`, `surface` |
-| `command-view` | `dialog` command palette, `input`, `list`, `surface` |
+| `app-shell` | `panel`, `bar`, `tabs`, `surface` |
+| `dashboard` | `panel`, `badge`, `table`, `bar`, `surface` |
+
+Future wave examples (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`) remain planned.
 
 ## Core packages (real imports, not copied)
 
@@ -190,7 +187,7 @@ Type `/theme` to switch themes live. Type `/dialog` to open a sample dialog.
 
 ## Next roadmap slice
 
-1. Ship first `bentos/` examples (`home-screen`, then `app-shell` and `dashboard`)
+1. Expand `registry/bentos/` beyond the shipped first wave (`home-screen`, `app-shell`, `dashboard`)
 2. Expand bento catalog breadth (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`)
 3. Keep primitive policy strict (use established Bubbles primitives like `spinner` directly)
 4. Tighten `bento init` template output and guidance comments
