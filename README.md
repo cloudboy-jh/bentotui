@@ -28,15 +28,13 @@ optional anchored footer mode for command focus.
 
 ## How it works
 
-Two things live in this repo:
+Three building blocks ship in this repo:
 
 | Thing | What it is |
 |-------|-----------|
-| **component** | Atomic UI piece. `bento add input` copies it into your project. |
-| **bentos** | Pre-built layout composition. A complete screen pattern you copy wholesale. |
-
-`registry/layouts` is also shipped in this module as importable layout primitives
-for composing screens (not copied by `bento add`).
+| **components** | Atomic UI pieces copied into your project via `bento add`. |
+| **bentos** | Runnable full-screen examples you can copy wholesale. |
+| **layouts** | Importable screen grammar under `registry/layouts` (not copied). |
 
 ```
 registry/components/   ← copied into your project by `bento add`
@@ -125,8 +123,6 @@ registry/bentos/
 | `app-shell` | `panel`, `bar`, `tabs`, `surface` |
 | `dashboard` | `panel`, `badge`, `table`, `bar`, `surface` |
 
-Future wave examples (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`) remain planned.
-
 ## Core packages (real imports, not copied)
 
 These are stable module deps your project imports directly:
@@ -194,29 +190,12 @@ Render contract:
 
 This avoids ANSI whitespace gaps and keeps theme canvas rendering deterministic.
 
-## Run the starter app
-
-```bash
-go run ./cmd/starter-app
-```
-
-Type `/theme` to switch themes live. Type `/dialog` to open a sample dialog.
-
 ## CLI status
 
 - `bento init` scaffolds a runnable project
 - `bento add <component...>` copies registry component source into `components/<name>/`
 - `bento list` shows available components
 - `bento doctor` runs environment/project checks
-
-## Next roadmap slice
-
-1. Expand `registry/bentos/` beyond the shipped first wave (`home-screen`, `app-shell`, `dashboard`)
-2. Expand bento catalog breadth (`detail-view`, `form`, `log-viewer`, `settings`, `command-view`)
-3. Keep primitive policy strict (use established Bubbles primitives like `spinner` directly)
-4. Tighten `bento init` template output and guidance comments
-5. Add component + CLI logic tests (`go test ./registry/...` and command smoke coverage)
-6. Start deterministic `bento wrap` manifest/scaffold pipeline
 
 ## License
 
