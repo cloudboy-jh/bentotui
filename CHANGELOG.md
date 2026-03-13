@@ -6,6 +6,15 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-13
+
+### Changed
+
+- Finalized Frame-first layout grammar and role-aware bar hierarchy (`top`, `subheader`, `footer`)
+- Added single muted status pill pattern for header metadata and anchored footer solid-row rendering
+- Expanded list/table/bar APIs and starter/bento defaults to the new frame/chrome contract
+- Refined theme role mapping/validation and updated docs for the latest layout + styling model
+
 ## [0.3.0] - 2026-03-12
 
 ### Added
