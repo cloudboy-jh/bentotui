@@ -10,5 +10,5 @@
 
 Layouts define frame grammar + geometry; `surface` handles final frame paint and overlays.
 
-Current default bentos/starter templates ship with minimal header rows (no test-only
-`LIVE/context/theme` banner content).
+Current default bentos/starter templates use a footer-anchored `Focus` layout
+(no top/subheader rows by default).

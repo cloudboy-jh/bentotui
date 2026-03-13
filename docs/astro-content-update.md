@@ -16,8 +16,8 @@ draft: false
 This update ships the new `registry/layouts` package and aligns docs, starter
 flows, and bento examples with the current rendering contract.
 
-Note: current starter and shipped bento defaults now use minimal top/subheader
-rows by default (no test-only `LIVE/context/theme` banners).
+Note: current starter and shipped bento defaults now use `Focus` layout
+(body + anchored footer, no top/subheader rows).
 
 ## What Changed
 
@@ -34,7 +34,7 @@ rows by default (no test-only `LIVE/context/theme` banners).
 Use layouts for geometry, and `surface` for final paint/composition:
 
 ```go
-screen := layouts.Pancake(width, height, header, content, footer)
+screen := layouts.Focus(width, height, content, footer)
 
 surf := surface.New(width, height)
 surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))

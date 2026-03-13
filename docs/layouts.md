@@ -8,15 +8,15 @@ Contract:
 - Layouts define screen grammar + geometry (allocation + constrain)
 - Layouts are theme-agnostic
 - Use `surface` as the final compositor in app `View()`
-- Prefer bar roles with `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`)
-- Starter and shipped bentos keep top/subheader rows minimal by default (no test metadata banners)
+- Prefer `Focus` for body + anchored-footer screens; use `Frame` when you explicitly need top/subheader rows.
+- Bar roles for `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`).
 
 ## API Basics
 
 ```go
 import "github.com/cloudboy-jh/bentotui/registry/layouts"
 
-screen := layouts.Frame(w, h, top, subheader, content, subfooter)
+screen := layouts.Focus(w, h, content, footer)
 ```
 
 Cells must satisfy:
@@ -35,7 +35,7 @@ Helpers:
 
 ## Named Layouts
 
-Frame-first grammar:
+Frame grammar:
 
 - `Frame(top, subheader, body, subfooter)`
 - `FrameMainDrawer(drawerW, top, subheader, main, drawer, subfooter)`
@@ -62,7 +62,7 @@ Compatibility layouts:
 ## Recommended Render Flow
 
 ```go
-screen := layouts.Frame(w, h, topbar, header, content, footer)
+screen := layouts.Focus(w, h, content, footer)
 
 surf := surface.New(w, h)
 surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))

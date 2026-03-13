@@ -6,6 +6,15 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-03-13
+
+### Changed
+
+- Reworked `layouts.Focus` to a native body+footer grammar so footer-anchored screens no longer reserve hidden header rows
+- Reworked `layouts.Pancake` to a native header+body+footer grammar and added snapshot coverage to prevent hidden shim-row regressions
+- Migrated starter app, shipped bentos, and `bento init` scaffold output to `layouts.Focus(...)` for footer-only chrome by default
+- Updated README/docs to document Focus-first home/starter layout usage and added the home-screen demo GIF
+
 ## [0.3.2] - 2026-03-13
 
 ### Changed

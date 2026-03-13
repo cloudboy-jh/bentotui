@@ -7,7 +7,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
-[![Status](https://img.shields.io/badge/status-v0.3.2%20active-6D5EF3)](#status)
+[![Status](https://img.shields.io/badge/status-v0.3.3%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
 A registry of copy-and-own terminal UI components built on
@@ -18,13 +18,13 @@ Run `bento add input` and the source lands in your project. You own it — read 
 modify it, delete what you don't need. No framework lock-in, no lifecycle hooks,
 no "extend" API to learn.
 
-Layout composition is handled by `registry/layouts` with `Frame(...)` as the
-default screen grammar (top row, subheader row, body, subfooter). Final frame
-painting and overlays are handled by `surface`.
+Layout composition is handled by `registry/layouts`. Home/starter screens use
+`Focus(...)` (body + anchored footer), while multi-row app shells can use
+`Frame(...)` (top row, subheader row, body, subfooter). Final frame painting
+and overlays are handled by `surface`.
 
-Frame rows use role-aware bar rendering (`top`, `subheader`, `footer`) with a
-single muted status pill pattern for metadata and optional anchored footer mode
-for command focus.
+Bar rows support role-aware rendering (`top`, `subheader`, `footer`) with
+optional anchored footer mode for command focus.
 
 ## How it works
 
@@ -35,9 +35,13 @@ Two things live in this repo:
 | **component** | Atomic UI piece. `bento add input` copies it into your project. |
 | **bentos** | Pre-built layout composition. A complete screen pattern you copy wholesale. |
 
+`registry/layouts` is also shipped in this module as importable layout primitives
+for composing screens (not copied by `bento add`).
+
 ```
 registry/components/   ← copied into your project by `bento add`
 registry/bentos/       ← complete runnable screen patterns
+registry/layouts/      ← imported layout primitives (not copied)
 ```
 
 ## Install
@@ -64,6 +68,10 @@ go run ./registry/bentos/dashboard
 # Copy components into your project
 bento add input bar surface
 ```
+
+Home-screen demo:
+
+![BentoTUI home-screen demo](./demo.gif)
 
 ## Components
 
@@ -127,7 +135,7 @@ These are stable module deps your project imports directly:
 |---------|-------------|------------|
 | `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 16 presets, goroutine-safe |
 | `styles` | `github.com/cloudboy-jh/bentotui/styles` | Theme → Lip Gloss style mapping |
-| `layouts` | `github.com/cloudboy-jh/bentotui/registry/layouts` | Frame-first visual layout grammar (`Frame`, `FrameMainDrawer`, `FrameTriple`) plus compatibility layouts |
+| `layouts` | `github.com/cloudboy-jh/bentotui/registry/layouts` | Named visual layout grammar (`Focus`, `Frame`, splits, dashboard, modal, and more) |
 
 `surface` remains a copy-and-own registry component (`bento add surface`) and is
 the recommended final compositor for full-frame paint (`Fill`) and overlays (`DrawCenter`).
@@ -179,7 +187,7 @@ your app code
 
 Render contract:
 
-1. Build structure with `registry/layouts` (typically `Frame`).
+1. Build structure with `registry/layouts` (typically `Focus` for home/starter screens).
 2. Paint the full frame with `surface.Fill(theme.CurrentTheme().Surface.Canvas)`.
 3. Draw layout output with `surface.Draw(0, 0, screen)`.
 4. Draw overlays/dialogs with `surface.DrawCenter(...)`.

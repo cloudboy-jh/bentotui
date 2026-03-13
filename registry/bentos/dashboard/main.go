@@ -40,8 +40,6 @@ type model struct {
 	width  int
 	height int
 
-	topBar *bar.Model
-	subBar *bar.Model
 	botBar *bar.Model
 
 	metricA *panel.Model
@@ -92,11 +90,6 @@ func newModel() *model {
 	tTxt := &textBlock{}
 
 	m := &model{
-		topBar: bar.New(
-			bar.RoleTopBar(),
-			bar.Left("bento dashboard"),
-		),
-		subBar: bar.New(bar.RoleSubBar()),
 		botBar: bar.New(
 			bar.FooterAnchored(),
 			bar.Left(""),
@@ -161,7 +154,7 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	bodyH := max(1, m.height-2)
+	bodyH := max(1, m.height-1)
 	m.metricATxt.SetText(m.metricAValue + "\n" + viewString(m.badgeA.View()))
 	m.metricBTxt.SetText(m.metricBValue + "\n" + viewString(m.badgeB.View()))
 	m.metricCTxt.SetText(m.metricCValue + "\n" + viewString(m.badgeC.View()))
@@ -176,7 +169,7 @@ func (m *model) View() tea.View {
 		body = layouts.VSplit(m.width, bodyH, layouts.Static(top), layouts.Static(bottom))
 	}
 
-	screen := layouts.Frame(m.width, m.height, m.topBar, m.subBar, layouts.Static(body), m.botBar)
+	screen := layouts.Focus(m.width, m.height, layouts.Static(body), m.botBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)

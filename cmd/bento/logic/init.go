@@ -86,7 +86,7 @@ go 1.23
 require (
 	charm.land/bubbletea/v2 v2.0.0-rc.2
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106192539-4b304240aab7
-	github.com/cloudboy-jh/bentotui v0.3.2
+	github.com/cloudboy-jh/bentotui v0.3.3
 )
 `
 
@@ -106,7 +106,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.2"
+const version = "v0.3.3"
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
 	"██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗\n" +
@@ -123,8 +123,6 @@ func main() {
 
 type model struct {
 	inputBox  *input.Model
-	topBar    *bar.Model
-	metaBar   *bar.Model
 	footerBar *bar.Model
 	dialogs   *dialog.Manager
 	width     int
@@ -135,13 +133,6 @@ type model struct {
 func newModel() *model {
 	inp := input.New()
 	inp.SetPlaceholder("Ask anything... /theme /dialog")
-	top := bar.New(
-		bar.RoleTopBar(),
-		bar.Left("{{.AppName}}"),
-	)
-	meta := bar.New(
-		bar.RoleSubBar(),
-	)
 	foot := bar.New(
 		bar.FooterAnchored(),
 		bar.Left("~ {{.AppName}}"),
@@ -151,7 +142,7 @@ func newModel() *model {
 		),
 		bar.CompactCards(),
 	)
-	return &model{inputBox: inp, topBar: top, metaBar: meta, footerBar: foot, dialogs: dialog.New()}
+	return &model{inputBox: inp, footerBar: foot, dialogs: dialog.New()}
 }
 
 func (m *model) Init() tea.Cmd { return m.inputBox.Focus() }
@@ -174,8 +165,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.topBar.SetSize(msg.Width, 1)
-		m.metaBar.SetSize(msg.Width, 1)
 		m.footerBar.SetSize(msg.Width, 1)
 		m.dialogs.SetSize(msg.Width, msg.Height)
 		m.inputW = clamp(m.width*6/10, 50, 90)
@@ -279,7 +268,7 @@ func (m *model) View() tea.View {
 		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, stack)
 	})
 
-	screen := layouts.Frame(m.width, m.height, m.topBar, m.metaBar, body, m.footerBar)
+	screen := layouts.Focus(m.width, m.height, body, m.footerBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvasColor)
 	surf.Draw(0, 0, screen)

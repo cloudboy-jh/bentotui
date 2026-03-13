@@ -49,8 +49,6 @@ type model struct {
 	nav     []string
 	cursor  int
 	tabs    *tabs.Model
-	topBar  *bar.Model
-	subBar  *bar.Model
 	botBar  *bar.Model
 	left    *panel.Model
 	center  *panel.Model
@@ -80,15 +78,10 @@ func newModel() *model {
 	metaTxt := &textBlock{text: "Context\n- workspace: demo\n- branch: main\n- health: green"}
 
 	m := &model{
-		scope:  focusNav,
-		nav:    []string{"Home", "Deploys", "Logs", "Settings", "About"},
-		cursor: 0,
-		tabs:   tabModel,
-		topBar: bar.New(
-			bar.RoleTopBar(),
-			bar.Left("bento app-shell"),
-		),
-		subBar:  bar.New(bar.RoleSubBar()),
+		scope:   focusNav,
+		nav:     []string{"Home", "Deploys", "Logs", "Settings", "About"},
+		cursor:  0,
+		tabs:    tabModel,
 		botBar:  bar.New(bar.RoleFooterBar(), bar.FooterAnchored()),
 		leftTxt: leftTxt,
 		mainTxt: mainTxt,
@@ -161,7 +154,7 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	bodyH := max(0, m.height-2)
+	bodyH := max(0, m.height-1)
 	bodyH = max(1, bodyH)
 
 	m.leftTxt.SetText(m.navText())
@@ -180,7 +173,7 @@ func (m *model) View() tea.View {
 		body = layouts.Sidebar(m.width, bodyH, navW, m.left, layouts.Static(main))
 	}
 
-	screen := layouts.Frame(m.width, m.height, m.topBar, m.subBar, layouts.Static(body), m.botBar)
+	screen := layouts.Focus(m.width, m.height, layouts.Static(body), m.botBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)

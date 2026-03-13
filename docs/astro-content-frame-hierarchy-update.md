@@ -19,13 +19,13 @@ layouts, themes, and starter/bento defaults.
 
 ## What Shipped
 
-- `Frame(...)` remains the default screen grammar (`top`, `subheader`, `body`, `subfooter`).
+- `Frame(...)` remains the multi-row grammar (`top`, `subheader`, `body`, `subfooter`).
 - Bar rows now support explicit roles and footer modes:
   - top/subheader/footer row roles
   - anchored footer mode for strong command focus
 - Anchored footer rows now render as one continuous strip (no segmented chip backgrounds).
 - Top-row metadata moved to a single muted status pill pattern (`StatusPill("LIVE")`).
-- Starter and shipped bentos now default to minimal top/subheader rows and remove tester header banners.
+- Starter and shipped bentos now default to `Focus(...)` (body + anchored footer).
 - Panel title/focus treatment reduced to avoid competing with anchored footer emphasis.
 - Theme mapping/validation updated so frame hierarchy behaves more consistently across presets.
 

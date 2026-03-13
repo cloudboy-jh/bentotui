@@ -1,6 +1,6 @@
 # BentoTUI Roadmap
 
-## Current State (v0.3.2)
+## Current State (v0.3.3)
 
 The repository completed a full structural refactor in v0.2 and has a working
 baseline CLI + starter flow:
