@@ -32,7 +32,7 @@ func RunDoctor() DoctorReport {
 	for _, pkg := range []string{
 		"github.com/cloudboy-jh/bentotui/theme",
 		"github.com/cloudboy-jh/bentotui/styles",
-		"github.com/cloudboy-jh/bentotui/layout",
+		"github.com/cloudboy-jh/bentotui/registry/layouts",
 	} {
 		results = append(results, checkModDep(pkg))
 	}

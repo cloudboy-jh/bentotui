@@ -9,8 +9,10 @@ import (
 )
 
 type Model struct {
-	text string
-	bold bool
+	text   string
+	bold   bool
+	width  int
+	height int
 }
 
 func New(text string) *Model {
@@ -19,6 +21,8 @@ func New(text string) *Model {
 
 func (m *Model) SetText(text string)                 { m.text = text }
 func (m *Model) SetBold(v bool)                      { m.bold = v }
+func (m *Model) SetSize(width, height int)           { m.width, m.height = width, height }
+func (m *Model) GetSize() (int, int)                 { return m.width, m.height }
 func (m *Model) Init() tea.Cmd                       { return nil }
 func (m *Model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/components/panel"
 	"github.com/cloudboy-jh/bentotui/registry/components/surface"
 	"github.com/cloudboy-jh/bentotui/registry/components/tabs"
+	"github.com/cloudboy-jh/bentotui/registry/layouts"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -104,9 +105,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.topBar.SetSize(m.width, 1)
-		m.botBar.SetSize(m.width, 1)
-		m.layoutPanels()
 		return m, nil
 
 	case tea.KeyMsg:
@@ -159,62 +157,33 @@ func (m *model) View() tea.View {
 	}
 
 	bodyH := max(0, m.height-2)
-	surf := surface.New(m.width, m.height)
-	surf.Fill(canvas)
+	bodyH = max(1, bodyH)
 
 	m.leftTxt.SetText(m.navText())
 	m.mainTxt.SetText(m.bodyText())
 
-	surf.Draw(0, 0, viewString(m.topBar.View()))
-
+	body := ""
 	if m.width < 78 {
-		navH := clamp(bodyH/3, 6, 10)
-		contentH := max(4, bodyH-navH)
-		m.left.SetSize(max(20, m.width), navH)
-		m.center.SetSize(max(20, m.width), contentH)
-		surf.Draw(0, 1, viewString(m.left.View()))
-		surf.Draw(0, 1+navH, viewString(m.center.View()))
+		body = layouts.VSplit(m.width, bodyH, m.left, m.center)
+	} else if m.width < 108 {
+		navW := clamp(m.width/4, 24, 32)
+		body = layouts.Sidebar(m.width, bodyH, navW, m.left, m.center)
 	} else {
-		surf.Draw(0, 1, viewString(m.left.View()))
-		leftW, _ := m.left.GetSize()
-		surf.Draw(leftW+1, 1, viewString(m.center.View()))
-		if m.width >= 108 {
-			centerW, _ := m.center.GetSize()
-			surf.Draw(leftW+centerW+2, 1, viewString(m.right.View()))
-		}
+		navW := clamp(m.width/4, 24, 32)
+		drawerW := clamp(m.width/5, 22, 28)
+		main := layouts.DrawerRight(max(1, m.width-navW), bodyH, drawerW, m.center, m.right)
+		body = layouts.Sidebar(m.width, bodyH, navW, m.left, layouts.Static(main))
 	}
 
-	surf.Draw(0, m.height-1, viewString(m.botBar.View()))
+	screen := layouts.Pancake(m.width, m.height, m.topBar, layouts.Static(body), m.botBar)
+	surf := surface.New(m.width, m.height)
+	surf.Fill(canvas)
+	surf.Draw(0, 0, screen)
 
 	v := tea.NewView(surf.Render())
 	v.AltScreen = true
 	v.BackgroundColor = canvas
 	return v
-}
-
-func (m *model) layoutPanels() {
-	bodyH := max(0, m.height-2)
-	if m.width < 78 {
-		m.left.SetSize(max(20, m.width), clamp(bodyH/3, 6, 10))
-		m.center.SetSize(max(20, m.width), max(4, bodyH-clamp(bodyH/3, 6, 10)))
-		m.right.SetSize(0, 0)
-		return
-	}
-
-	leftW := clamp(m.width/4, 24, 32)
-	if m.width >= 108 {
-		rightW := clamp(m.width/5, 22, 28)
-		centerW := max(26, m.width-leftW-rightW-2)
-		m.left.SetSize(leftW, bodyH)
-		m.center.SetSize(centerW, bodyH)
-		m.right.SetSize(rightW, bodyH)
-		return
-	}
-
-	centerW := max(26, m.width-leftW-1)
-	m.left.SetSize(leftW, bodyH)
-	m.center.SetSize(centerW, bodyH)
-	m.right.SetSize(0, 0)
 }
 
 func (m *model) syncFocus() {

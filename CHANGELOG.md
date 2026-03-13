@@ -12,6 +12,8 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
   `progress`, `tabs`, `toast`, `separator`
 - New runnable bento examples in `registry/bentos/`: `home-screen`,
   `app-shell`, `dashboard`
+- New `registry/layouts/` package with 15 named layout functions and shared sizing engine
+- New layout docs at `docs/layouts.md`
 
 ### Changed
 
@@ -25,6 +27,9 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
   the first wave as shipped
 - `bento doctor` now checks all shipped copy-and-own components
 - README Go badge now matches module Go version floor (`1.25+`)
+- Starter app, registry bentos, and `bento init` template now compose screens with `registry/layouts`
+- Full-frame rendering contract restored: `surface.Fill(...)` + `surface.Draw(...)` remains the final compositor path
+- Docs updated to reflect `registry/layouts` + `surface` composition responsibilities
 
 ## [0.2.0] - 2026-03-02
 

@@ -7,7 +7,8 @@ baseline CLI + starter flow:
 
 - Deleted the monolithic `bentotui.New()` framework API
 - Deleted `app/`, `core/`, `ui/`, `bentotui.go`
-- Moved `core/theme/` → `theme/`, `ui/styles/` → `styles/`, `core/layout/` → `layout/`
+- Moved `core/theme/` → `theme/`, `ui/styles/` → `styles/`
+- Added `registry/layouts/` with 15 named layout patterns
 - Created `registry/` with clean rewrites of every component
 - Every component reads `theme.CurrentTheme()` in `View()` — no stored theme state
 - Every row uses a single `lipgloss.NewStyle().Background().Width().Render()` call
@@ -63,8 +64,8 @@ Primitive policy: Bento does not plan a `spinner` registry component; use
 
 ### Layout Enhancements
 
-- [ ] `layout.Grid` — fixed-column grid (simpler than manual Horizontal+Vertical nesting)
-- [ ] Scrollable `Split` — allow body regions to scroll independently
+- [ ] `layouts.Grid` — fixed-column grid helper for dashboard-style screens
+- [ ] Scrollable region helper — allow body regions to scroll independently within named layouts
 
 ### Developer Experience
 

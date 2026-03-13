@@ -13,6 +13,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/components/dialog"
 	"github.com/cloudboy-jh/bentotui/registry/components/input"
 	"github.com/cloudboy-jh/bentotui/registry/components/surface"
+	"github.com/cloudboy-jh/bentotui/registry/layouts"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -85,7 +86,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusBar.SetSize(msg.Width, 1)
-		m.dialogs.SetSize(msg.Width, max(0, msg.Height-1))
+		m.dialogs.SetSize(msg.Width, msg.Height)
 		m.inputW = clamp(m.width*6/10, 50, 90)
 		m.inputBox.SetSize(m.inputW-5, 1)
 		return m, nil
@@ -133,45 +134,18 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	bodyH := max(0, m.height-1) // rows available for body content
-
-	// ── Surface covers the full terminal (width x height) ─────────────────────
-	// Fill paints every cell first. All components draw on top of this layer.
-	// Status bar is drawn as the last row inside the same surface — no string
-	// concatenation outside surface.Render().
-	surf := surface.New(m.width, m.height)
-	surf.Fill(canvasColor)
-
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
 	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
 
-	// ── wordmark ──────────────────────────────────────────────────────────────
 	wm := lipgloss.NewStyle().
 		Foreground(lipgloss.Color(t.Text.Accent)).
 		Bold(true).
 		Render(wordmark)
-	wmW := lipgloss.Width(wm)
-	wmH := lipgloss.Height(wm)
 
-	// ── input block ───────────────────────────────────────────────────────────
-	// inputW is the total block width. innerW is the text area inside padding+border.
-	// Every row is explicitly sized so every cell has Input.BG set — no transparent
-	// padding cells that would inherit canvas color via the surface overlay.
 	inputBlockW := m.inputW
 	if inputBlockW == 0 {
 		inputBlockW = clamp(m.width*6/10, 50, 90)
 	}
-	// Block layout — all rows are rendered explicitly so every cell has Input.BG.
-	// Lipgloss PaddingTop/PaddingBottom rows carry Bg=nil which the UV overlay
-	// treats as canvas color, so we use explicit blank rows instead.
-	//
-	// Anatomy:
-	//   total block width = inputBlockW
-	//   left border (1) + row content = inputBlockW
-	//   row = PaddingLeft(2) + Width(contentW) + PaddingRight(2)
-	//   → contentW = inputBlockW - 1(border) - 2(PL) - 2(PR) = inputBlockW - 5
-	//
-	// block.Width(inputBlockW-1): lipgloss content-area width + 1(border) = inputBlockW total.
 	contentW := max(1, inputBlockW-5)
 	inputStr := viewString(m.inputBox.View())
 
@@ -183,8 +157,6 @@ func (m *model) View() tea.View {
 			Width(contentW).
 			Render(content)
 	}
-	// Use a space, not "", so the row has a real rune — some lipgloss/JoinVertical
-	// paths collapse a fully-empty render to zero height.
 	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(t.Input.BG)).Width(contentW + 4).Render(" ")
 	inner := lipgloss.JoinVertical(lipgloss.Left,
 		blankRow,
@@ -192,59 +164,49 @@ func (m *model) View() tea.View {
 		mkRow(t.Text.Muted, "add   panel   list   input   table   dialog"),
 		blankRow,
 	)
-	// Width(inputBlockW-1): lipgloss adds 1 for the left border, so total = inputBlockW. ✓
 	block := lipgloss.NewStyle().
 		Background(lipgloss.Color(t.Input.BG)).
 		Border(lipgloss.Border{Left: "┃"}, false, false, false, true).
 		BorderForeground(lipgloss.Color(t.Border.Focus)).
 		Width(inputBlockW - 1).
 		Render(inner)
-	blockW := lipgloss.Width(block)
-	blockH := lipgloss.Height(block)
 
-	// ── kbd hints ─────────────────────────────────────────────────────────────
 	kbdStr := dim.Render("tab ") + bright.Render("components") +
 		dim.Render("   ⌘K ") + bright.Render("commands")
-	kbdW := lipgloss.Width(kbdStr)
 
-	// ── tip ───────────────────────────────────────────────────────────────────
 	dot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("● Tip")
 	tipStr := dot + dim.Render("  Run bento init to scaffold a new TUI app")
-	tipW := lipgloss.Width(tipStr)
 
-	// ── vertical centering ────────────────────────────────────────────────────
-	// Layout: wordmark(6) + gap(2) + block(4) + gap(1) + kbd(1) + gap(1) + tip(1) = 16
-	const contentH = 16
-	topPad := max(0, (bodyH-contentH)/2)
+	body := layouts.RenderFunc(func(width, height int) string {
+		center := func(s string) string {
+			return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
+		}
+		right := func(s string) string {
+			line := lipgloss.NewStyle().Width(max(1, width-2)).Align(lipgloss.Right).Render(s)
+			if width > 1 {
+				return " " + line
+			}
+			return line
+		}
+		stack := strings.Join([]string{
+			center(wm),
+			"",
+			center(block),
+			"",
+			right(kbdStr),
+			"",
+			center(tipStr),
+		}, "\n")
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, stack)
+	})
 
-	// Draw each element at its centered X, calculated Y position.
-	// surface.Draw(x, y, content) — no whitespace padding needed.
-	y := topPad
-
-	// wordmark — centered horizontally
-	surf.Draw(max(0, (m.width-wmW)/2), y, wm)
-	y += wmH + 2
-
-	// input block — centered horizontally
-	surf.Draw(max(0, (m.width-blockW)/2), y, block)
-	y += blockH + 1
-
-	// kbd hints — right-aligned (2 cell margin from edge)
-	surf.Draw(max(0, m.width-kbdW-2), y, kbdStr)
-	y += 2
-
-	// tip — centered
-	surf.Draw(max(0, (m.width-tipW)/2), y, tipStr)
-
-	// ── dialog overlay ────────────────────────────────────────────────────────
+	screen := layouts.Focus(m.width, m.height, body, m.statusBar)
+	surf := surface.New(m.width, m.height)
+	surf.Fill(canvasColor)
+	surf.Draw(0, 0, screen)
 	if m.dialogs.IsOpen() {
-		dlgStr := viewString(m.dialogs.View())
-		surf.DrawCenter(dlgStr)
+		surf.DrawCenter(viewString(m.dialogs.View()))
 	}
-
-	// ── status bar — drawn as the last row inside the surface ─────────────────
-	statusStr := viewString(m.statusBar.View())
-	surf.Draw(0, m.height-1, statusStr)
 
 	v := tea.NewView(surf.Render())
 	v.AltScreen = true

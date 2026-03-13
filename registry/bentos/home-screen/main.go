@@ -10,6 +10,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/components/dialog"
 	"github.com/cloudboy-jh/bentotui/registry/components/input"
 	"github.com/cloudboy-jh/bentotui/registry/components/surface"
+	"github.com/cloudboy-jh/bentotui/registry/layouts"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -73,7 +74,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.statusBar.SetSize(msg.Width, 1)
-		m.dialogs.SetSize(msg.Width, max(0, msg.Height-1))
+		m.dialogs.SetSize(msg.Width, msg.Height)
 		m.inputW = clamp(m.width*6/10, 50, 90)
 		m.inputBox.SetSize(m.inputW-5, 1)
 		return m, nil
@@ -122,11 +123,6 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	bodyH := max(0, m.height-1)
-
-	surf := surface.New(m.width, m.height)
-	surf.Fill(canvasColor)
-
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
 	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
 
@@ -134,9 +130,6 @@ func (m *model) View() tea.View {
 		Foreground(lipgloss.Color(t.Text.Accent)).
 		Bold(true).
 		Render(wordmark)
-	wmW := lipgloss.Width(wm)
-	wmH := lipgloss.Height(wm)
-
 	inputBlockW := m.inputW
 	if inputBlockW == 0 {
 		inputBlockW = clamp(m.width*6/10, 50, 90)
@@ -167,34 +160,42 @@ func (m *model) View() tea.View {
 		BorderForeground(lipgloss.Color(t.Border.Focus)).
 		Width(inputBlockW - 1).
 		Render(inner)
-	blockW := lipgloss.Width(block)
-	blockH := lipgloss.Height(block)
 
 	kbdStr := dim.Render("tab ") + bright.Render("components") +
 		dim.Render("   ⌘K ") + bright.Render("commands")
-	kbdW := lipgloss.Width(kbdStr)
 
 	dot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("● Tip")
 	tipStr := dot + dim.Render("  Run bento init to scaffold a new TUI app")
-	tipW := lipgloss.Width(tipStr)
+	body := layouts.RenderFunc(func(width, height int) string {
+		center := func(s string) string {
+			return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
+		}
+		right := func(s string) string {
+			line := lipgloss.NewStyle().Width(max(1, width-2)).Align(lipgloss.Right).Render(s)
+			if width > 1 {
+				return " " + line
+			}
+			return line
+		}
+		stack := strings.Join([]string{
+			center(wm),
+			"",
+			center(block),
+			"",
+			right(kbdStr),
+			"",
+			center(tipStr),
+		}, "\n")
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, stack)
+	})
 
-	const contentH = 16
-	topPad := max(0, (bodyH-contentH)/2)
-	y := topPad
-
-	surf.Draw(max(0, (m.width-wmW)/2), y, wm)
-	y += wmH + 2
-	surf.Draw(max(0, (m.width-blockW)/2), y, block)
-	y += blockH + 1
-	surf.Draw(max(0, m.width-kbdW-2), y, kbdStr)
-	y += 2
-	surf.Draw(max(0, (m.width-tipW)/2), y, tipStr)
-
+	screen := layouts.Focus(m.width, m.height, body, m.statusBar)
+	surf := surface.New(m.width, m.height)
+	surf.Fill(canvasColor)
+	surf.Draw(0, 0, screen)
 	if m.dialogs.IsOpen() {
 		surf.DrawCenter(viewString(m.dialogs.View()))
 	}
-
-	surf.Draw(0, m.height-1, viewString(m.statusBar.View()))
 
 	v := tea.NewView(surf.Render())
 	v.AltScreen = true

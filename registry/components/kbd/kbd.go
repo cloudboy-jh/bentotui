@@ -15,6 +15,8 @@ type Model struct {
 	label   string
 	active  bool
 	variant string
+	width   int
+	height  int
 }
 
 func New(command, label string) *Model {
@@ -25,6 +27,8 @@ func (m *Model) SetCommand(v string)                 { m.command = v }
 func (m *Model) SetLabel(v string)                   { m.label = v }
 func (m *Model) SetActive(v bool)                    { m.active = v }
 func (m *Model) SetVariant(v string)                 { m.variant = strings.TrimSpace(v) }
+func (m *Model) SetSize(width, height int)           { m.width, m.height = width, height }
+func (m *Model) GetSize() (int, int)                 { return m.width, m.height }
 func (m *Model) Init() tea.Cmd                       { return nil }
 func (m *Model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 

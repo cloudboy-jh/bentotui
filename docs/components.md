@@ -36,23 +36,41 @@ t.Bar.{BG, FG}
 t.Dialog.{BG, FG, Border, Scrim}
 ```
 
-### `layout`
+### `registry/layouts`
 
 ```go
-import "github.com/cloudboy-jh/bentotui/layout"
+import (
+    "charm.land/lipgloss/v2"
+    "github.com/cloudboy-jh/bentotui/registry/components/surface"
+    "github.com/cloudboy-jh/bentotui/registry/layouts"
+    "github.com/cloudboy-jh/bentotui/theme"
+)
 
-root := layout.Horizontal(
-    layout.Fixed(30, sidebar),     // exact column count
-    layout.Flex(1, main),          // proportional share
-    layout.Flex(2, detail),        // 2× share vs Flex(1)
-).WithGutterColor(t.Border.Subtle) // 1-cell painted gutter
+screen := layouts.HolyGrail(width, height,
+    28,       // sidebar width
+    header,
+    sidebar,
+    main,
+    footer,
+)
 
-root.SetSize(width, height)        // call on WindowSizeMsg
-root.GetSize() (int, int)
-root.DebugLayout() string          // "####|########|####"
+overlay := layouts.Modal(width, height, 56, 16,
+    layouts.Static(screen),
+    dialog,
+)
 ```
 
-`SetSize` propagates to children that implement `Sizeable` (have `SetSize`/`GetSize`).
+All 15 layouts call `SetSize` on each child, constrain each cell to its exact
+allocation, and return a final `string`.
+
+Use `surface` as the final compositor in full-screen apps:
+
+```go
+screen := layouts.Pancake(width, height, header, body, footer)
+surf := surface.New(width, height)
+surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))
+surf.Draw(0, 0, screen)
+```
 
 ---
 
@@ -136,10 +154,9 @@ return m, func() tea.Msg { return dialog.Open(dialog.Confirm{
 updated, cmd := dm.Update(msg)
 dm = updated.(*dialog.Manager)
 
-// Render — position it in your View() with lipgloss.Place*
+// Render — composite with surface in your View()
 if dm.IsOpen() {
-    overlay := viewString(dm.View())
-    // center it, then composite over body
+    surf.DrawCenter(viewString(dm.View()))
 }
 
 dm.SetSize(width, height)
@@ -429,7 +446,8 @@ import (
 
     tea "charm.land/bubbletea/v2"
     "charm.land/lipgloss/v2"
-    "github.com/cloudboy-jh/bentotui/layout"
+    "github.com/cloudboy-jh/bentotui/registry/components/surface"
+    "github.com/cloudboy-jh/bentotui/registry/layouts"
     "github.com/cloudboy-jh/bentotui/theme"
     "yourmodule/components/bar"
     "yourmodule/components/dialog"
@@ -444,8 +462,8 @@ func main() {
 }
 
 type model struct {
-    root    *layout.Split
     header  *bar.Model
+    footer  *bar.Model
     body    *panel.Model
     log     *list.Model
     dialogs *dialog.Manager
@@ -457,16 +475,17 @@ func newModel() *model {
     log.Append("ready")
 
     body := panel.New(panel.Title("Main"), panel.Content(log))
-    hdr  := bar.New(
+    hdr := bar.New(
         bar.Left("my app"),
         bar.Cards(bar.Card{Command: "ctrl+t", Label: "theme", Enabled: true}),
     )
-    root := layout.Vertical(layout.Fixed(1, hdr), layout.Flex(1, body))
 
-    return &model{root: root, header: hdr, body: body, log: log, dialogs: dialog.New()}
+    ftr := bar.New(bar.Left("ctrl+c quit"))
+
+    return &model{header: hdr, footer: ftr, body: body, log: log, dialogs: dialog.New()}
 }
 
-func (m *model) Init() tea.Cmd { return m.root.Init() }
+func (m *model) Init() tea.Cmd { return nil }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     if m.dialogs.IsOpen() {
@@ -480,7 +499,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.WindowSizeMsg:
         m.w, m.h = msg.Width, msg.Height
-        m.root.SetSize(m.w, m.h)
         m.dialogs.SetSize(m.w, m.h)
     case tea.KeyMsg:
         switch msg.String() {
@@ -495,20 +513,27 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             }
         }
     }
-    u, cmd := m.root.Update(msg)
-    m.root = u.(*layout.Split)
-    return m, cmd
+    return m, nil
 }
 
 func (m *model) View() tea.View {
     t := theme.CurrentTheme()
-    screen := viewString(m.root.View())
+
+    screen := layouts.Pancake(m.w, m.h,
+        m.header,
+        m.body,
+        m.footer,
+    )
+
+    surf := surface.New(m.w, m.h)
+    surf.Fill(lipgloss.Color(t.Surface.Canvas))
+    surf.Draw(0, 0, screen)
+
     if m.dialogs.IsOpen() {
-        d := viewString(m.dialogs.View())
-        screen = lipgloss.PlaceHorizontal(m.w, lipgloss.Center,
-            lipgloss.PlaceVertical(m.h, lipgloss.Center, d))
+        surf.DrawCenter(viewString(m.dialogs.View()))
     }
-    v := tea.NewView(screen)
+
+    v := tea.NewView(surf.Render())
     v.AltScreen = true
     v.BackgroundColor = lipgloss.Color(t.Surface.Canvas)
     return v

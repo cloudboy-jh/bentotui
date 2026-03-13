@@ -18,6 +18,9 @@ Run `bento add input` and the source lands in your project. You own it — read 
 modify it, delete what you don't need. No framework lock-in, no lifecycle hooks,
 no "extend" API to learn.
 
+Layout composition is now handled by `registry/layouts` (15 named layout
+functions). Final frame painting and overlays are handled by `surface`.
+
 ## How it works
 
 Two things live in this repo:
@@ -119,7 +122,10 @@ These are stable module deps your project imports directly:
 |---------|-------------|------------|
 | `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 16 presets, goroutine-safe |
 | `styles` | `github.com/cloudboy-jh/bentotui/styles` | Theme → Lip Gloss style mapping |
-| `layout` | `github.com/cloudboy-jh/bentotui/layout` | `Horizontal` / `Vertical` split layout |
+| `layouts` | `github.com/cloudboy-jh/bentotui/registry/layouts` | 15 named layout functions (`Focus`, `Pancake`, `Sidebar`, `Modal`, etc.) |
+
+`surface` remains a copy-and-own registry component (`bento add surface`) and is
+the recommended final compositor for full-frame paint (`Fill`) and overlays (`DrawCenter`).
 
 ## Theme System
 
@@ -156,7 +162,7 @@ your app code
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │  bentotui module deps  (real go imports)             │
-│  theme   styles   layout                             │
+│  theme   styles   registry/layouts                   │
 └─────────────────────────────────────────────────────┘
                   │ built on
                   ▼
@@ -166,9 +172,14 @@ your app code
 └─────────────────────────────────────────────────────┘
 ```
 
-`surface` is the key rendering primitive. It wraps Ultraviolet's cell buffer
-so every cell is explicitly painted before Bubble Tea flushes the frame —
-eliminating ANSI whitespace-reset bleed that occurs with pure string composition.
+Render contract:
+
+1. Build structure with `registry/layouts`.
+2. Paint the full frame with `surface.Fill(theme.CurrentTheme().Surface.Canvas)`.
+3. Draw layout output with `surface.Draw(0, 0, screen)`.
+4. Draw overlays/dialogs with `surface.DrawCenter(...)`.
+
+This avoids ANSI whitespace gaps and keeps theme canvas rendering deterministic.
 
 ## Run the starter app
 

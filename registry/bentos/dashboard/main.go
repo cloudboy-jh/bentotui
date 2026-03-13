@@ -11,6 +11,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/components/panel"
 	"github.com/cloudboy-jh/bentotui/registry/components/surface"
 	"github.com/cloudboy-jh/bentotui/registry/components/table"
+	"github.com/cloudboy-jh/bentotui/registry/layouts"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -56,6 +57,10 @@ type model struct {
 	badgeA *badge.Model
 	badgeB *badge.Model
 	badgeC *badge.Model
+
+	metricAValue string
+	metricBValue string
+	metricCValue string
 }
 
 func main() {
@@ -93,14 +98,17 @@ func newModel() *model {
 				bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true},
 			),
 		),
-		metricATxt: mATxt,
-		metricBTxt: mBTxt,
-		metricCTxt: mCTxt,
-		tableTxt:   tTxt,
-		table:      t,
-		badgeA:     b1,
-		badgeB:     b2,
-		badgeC:     b3,
+		metricATxt:   mATxt,
+		metricBTxt:   mBTxt,
+		metricCTxt:   mCTxt,
+		tableTxt:     tTxt,
+		table:        t,
+		badgeA:       b1,
+		badgeB:       b2,
+		badgeC:       b3,
+		metricAValue: "1.82M total",
+		metricBValue: "0.42%",
+		metricCValue: "Last deploy: 23m ago",
 	}
 
 	m.metricA = panel.New(panel.Title("Requests"), panel.Content(mATxt))
@@ -118,9 +126,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.topBar.SetSize(m.width, 1)
-		m.botBar.SetSize(m.width, 1)
-		m.layoutPanels()
 		return m, nil
 
 	case tea.KeyMsg:
@@ -129,9 +134,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "r":
 			seedTable(m.table, true)
-			m.metricATxt.SetText("1.91M total")
-			m.metricBTxt.SetText("0.31%")
-			m.metricCTxt.SetText("Last deploy: 24m ago")
+			m.metricAValue = "1.91M total"
+			m.metricBValue = "0.31%"
+			m.metricCValue = "Last deploy: 24m ago"
 		}
 	}
 	return m, nil
@@ -148,85 +153,29 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	surf := surface.New(m.width, m.height)
-	surf.Fill(canvas)
-
+	bodyH := max(1, m.height-2)
+	m.metricATxt.SetText(m.metricAValue + "\n" + viewString(m.badgeA.View()))
+	m.metricBTxt.SetText(m.metricBValue + "\n" + viewString(m.badgeB.View()))
+	m.metricCTxt.SetText(m.metricCValue + "\n" + viewString(m.badgeC.View()))
 	m.tableTxt.SetText(viewString(m.table.View()))
 
-	surf.Draw(0, 0, viewString(m.topBar.View()))
-
-	bodyH := max(0, m.height-2)
-	cardH := 6
-	gap := 1
-
+	body := ""
 	if m.width >= 96 {
-		cardW, _ := m.metricA.GetSize()
-		y := 1
-		x1 := gap
-		x2 := x1 + cardW + gap
-		x3 := x2 + cardW + gap
-
-		surf.Draw(x1, y, viewString(m.metricA.View()))
-		surf.Draw(x2, y, viewString(m.metricB.View()))
-		surf.Draw(x3, y, viewString(m.metricC.View()))
-
-		surf.Draw(x1+2, y+3, viewString(m.badgeA.View()))
-		surf.Draw(x2+2, y+3, viewString(m.badgeB.View()))
-		surf.Draw(x3+2, y+3, viewString(m.badgeC.View()))
-
-		tableY := y + cardH + 1
-		surf.Draw(1, tableY, viewString(m.tableP.View()))
-
-		legend := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted)).Render("Tip: press r to refresh sample data")
-		surf.Draw(max(1, m.width-lipgloss.Width(legend)-2), max(1, tableY+max(6, bodyH-cardH-1)-1), legend)
+		body = layouts.Dashboard2x2(m.width, bodyH, m.metricA, m.metricB, m.metricC, m.tableP)
 	} else {
-		y := 1
-		surf.Draw(1, y, viewString(m.metricA.View()))
-		surf.Draw(3, y+3, viewString(m.badgeA.View()))
-		y += cardH
-		surf.Draw(1, y, viewString(m.metricB.View()))
-		surf.Draw(3, y+3, viewString(m.badgeB.View()))
-		y += cardH
-		surf.Draw(1, y, viewString(m.metricC.View()))
-		surf.Draw(3, y+3, viewString(m.badgeC.View()))
-		y += cardH
-
-		if y < m.height-2 {
-			surf.Draw(1, y, viewString(m.tableP.View()))
-		}
+		top := layouts.VSplit(m.width, max(1, bodyH/2), m.metricA, m.metricB)
+		bottom := layouts.VSplit(m.width, max(1, bodyH-bodyH/2), m.metricC, m.tableP)
+		body = layouts.VSplit(m.width, bodyH, layouts.Static(top), layouts.Static(bottom))
 	}
 
-	surf.Draw(0, m.height-1, viewString(m.botBar.View()))
-
+	screen := layouts.Pancake(m.width, m.height, m.topBar, layouts.Static(body), m.botBar)
+	surf := surface.New(m.width, m.height)
+	surf.Fill(canvas)
+	surf.Draw(0, 0, screen)
 	v := tea.NewView(surf.Render())
 	v.AltScreen = true
 	v.BackgroundColor = canvas
 	return v
-}
-
-func (m *model) layoutPanels() {
-	bodyH := max(0, m.height-2)
-	cardH := 6
-
-	if m.width >= 96 {
-		cardW := max(18, (m.width-4)/3)
-		m.metricA.SetSize(cardW, cardH)
-		m.metricB.SetSize(cardW, cardH)
-		m.metricC.SetSize(cardW, cardH)
-		tableH := max(6, bodyH-cardH-1)
-		m.table.SetSize(max(10, m.width-4), max(4, tableH-3))
-		m.tableP.SetSize(max(20, m.width-2), tableH)
-		return
-	}
-
-	cardW := max(20, m.width-2)
-	m.metricA.SetSize(cardW, cardH)
-	m.metricB.SetSize(cardW, cardH)
-	m.metricC.SetSize(cardW, cardH)
-
-	tableH := max(6, bodyH-(cardH*3))
-	m.table.SetSize(max(10, m.width-4), max(4, tableH-3))
-	m.tableP.SetSize(max(20, m.width-2), tableH)
 }
 
 func seedTable(t *table.Model, refreshed bool) {

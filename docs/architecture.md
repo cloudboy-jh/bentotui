@@ -1,13 +1,12 @@
 # BentoTUI Architecture
 
-Status: Active reference — updated after v0.2 surface refactor (2026-03-02)
+Status: Active reference — updated after registry/layouts rollout (2026-03-12)
 
 ## Overview
 
 BentoTUI is a **registry of copy-and-own components**, not a framework. Run
-`bento add input` and the source lands in your project. The only stable
-dependency is a small set of shared packages (`theme`, `styles`, `layout`)
-that you import as a normal Go module.
+`bento add input` and the source lands in your project. The stable shared
+imports are `theme`, `styles`, and `registry/layouts`.
 
 ---
 
@@ -29,9 +28,13 @@ registry/components/ (copy-and-own UI pieces)
      │  input  bar  dialog  panel  list  table  text  surface
      │  Each component renders to a string via lipgloss
      ▼
+registry/layouts (named layout patterns)
+     │  Focus / Pancake / Sidebar / HolyGrail / Modal / etc.
+     │  geometry + sizing only, no theme or canvas paint
+     ▼
 surface (Ultraviolet-backed full-terminal cell buffer)
-     │  surface.New(w, h) → Fill(bg) → Draw(x, y, content) → Render()
-     │  Root canvas for every bento and full-screen layout
+     │  surface.New(w, h) → Fill(bg) → Draw(0,0,layout) → DrawCenter(dialog) → Render()
+     │  Root canvas for every full-screen frame
      ▼
 Bubble Tea v2 frame (tea.NewView, AltScreen, BackgroundColor)
 ```
@@ -190,16 +193,26 @@ surf.DrawCenter(str)        // centered overlay for dialogs
 surf.Render()               // → ANSI string for tea.NewView
 ```
 
-### `layout/`
+### `registry/layouts/`
 
-Composable split-pane layout. No bentotui-specific deps.
+Named layout patterns with strict cell constraints.
+
+- `registry/layouts` does geometry only (allocation, constrain, join, overlay math)
+- It intentionally does not import `theme` or `surface`
+- Always composite layout output through `surface` in app `View()`
 
 ```go
-root := layout.Horizontal(
-    layout.Fixed(30, sidebar),
-    layout.Flex(1, main),
+screen := layouts.TopbarPancake(w, h,
+    topbar,
+    header,
+    content,
+    footer,
 )
-root.SetSize(termW, termH)
+
+surf := surface.New(w, h)
+surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))
+surf.Draw(0, 0, screen)
+return tea.NewView(surf.Render())
 ```
 
 ---
