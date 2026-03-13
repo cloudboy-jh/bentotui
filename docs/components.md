@@ -112,24 +112,42 @@ Single-row header or footer bar. Truncates cards gracefully when width is tight.
 import "yourmodule/components/bar"
 
 b := bar.New(
+    bar.RoleTopBar(),
+    bar.StatusPill("LIVE"),
     bar.Left("my app"),
     bar.Right("v1.0"),
+)
+
+footer := bar.New(
+    bar.FooterAnchored(),
+    bar.Left("scope: nav"),
     bar.Cards(
-        bar.Card{Command: "ctrl+t", Label: "theme", Enabled: true},
-        bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardDanger, Enabled: true},
+        bar.Card{Command: "j/k", Label: "move", Enabled: true, Priority: 4},
+        bar.Card{Command: "tab", Label: "focus tabs", Enabled: true, Priority: 3},
+        bar.Card{Command: "q", Label: "quit", Enabled: true, Priority: 2},
     ),
 )
 
 b.SetSize(width, 1)
 b.SetLeft(s string)
 b.SetRight(s string)
+b.SetStatusPill("LIVE")
 b.SetCards([]bar.Card)
+b.SetCompactCards(true)
+b.SetRole(bar.RoleFooter)
+b.SetAnchored(true)
 ```
 
 **Card variants:** `CardNormal`, `CardPrimary`, `CardMuted`, `CardDanger`
 
-Cards render as `command label` pairs. When width is tight, labels are dropped
-first; then cards are truncated from the right.
+Cards render as `command label` pairs. In compact mode they render denser. When
+width is tight, labels drop first, then lower-priority cards drop before
+higher-priority cards.
+
+Row roles: `RoleTop`, `RoleSubheader`, `RoleFooter`.
+Footer modes: `FooterModeNormal`, `FooterModeAnchored`.
+Use `bar.FooterAnchored()` for vim-style focused command rows.
+Use `StatusPill("LIVE")` for non-keybind metadata in top/subheader rows.
 
 ---
 
@@ -233,8 +251,14 @@ import "yourmodule/components/list"
 l := list.New(200)  // max 200 items stored
 l.Append("line added to bottom")
 l.Prepend("line added to top")
+l.AppendSection("Today")
+l.AppendRow(list.Row{Label: "api", Status: "ok", Stat: "36ms"})
 l.Clear()
 l.Items() []string  // copy of current items
+
+l.SetFormatter(func(row list.Row, selected bool, width int) string {
+    return row.Label
+})
 
 l.SetSize(width, height)  // shows last N lines that fit
 ```
@@ -243,12 +267,17 @@ l.SetSize(width, height)  // shows last N lines that fit
 
 ### `table`
 
-Header row + data rows. Column width is `totalWidth / colCount`.
+Header row + data rows with optional compact/borderless modes and per-column
+width/alignment control.
 
 ```go
 import "yourmodule/components/table"
 
 t := table.New("Name", "Status", "Size")
+t.SetCompact(true)
+t.SetBorderless(true)
+t.SetColumnAlign(2, table.AlignRight)
+t.SetColumnWidth(0, 18)
 t.AddRow("main.go", "ok", "4.2 KB")
 t.AddRow("go.mod", "ok", "1.1 KB")
 t.Clear()

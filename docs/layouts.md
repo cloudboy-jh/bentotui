@@ -1,20 +1,21 @@
 # BentoTUI Layouts
 
-`registry/layouts` provides 15 named layout functions. Each function takes
+`registry/layouts` provides named layout functions. Each function takes
 `(width, height, ...cells)` and returns a rendered `string`.
 
 Contract:
 
-- Layouts do geometry only (allocation + constrain)
+- Layouts define screen grammar + geometry (allocation + constrain)
 - Layouts are theme-agnostic
 - Use `surface` as the final compositor in app `View()`
+- Prefer bar roles with `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`)
 
 ## API Basics
 
 ```go
 import "github.com/cloudboy-jh/bentotui/registry/layouts"
 
-screen := layouts.Pancake(w, h, header, content, footer)
+screen := layouts.Frame(w, h, top, subheader, content, subfooter)
 ```
 
 Cells must satisfy:
@@ -32,6 +33,14 @@ Helpers:
 - `layouts.RenderFunc(func(width, height int) string { ... })`
 
 ## Named Layouts
+
+Frame-first grammar:
+
+- `Frame(top, subheader, body, subfooter)`
+- `FrameMainDrawer(drawerW, top, subheader, main, drawer, subfooter)`
+- `FrameTriple(navW, listW, top, subheader, nav, list, detail, subfooter)`
+
+Compatibility layouts:
 
 - `Focus(content, footer)`
 - `Pancake(header, content, footer)`
@@ -52,7 +61,7 @@ Helpers:
 ## Recommended Render Flow
 
 ```go
-screen := layouts.TopbarPancake(w, h, topbar, header, content, footer)
+screen := layouts.Frame(w, h, topbar, header, content, footer)
 
 surf := surface.New(w, h)
 surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))

@@ -15,10 +15,49 @@ type SurfaceColors struct {
 	FG string
 }
 
+type Spacing struct {
+	XXS int
+	XS  int
+	SM  int
+	MD  int
+	LG  int
+}
+
+var LayoutSpacing = Spacing{
+	XXS: 0,
+	XS:  1,
+	SM:  2,
+	MD:  3,
+	LG:  4,
+}
+
 func New(t theme.Theme) System { return System{Theme: t} }
 
 func (s System) BarColors() SurfaceColors {
 	return SurfaceColors{BG: s.Theme.Bar.BG, FG: s.Theme.Bar.FG}
+}
+
+func (s System) StatusRowColors(role string, anchored bool) SurfaceColors {
+	switch role {
+	case "subheader":
+		return SurfaceColors{
+			BG: pick(s.Theme.Surface.Elevated, s.Theme.Bar.BG),
+			FG: pick(s.Theme.Text.Muted, s.Theme.Bar.FG),
+		}
+	case "footer":
+		if anchored {
+			return SurfaceColors{
+				BG: pick(s.Theme.Selection.BG, s.Theme.Border.Focus),
+				FG: pick(s.Theme.Selection.FG, s.Theme.Text.Inverse),
+			}
+		}
+		return SurfaceColors{
+			BG: pick(s.Theme.Surface.Elevated, s.Theme.Bar.BG),
+			FG: pick(s.Theme.Text.Primary, s.Theme.Bar.FG),
+		}
+	default:
+		return s.BarColors()
+	}
 }
 
 func (s System) InputColors() SurfaceColors {
@@ -36,21 +75,19 @@ func (s System) PanelFrame(focused bool) lipgloss.Style {
 }
 
 func (s System) PanelTitleBar(focused bool) lipgloss.Style {
-	bg := pick(s.Theme.Surface.Interactive, s.Theme.Surface.Elevated)
+	bg := pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
 	fg := s.Theme.Text.Muted
 	if focused {
-		bg = pick(s.Theme.Selection.BG, s.Theme.Border.Focus)
-		fg = pick(s.Theme.Selection.FG, s.Theme.Text.Inverse)
+		fg = pick(s.Theme.Text.Primary, s.Theme.Text.Muted)
 	}
 	return lipgloss.NewStyle().Background(lipgloss.Color(bg)).Foreground(lipgloss.Color(fg))
 }
 
 func (s System) PanelTitleBadge(focused bool) lipgloss.Style {
-	bg := pick(s.Theme.Text.Accent, s.Theme.State.Info)
-	fg := pick(s.Theme.Text.Inverse, s.Theme.Surface.Canvas)
+	bg := pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+	fg := pick(s.Theme.Text.Muted, s.Theme.Text.Primary)
 	if focused {
-		bg = pick(s.Theme.Border.Focus, s.Theme.Text.Accent)
-		fg = pick(s.Theme.Selection.FG, s.Theme.Text.Inverse)
+		fg = pick(s.Theme.Text.Accent, s.Theme.Text.Primary)
 	}
 	return lipgloss.NewStyle().
 		Bold(true).
@@ -65,6 +102,14 @@ func (s System) StatusBar() lipgloss.Style {
 		Background(lipgloss.Color(s.Theme.Bar.BG))
 }
 
+func (s System) StatusPillMuted() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Bold(true).
+		Padding(0, 1).
+		Foreground(lipgloss.Color(pick(s.Theme.Text.Primary, s.Theme.Bar.FG))).
+		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Bar.BG)))
+}
+
 func (s System) FooterCardCommand(variant string, enabled bool) lipgloss.Style {
 	fg, bg := s.footerCardColors(variant, enabled, true)
 	return lipgloss.NewStyle().
@@ -73,11 +118,33 @@ func (s System) FooterCardCommand(variant string, enabled bool) lipgloss.Style {
 		Background(lipgloss.Color(bg))
 }
 
+// FooterCardCommandAnchored renders command emphasis with no background so
+// anchored footer rows remain a single solid strip.
+func (s System) FooterCardCommandAnchored(variant string, enabled bool) lipgloss.Style {
+	fg, _ := s.footerCardColors(variant, enabled, true)
+	st := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(fg))
+	if !enabled {
+		return st.Faint(true)
+	}
+	return st
+}
+
 func (s System) FooterCardLabel(variant string, enabled bool) lipgloss.Style {
 	fg, bg := s.footerCardColors(variant, enabled, false)
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(fg)).
 		Background(lipgloss.Color(bg))
+}
+
+// FooterCardLabelAnchored renders labels with no background so anchored footer
+// rows remain visually continuous.
+func (s System) FooterCardLabelAnchored(variant string, enabled bool) lipgloss.Style {
+	fg, _ := s.footerCardColors(variant, enabled, false)
+	st := lipgloss.NewStyle().Foreground(lipgloss.Color(fg))
+	if !enabled {
+		return st.Faint(true)
+	}
+	return st
 }
 
 // DialogFrame returns the base style for the dialog outer box.
@@ -214,6 +281,27 @@ func (s System) ElevatedFrame() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel))).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary))
+}
+
+// DashboardPanel returns a low-noise container style.
+func (s System) DashboardPanel() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(pick(s.Theme.Surface.Panel, s.Theme.Surface.Elevated))).
+		Foreground(lipgloss.Color(s.Theme.Text.Primary))
+}
+
+// DashboardElevated returns a raised container style.
+func (s System) DashboardElevated() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel))).
+		Foreground(lipgloss.Color(s.Theme.Text.Primary))
+}
+
+// BorderSubtle returns a subtle border style for low-contrast separation.
+func (s System) BorderSubtle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(pick(s.Theme.Border.Subtle, s.Theme.Border.Normal)))
 }
 
 // InputStyles returns a fully-themed textinput.Styles struct.

@@ -1,7 +1,5 @@
 package layouts
 
-import "github.com/cloudboy-jh/bentotui/registry/layouts/internal/engine"
-
 // Pancake:
 // +----------------------+
 // | header               |
@@ -14,10 +12,7 @@ import "github.com/cloudboy-jh/bentotui/registry/layouts/internal/engine"
 // +----------------------+
 // Pancake renders header, content, and footer.
 func Pancake(width, height int, header, content, footer Sizable) string {
-	return engine.RenderVertical(width, height,
-		[]engine.Spec{{Kind: engine.Fixed, N: 1}, {Kind: engine.Fill}, {Kind: engine.Fixed, N: 1}},
-		[]Sizable{header, content, footer},
-	)
+	return Frame(width, height, header, Static(""), content, footer)
 }
 
 // TopbarPancake:
@@ -34,8 +29,5 @@ func Pancake(width, height int, header, content, footer Sizable) string {
 // +----------------------+
 // TopbarPancake renders topbar, header, content, and footer.
 func TopbarPancake(width, height int, topbar, header, content, footer Sizable) string {
-	return engine.RenderVertical(width, height,
-		[]engine.Spec{{Kind: engine.Fixed, N: 1}, {Kind: engine.Fixed, N: 1}, {Kind: engine.Fill}, {Kind: engine.Fixed, N: 1}},
-		[]Sizable{topbar, header, content, footer},
-	)
+	return Frame(width, height, topbar, header, content, footer)
 }

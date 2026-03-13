@@ -64,6 +64,7 @@ func fromTint(t *tint.Tint, name string) Theme {
 	// Never use surface slots (BrightBlack/Black) which can collide with inputBG.
 	selectionBG := pickDistinctFrom([]string{bacc, bcya, bpur, byel}, []string{canvas, inputBG}, 0.05)
 	selectionFG := blk // dark text on bright selection
+	barBG := ensureDistinctMin(elevated, canvas, 0.02, panel, blk)
 
 	// ── assemble ──────────────────────────────────────────────────────────────
 	return Theme{
@@ -104,7 +105,7 @@ func fromTint(t *tint.Tint, name string) Theme {
 			Border:      pick(bacc, bpur),
 		},
 		Bar: BarTokens{
-			BG: pick(blk, canvas),
+			BG: pick(barBG, panel),
 			FG: pick(fg, bwht),
 		},
 		Dialog: DialogTokens{

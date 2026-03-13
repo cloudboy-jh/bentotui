@@ -9,6 +9,7 @@
 package panel
 
 import (
+	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -105,7 +106,7 @@ func (m *Model) View() tea.View {
 		titleRows++
 
 		if h > 1 {
-			sep := sys.Divider().Render(strings.Repeat("─", w))
+			sep := sys.SubtleDivider().Render(strings.Repeat("─", w))
 			rows = append(rows, sep)
 			titleRows++
 		}
@@ -163,7 +164,7 @@ func contentRow(line string, w int, bg, fg string, focused bool, sys styles.Syst
 	if w <= 0 {
 		return ""
 	}
-	plain := stripANSI(line)
+	plain := ansi.Truncate(line, max(0, w-1), "")
 	if focused && w > 1 {
 		accent := sys.FocusAccent().Render(" ")
 		rest := lipgloss.NewStyle().
@@ -186,8 +187,8 @@ func renderStyledRow(style lipgloss.Style, width int, content string) string {
 	if width <= 0 {
 		return ""
 	}
-	plain := stripANSI(content)
-	return style.Width(width).Render(plain)
+	clipped := ansi.Truncate(content, width, "")
+	return style.Width(width).Render(clipped)
 }
 
 // viewString extracts a plain string from a tea.View.
@@ -198,16 +199,10 @@ func viewString(v tea.View) string {
 	if r, ok := v.Content.(interface{ Render() string }); ok {
 		return r.Render()
 	}
-	if s, ok := v.Content.(interface{ String() string }); ok {
+	if s, ok := v.Content.(fmt.Stringer); ok {
 		return s.String()
 	}
-	return ""
-}
-
-// stripANSI removes ANSI escape sequences so that the single
-// lipgloss Width().Render() call owns every cell's color.
-func stripANSI(s string) string {
-	return ansi.Strip(s)
+	return fmt.Sprint(v.Content)
 }
 
 func pick(v, fallback string) string {

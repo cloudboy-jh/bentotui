@@ -86,6 +86,9 @@ func TestAllLayoutsExactDimensions(t *testing.T) {
 	md := Static("modal")
 
 	outputs := []string{
+		Frame(w, h, tb, hd, b, f),
+		FrameMainDrawer(w, h, 8, tb, hd, mn, sb, f),
+		FrameTriple(w, h, 6, 10, tb, hd, n, ls, d, f),
 		Focus(w, h, b, f),
 		Pancake(w, h, hd, b, f),
 		TopbarPancake(w, h, tb, hd, b, f),

@@ -50,6 +50,7 @@ type model struct {
 	cursor  int
 	tabs    *tabs.Model
 	topBar  *bar.Model
+	subBar  *bar.Model
 	botBar  *bar.Model
 	left    *panel.Model
 	center  *panel.Model
@@ -79,12 +80,18 @@ func newModel() *model {
 	metaTxt := &textBlock{text: "Context\n- workspace: demo\n- branch: main\n- health: green"}
 
 	m := &model{
-		scope:   focusNav,
-		nav:     []string{"Home", "Deploys", "Logs", "Settings", "About"},
-		cursor:  0,
-		tabs:    tabModel,
-		topBar:  bar.New(bar.Left("bento app-shell"), bar.Right("workspace: demo")),
-		botBar:  bar.New(),
+		scope:  focusNav,
+		nav:    []string{"Home", "Deploys", "Logs", "Settings", "About"},
+		cursor: 0,
+		tabs:   tabModel,
+		topBar: bar.New(
+			bar.RoleTopBar(),
+			bar.StatusPill("LIVE"),
+			bar.Left("bento app-shell"),
+			bar.Right("workspace: demo"),
+		),
+		subBar:  bar.New(bar.RoleSubBar(), bar.Left("scope: nav"), bar.Right("nav: 5   tabs: 3")),
+		botBar:  bar.New(bar.RoleFooterBar(), bar.FooterAnchored()),
 		leftTxt: leftTxt,
 		mainTxt: mainTxt,
 		metaTxt: metaTxt,
@@ -175,7 +182,7 @@ func (m *model) View() tea.View {
 		body = layouts.Sidebar(m.width, bodyH, navW, m.left, layouts.Static(main))
 	}
 
-	screen := layouts.Pancake(m.width, m.height, m.topBar, layouts.Static(body), m.botBar)
+	screen := layouts.Frame(m.width, m.height, m.topBar, m.subBar, layouts.Static(body), m.botBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)
@@ -200,21 +207,27 @@ func (m *model) syncFocus() {
 
 func (m *model) syncFooter() {
 	if m.scope == focusNav {
+		m.subBar.SetLeft("scope: nav")
+		m.subBar.SetRight("nav active")
 		m.botBar.SetLeft("scope: nav")
 		m.botBar.SetCards([]bar.Card{
-			{Command: "j/k", Label: "move", Variant: bar.CardPrimary, Enabled: true},
-			{Command: "tab", Label: "focus tabs", Variant: bar.CardNormal, Enabled: true},
-			{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true},
+			{Command: "j/k", Label: "move", Variant: bar.CardPrimary, Enabled: true, Priority: 4},
+			{Command: "tab", Label: "focus tabs", Variant: bar.CardNormal, Enabled: true, Priority: 3},
+			{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 		})
+		m.botBar.SetCompactCards(true)
 		return
 	}
 
+	m.subBar.SetLeft("scope: tabs")
+	m.subBar.SetRight("tabs active")
 	m.botBar.SetLeft("scope: tabs")
 	m.botBar.SetCards([]bar.Card{
-		{Command: "h/l", Label: "switch tab", Variant: bar.CardPrimary, Enabled: true},
-		{Command: "tab", Label: "focus nav", Variant: bar.CardNormal, Enabled: true},
-		{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true},
+		{Command: "h/l", Label: "switch tab", Variant: bar.CardPrimary, Enabled: true, Priority: 4},
+		{Command: "tab", Label: "focus nav", Variant: bar.CardNormal, Enabled: true, Priority: 3},
+		{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 	})
+	m.botBar.SetCompactCards(true)
 }
 
 func (m *model) navText() string {

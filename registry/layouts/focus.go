@@ -1,7 +1,5 @@
 package layouts
 
-import "github.com/cloudboy-jh/bentotui/registry/layouts/internal/engine"
-
 // Focus:
 // +----------------------+
 // |                      |
@@ -12,8 +10,5 @@ import "github.com/cloudboy-jh/bentotui/registry/layouts/internal/engine"
 // +----------------------+
 // Focus renders full content plus a one-row footer.
 func Focus(width, height int, content, footer Sizable) string {
-	return engine.RenderVertical(width, height,
-		[]engine.Spec{{Kind: engine.Fill}, {Kind: engine.Fixed, N: 1}},
-		[]Sizable{content, footer},
-	)
+	return Frame(width, height, Static(""), Static(""), content, footer)
 }

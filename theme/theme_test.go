@@ -68,6 +68,7 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 			{th.Selection.BG, th.Surface.Canvas, "selection.bg", "surface.canvas", 0.05},
 			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
 			{th.Dialog.BG, th.Surface.Canvas, "dialog.bg", "surface.canvas", 0.03},
+			{th.Bar.BG, th.Surface.Canvas, "bar.bg", "surface.canvas", 0.02},
 		}
 		for _, p := range pairs {
 			delta := lumDelta(p.a, p.b)

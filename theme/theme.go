@@ -158,6 +158,7 @@ func validateTheme(t Theme) error {
 		{"selection.bg", "surface.canvas", t.Selection.BG, t.Surface.Canvas, 0.05},
 		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
 		{"dialog.bg", "surface.canvas", t.Dialog.BG, t.Surface.Canvas, 0.03},
+		{"bar.bg", "surface.canvas", t.Bar.BG, t.Surface.Canvas, 0.02},
 	}
 	for _, p := range layerPairs {
 		if lumDelta(p.a, p.b) < p.minDelta {

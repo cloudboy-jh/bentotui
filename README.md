@@ -7,7 +7,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
-[![Status](https://img.shields.io/badge/status-v0.3%20active-6D5EF3)](#status)
+[![Status](https://img.shields.io/badge/status-v0.4%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
 A registry of copy-and-own terminal UI components built on
@@ -18,8 +18,13 @@ Run `bento add input` and the source lands in your project. You own it — read 
 modify it, delete what you don't need. No framework lock-in, no lifecycle hooks,
 no "extend" API to learn.
 
-Layout composition is now handled by `registry/layouts` (15 named layout
-functions). Final frame painting and overlays are handled by `surface`.
+Layout composition is handled by `registry/layouts` with `Frame(...)` as the
+default screen grammar (top row, subheader row, body, subfooter). Final frame
+painting and overlays are handled by `surface`.
+
+Frame rows use role-aware bar rendering (`top`, `subheader`, `footer`) with a
+single muted status pill pattern for metadata and optional anchored footer mode
+for command focus.
 
 ## How it works
 
@@ -70,12 +75,12 @@ Once copied they live at `yourmodule/components/<name>` — you own the source.
 | Component | Description |
 |-----------|-------------|
 | `surface` | Full-screen cell buffer backed by Ultraviolet. Deterministic background paint — no ANSI whitespace bleed. Used by every full-screen layout. |
-| `bar` | Status/nav bar with left + right slots. |
+| `bar` | Role-aware status/nav row with `StatusPill`, compact cards, anchored footer mode, and priority-aware overflow. |
 | `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
 | `panel` | Titled, focusable content container. |
 | `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`. |
-| `list` | Scrollable log-style list. |
-| `table` | Header + data rows. |
+| `list` | Scrollable list with optional sections and row formatting hooks. |
+| `table` | Header + data rows with compact/borderless and per-column width/align. |
 | `text` | Static styled label. |
 | `badge` | Inline themed label. |
 | `kbd` | Keyboard shortcut command + label pair. |
@@ -122,7 +127,7 @@ These are stable module deps your project imports directly:
 |---------|-------------|------------|
 | `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 16 presets, goroutine-safe |
 | `styles` | `github.com/cloudboy-jh/bentotui/styles` | Theme → Lip Gloss style mapping |
-| `layouts` | `github.com/cloudboy-jh/bentotui/registry/layouts` | 15 named layout functions (`Focus`, `Pancake`, `Sidebar`, `Modal`, etc.) |
+| `layouts` | `github.com/cloudboy-jh/bentotui/registry/layouts` | Frame-first visual layout grammar (`Frame`, `FrameMainDrawer`, `FrameTriple`) plus compatibility layouts |
 
 `surface` remains a copy-and-own registry component (`bento add surface`) and is
 the recommended final compositor for full-frame paint (`Fill`) and overlays (`DrawCenter`).
@@ -174,7 +179,7 @@ your app code
 
 Render contract:
 
-1. Build structure with `registry/layouts`.
+1. Build structure with `registry/layouts` (typically `Frame`).
 2. Paint the full frame with `surface.Fill(theme.CurrentTheme().Surface.Canvas)`.
 3. Draw layout output with `surface.Draw(0, 0, screen)`.
 4. Draw overlays/dialogs with `surface.DrawCenter(...)`.

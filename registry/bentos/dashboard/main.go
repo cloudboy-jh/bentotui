@@ -41,6 +41,7 @@ type model struct {
 	height int
 
 	topBar *bar.Model
+	subBar *bar.Model
 	botBar *bar.Model
 
 	metricA *panel.Model
@@ -72,6 +73,10 @@ func main() {
 
 func newModel() *model {
 	t := table.New("SERVICE", "STATUS", "LATENCY", "ERR%")
+	t.SetCompact(true)
+	t.SetBorderless(true)
+	t.SetColumnAlign(2, table.AlignRight)
+	t.SetColumnAlign(3, table.AlignRight)
 	seedTable(t, false)
 
 	b1 := badge.New("+12.4%")
@@ -88,15 +93,24 @@ func newModel() *model {
 
 	m := &model{
 		topBar: bar.New(
+			bar.RoleTopBar(),
+			bar.StatusPill("LIVE"),
 			bar.Left("bento dashboard"),
 			bar.Right("range: 24h"),
 		),
+		subBar: bar.New(
+			bar.RoleSubBar(),
+			bar.Left("services: 4   healthy: 3"),
+			bar.Right("region: us-central1"),
+		),
 		botBar: bar.New(
+			bar.FooterAnchored(),
 			bar.Left("cards + table composition"),
 			bar.Cards(
-				bar.Card{Command: "r", Label: "refresh", Variant: bar.CardPrimary, Enabled: true},
-				bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true},
+				bar.Card{Command: "r", Label: "refresh", Variant: bar.CardPrimary, Enabled: true, Priority: 3},
+				bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 			),
+			bar.CompactCards(),
 		),
 		metricATxt:   mATxt,
 		metricBTxt:   mBTxt,
@@ -168,7 +182,7 @@ func (m *model) View() tea.View {
 		body = layouts.VSplit(m.width, bodyH, layouts.Static(top), layouts.Static(bottom))
 	}
 
-	screen := layouts.Pancake(m.width, m.height, m.topBar, layouts.Static(body), m.botBar)
+	screen := layouts.Frame(m.width, m.height, m.topBar, m.subBar, layouts.Static(body), m.botBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)

@@ -33,7 +33,9 @@ func main() {
 
 type model struct {
 	inputBox  *input.Model
-	statusBar *bar.Model
+	topBar    *bar.Model
+	metaBar   *bar.Model
+	footerBar *bar.Model
 	dialogs   *dialog.Manager
 	width     int
 	height    int
@@ -43,11 +45,27 @@ type model struct {
 func newModel() *model {
 	inp := input.New()
 	inp.SetPlaceholder(`Ask anything… /theme  /dialog`)
-	sb := bar.New(
-		bar.Left("~  registry/bentos/home-screen"),
-		bar.Right(fmt.Sprintf("theme: %s  %s", theme.CurrentThemeName(), version)),
+	top := bar.New(
+		bar.RoleTopBar(),
+		bar.StatusPill("LIVE"),
+		bar.Left("bentotui home-screen"),
+		bar.Right("context: examples"),
 	)
-	return &model{inputBox: inp, statusBar: sb, dialogs: dialog.New()}
+	meta := bar.New(
+		bar.RoleSubBar(),
+		bar.Left("starter grammar: frame"),
+		bar.Right(fmt.Sprintf("theme: %s", theme.CurrentThemeName())),
+	)
+	foot := bar.New(
+		bar.FooterAnchored(),
+		bar.Left("~ registry/bentos/home-screen"),
+		bar.Cards(
+			bar.Card{Command: "enter", Label: "submit", Variant: bar.CardPrimary, Enabled: true, Priority: 3},
+			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
+		),
+		bar.CompactCards(),
+	)
+	return &model{inputBox: inp, topBar: top, metaBar: meta, footerBar: foot, dialogs: dialog.New()}
 }
 
 func (m *model) Init() tea.Cmd {
@@ -73,7 +91,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.statusBar.SetSize(msg.Width, 1)
+		m.topBar.SetSize(msg.Width, 1)
+		m.metaBar.SetSize(msg.Width, 1)
+		m.footerBar.SetSize(msg.Width, 1)
 		m.dialogs.SetSize(msg.Width, msg.Height)
 		m.inputW = clamp(m.width*6/10, 50, 90)
 		m.inputBox.SetSize(m.inputW-5, 1)
@@ -189,7 +209,7 @@ func (m *model) View() tea.View {
 		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, stack)
 	})
 
-	screen := layouts.Focus(m.width, m.height, body, m.statusBar)
+	screen := layouts.Frame(m.width, m.height, m.topBar, m.metaBar, body, m.footerBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvasColor)
 	surf.Draw(0, 0, screen)
@@ -204,7 +224,7 @@ func (m *model) View() tea.View {
 }
 
 func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
-	m.statusBar.SetRight(fmt.Sprintf("theme: %s  %s", msg.Name, version))
+	m.metaBar.SetRight(fmt.Sprintf("theme: %s", msg.Name))
 }
 
 func openThemePicker() tea.Cmd {
