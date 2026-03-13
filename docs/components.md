@@ -147,7 +147,8 @@ higher-priority cards.
 Row roles: `RoleTop`, `RoleSubheader`, `RoleFooter`.
 Footer modes: `FooterModeNormal`, `FooterModeAnchored`.
 Use `bar.FooterAnchored()` for vim-style focused command rows.
-Use `StatusPill("LIVE")` for non-keybind metadata in top/subheader rows.
+Use `StatusPill(...)` only when you have real runtime status metadata.
+Starter and shipped bentos now default to minimal top/subheader content.
 
 ---
 

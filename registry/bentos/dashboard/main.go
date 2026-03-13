@@ -94,18 +94,12 @@ func newModel() *model {
 	m := &model{
 		topBar: bar.New(
 			bar.RoleTopBar(),
-			bar.StatusPill("LIVE"),
 			bar.Left("bento dashboard"),
-			bar.Right("range: 24h"),
 		),
-		subBar: bar.New(
-			bar.RoleSubBar(),
-			bar.Left("services: 4   healthy: 3"),
-			bar.Right("region: us-central1"),
-		),
+		subBar: bar.New(bar.RoleSubBar()),
 		botBar: bar.New(
 			bar.FooterAnchored(),
-			bar.Left("cards + table composition"),
+			bar.Left(""),
 			bar.Cards(
 				bar.Card{Command: "r", Label: "refresh", Variant: bar.CardPrimary, Enabled: true, Priority: 3},
 				bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},

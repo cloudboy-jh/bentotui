@@ -14,7 +14,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.1"
+const version = "v0.3.2"
 
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
@@ -47,14 +47,10 @@ func newModel() *model {
 	inp.SetPlaceholder(`Ask anything… /theme  /dialog`)
 	top := bar.New(
 		bar.RoleTopBar(),
-		bar.StatusPill("LIVE"),
 		bar.Left("bentotui home-screen"),
-		bar.Right("context: examples"),
 	)
 	meta := bar.New(
 		bar.RoleSubBar(),
-		bar.Left("starter grammar: frame"),
-		bar.Right(fmt.Sprintf("theme: %s", theme.CurrentThemeName())),
 	)
 	foot := bar.New(
 		bar.FooterAnchored(),
@@ -224,7 +220,7 @@ func (m *model) View() tea.View {
 }
 
 func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
-	m.metaBar.SetRight(fmt.Sprintf("theme: %s", msg.Name))
+	_ = msg
 }
 
 func openThemePicker() tea.Cmd {

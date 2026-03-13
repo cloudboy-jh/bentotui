@@ -86,11 +86,9 @@ func newModel() *model {
 		tabs:   tabModel,
 		topBar: bar.New(
 			bar.RoleTopBar(),
-			bar.StatusPill("LIVE"),
 			bar.Left("bento app-shell"),
-			bar.Right("workspace: demo"),
 		),
-		subBar:  bar.New(bar.RoleSubBar(), bar.Left("scope: nav"), bar.Right("nav: 5   tabs: 3")),
+		subBar:  bar.New(bar.RoleSubBar()),
 		botBar:  bar.New(bar.RoleFooterBar(), bar.FooterAnchored()),
 		leftTxt: leftTxt,
 		mainTxt: mainTxt,
@@ -207,9 +205,7 @@ func (m *model) syncFocus() {
 
 func (m *model) syncFooter() {
 	if m.scope == focusNav {
-		m.subBar.SetLeft("scope: nav")
-		m.subBar.SetRight("nav active")
-		m.botBar.SetLeft("scope: nav")
+		m.botBar.SetLeft("")
 		m.botBar.SetCards([]bar.Card{
 			{Command: "j/k", Label: "move", Variant: bar.CardPrimary, Enabled: true, Priority: 4},
 			{Command: "tab", Label: "focus tabs", Variant: bar.CardNormal, Enabled: true, Priority: 3},
@@ -219,9 +215,7 @@ func (m *model) syncFooter() {
 		return
 	}
 
-	m.subBar.SetLeft("scope: tabs")
-	m.subBar.SetRight("tabs active")
-	m.botBar.SetLeft("scope: tabs")
+	m.botBar.SetLeft("")
 	m.botBar.SetCards([]bar.Card{
 		{Command: "h/l", Label: "switch tab", Variant: bar.CardPrimary, Enabled: true, Priority: 4},
 		{Command: "tab", Label: "focus nav", Variant: bar.CardNormal, Enabled: true, Priority: 3},

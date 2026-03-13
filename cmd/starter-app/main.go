@@ -17,7 +17,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.1"
+const version = "v0.3.2"
 
 // wordmark is large ASCII art rendered centered in the upper body.
 const wordmark = "" +
@@ -53,14 +53,10 @@ func newModel() *model {
 	inp.SetPlaceholder(`Ask anything… /theme  /dialog`)
 	top := bar.New(
 		bar.RoleTopBar(),
-		bar.StatusPill("LIVE"),
 		bar.Left("bentotui"),
-		bar.Right("workspace: starter-app"),
 	)
 	meta := bar.New(
 		bar.RoleSubBar(),
-		bar.Left("ready: 17 components"),
-		bar.Right(fmt.Sprintf("theme: %s", theme.CurrentThemeName())),
 	)
 	foot := bar.New(
 		bar.FooterAnchored(),
@@ -238,7 +234,7 @@ func (m *model) View() tea.View {
 
 // onThemeChange keeps the status bar in sync with the active theme.
 func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
-	m.metaBar.SetRight(fmt.Sprintf("theme: %s", msg.Name))
+	_ = msg
 }
 
 // ── commands ──────────────────────────────────────────────────────────────────

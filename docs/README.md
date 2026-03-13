@@ -9,3 +9,6 @@
 - [roadmap.md](./roadmap.md) — Backlog and non-goals
 
 Layouts define frame grammar + geometry; `surface` handles final frame paint and overlays.
+
+Current default bentos/starter templates ship with minimal header rows (no test-only
+`LIVE/context/theme` banner content).

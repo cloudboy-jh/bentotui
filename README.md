@@ -7,7 +7,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
-[![Status](https://img.shields.io/badge/status-v0.3.1%20active-6D5EF3)](#status)
+[![Status](https://img.shields.io/badge/status-v0.3.2%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
 A registry of copy-and-own terminal UI components built on

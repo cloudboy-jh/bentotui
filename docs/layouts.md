@@ -9,6 +9,7 @@ Contract:
 - Layouts are theme-agnostic
 - Use `surface` as the final compositor in app `View()`
 - Prefer bar roles with `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`)
+- Starter and shipped bentos keep top/subheader rows minimal by default (no test metadata banners)
 
 ## API Basics
 

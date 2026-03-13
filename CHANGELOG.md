@@ -6,6 +6,14 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-03-13
+
+### Changed
+
+- Removed test/demo header banner content from shipped bentos, starter app, and `bento init` scaffold output
+- Kept Frame row structure while defaulting top/subheader rows to minimal app chrome
+- Updated docs set under `docs/` to reflect the new minimal header defaults and frame hierarchy state
+
 ## [0.3.1] - 2026-03-13
 
 ### Changed

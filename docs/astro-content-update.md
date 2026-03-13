@@ -16,6 +16,9 @@ draft: false
 This update ships the new `registry/layouts` package and aligns docs, starter
 flows, and bento examples with the current rendering contract.
 
+Note: current starter and shipped bento defaults now use minimal top/subheader
+rows by default (no test-only `LIVE/context/theme` banners).
+
 ## What Changed
 
 - Added `registry/layouts` with 15 named layout functions

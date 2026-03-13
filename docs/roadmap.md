@@ -1,6 +1,6 @@
 # BentoTUI Roadmap
 
-## Current State (v0.2)
+## Current State (v0.3.2)
 
 The repository completed a full structural refactor in v0.2 and has a working
 baseline CLI + starter flow:
@@ -90,4 +90,4 @@ Primitive policy: Bento does not plan a `spinner` registry component; use
 
 ---
 
-Last updated: 2026-03-09
+Last updated: 2026-03-13

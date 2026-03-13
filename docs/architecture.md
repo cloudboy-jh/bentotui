@@ -1,6 +1,6 @@
 # BentoTUI Architecture
 
-Status: Active reference — updated after registry/layouts rollout (2026-03-12)
+Status: Active reference — updated after frame hierarchy cleanup (2026-03-13)
 
 ## Overview
 
@@ -29,8 +29,8 @@ registry/components/ (copy-and-own UI pieces)
      │  Each component renders to a string via lipgloss
      ▼
 registry/layouts (named layout patterns)
-     │  Focus / Pancake / Sidebar / HolyGrail / Modal / etc.
-     │  geometry + sizing only, no theme or canvas paint
+     │  Frame / FrameMainDrawer / FrameTriple + compatibility layouts
+     │  screen grammar + geometry only, no theme or canvas paint
      ▼
 surface (Ultraviolet-backed full-terminal cell buffer)
      │  surface.New(w, h) → Fill(bg) → Draw(0,0,layout) → DrawCenter(dialog) → Render()
