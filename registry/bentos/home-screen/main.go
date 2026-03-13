@@ -14,7 +14,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.2.0"
+const version = "v0.3.0"
 
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +

@@ -6,6 +6,8 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-12
+
 ### Added
 
 - New registry components: `badge`, `kbd`, `wordmark`, `select`, `checkbox`,
