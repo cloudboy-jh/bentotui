@@ -6,3 +6,5 @@
 - [architecture.md](./architecture.md) — Layer diagram, design principles, and rules
 - [next-steps.md](./next-steps.md) — Immediate priorities based on current repo state
 - [roadmap.md](./roadmap.md) — Backlog and non-goals
+
+Layouts handle geometry; `surface` handles final frame paint and overlays.
