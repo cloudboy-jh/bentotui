@@ -1,6 +1,6 @@
-package layouts
+package rooms
 
-import "github.com/cloudboy-jh/bentotui/registry/layouts/internal/engine"
+import "github.com/cloudboy-jh/bentotui/registry/rooms/internal/engine"
 
 // BigTopStrip:
 // +----------------------+

@@ -9,7 +9,7 @@ Completed in this directory today:
 - `bento` CLI has working `init`, `add`, `list`, and `doctor` paths under `cmd/bento/`
 - Registry component catalog is finalized and shipped (`surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`)
 - Wave 1 bento examples are now present under `registry/bentos/` (`home-screen`, `app-shell`, `dashboard`)
-- Named layout catalog shipped at `registry/layouts/` (shared sizing engine + named screen grammars)
+- Named room catalog shipped at `registry/rooms/` (shared sizing engine + named screen grammars)
 - Starter and shipped bentos now default to `Focus` (body + anchored footer, no top/subheader rows)
 
 ---

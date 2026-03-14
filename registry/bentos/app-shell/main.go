@@ -1,16 +1,24 @@
 package main
 
+// App-shell room stack:
+// +--------------------------------------------------+
+// | nav panel | body panel (tabs/content) | inspector|
+// +--------------------------------------------------+
+// | anchored footer command row                      |
+// +--------------------------------------------------+
+// Narrow widths collapse to two-room splits.
+
 import (
 	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/registry/components/bar"
-	"github.com/cloudboy-jh/bentotui/registry/components/panel"
-	"github.com/cloudboy-jh/bentotui/registry/components/surface"
-	"github.com/cloudboy-jh/bentotui/registry/components/tabs"
-	"github.com/cloudboy-jh/bentotui/registry/layouts"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/panel"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/tabs"
+	"github.com/cloudboy-jh/bentotui/registry/rooms"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -162,18 +170,18 @@ func (m *model) View() tea.View {
 
 	body := ""
 	if m.width < 78 {
-		body = layouts.VSplit(m.width, bodyH, m.left, m.center)
+		body = rooms.VSplit(m.width, bodyH, m.left, m.center)
 	} else if m.width < 108 {
 		navW := clamp(m.width/4, 24, 32)
-		body = layouts.Sidebar(m.width, bodyH, navW, m.left, m.center)
+		body = rooms.Sidebar(m.width, bodyH, navW, m.left, m.center)
 	} else {
 		navW := clamp(m.width/4, 24, 32)
 		drawerW := clamp(m.width/5, 22, 28)
-		main := layouts.DrawerRight(max(1, m.width-navW), bodyH, drawerW, m.center, m.right)
-		body = layouts.Sidebar(m.width, bodyH, navW, m.left, layouts.Static(main))
+		main := rooms.DrawerRight(max(1, m.width-navW), bodyH, drawerW, m.center, m.right)
+		body = rooms.Sidebar(m.width, bodyH, navW, m.left, rooms.Static(main))
 	}
 
-	screen := layouts.Focus(m.width, m.height, layouts.Static(body), m.botBar)
+	screen := rooms.Focus(m.width, m.height, rooms.Static(body), m.botBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)

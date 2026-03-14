@@ -1,5 +1,18 @@
 package theme
 
+// Semantic surface ladder:
+// +-------------------------------+
+// | surface.canvas                |
+// +-------------------------------+
+// | surface.panel                |
+// +-------------------------------+
+// | surface.elevated             |
+// +-------------------------------+
+// | surface.interactive          |
+// +-------------------------------+
+// Footer anchored colors are separate semantic tokens so command rows do not
+// have to reuse selection-highlight intensity.
+
 import (
 	"fmt"
 
@@ -52,6 +65,12 @@ type BarTokens struct {
 	FG string
 }
 
+type FooterTokens struct {
+	AnchoredBG    string
+	AnchoredFG    string
+	AnchoredMuted string
+}
+
 type DialogTokens struct {
 	BG     string
 	FG     string
@@ -68,8 +87,16 @@ type Theme struct {
 	Selection SelectionTokens
 	Input     InputTokens
 	Bar       BarTokens
+	Footer    FooterTokens
 	Dialog    DialogTokens
 }
+
+const (
+	minSurfacePanelCanvasDelta         = 0.025
+	minSurfaceElevatedPanelDelta       = 0.020
+	minSurfaceInteractivePanelDelta    = 0.020
+	minSurfaceInteractiveElevatedDelta = 0.015
+)
 
 const (
 	DefaultName         = "catppuccin-mocha"
@@ -142,6 +169,16 @@ func validateTheme(t Theme) error {
 		}
 	}
 
+	footerProvided := 0
+	for _, v := range []string{t.Footer.AnchoredBG, t.Footer.AnchoredFG, t.Footer.AnchoredMuted} {
+		if v != "" {
+			footerProvided++
+		}
+	}
+	if footerProvided > 0 && footerProvided < 3 {
+		return fmt.Errorf("footer anchored tokens must be set together: footer.anchoredBG, footer.anchoredFG, footer.anchoredMuted")
+	}
+
 	// ── layer separation checks ───────────────────────────────────────────────
 	// Key layer pairs must be visually distinct. Thresholds are calibrated to
 	// the minimum detectable contrast in dark terminal themes:
@@ -154,6 +191,10 @@ func validateTheme(t Theme) error {
 		a, b           string
 		minDelta       float64
 	}{
+		{"surface.panel", "surface.canvas", t.Surface.Panel, t.Surface.Canvas, minSurfacePanelCanvasDelta},
+		{"surface.elevated", "surface.panel", t.Surface.Elevated, t.Surface.Panel, minSurfaceElevatedPanelDelta},
+		{"surface.interactive", "surface.panel", t.Surface.Interactive, t.Surface.Panel, minSurfaceInteractivePanelDelta},
+		{"surface.interactive", "surface.elevated", t.Surface.Interactive, t.Surface.Elevated, minSurfaceInteractiveElevatedDelta},
 		{"input.bg", "surface.canvas", t.Input.BG, t.Surface.Canvas, 0.03},
 		{"selection.bg", "surface.canvas", t.Selection.BG, t.Surface.Canvas, 0.05},
 		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
@@ -161,10 +202,11 @@ func validateTheme(t Theme) error {
 		{"bar.bg", "surface.canvas", t.Bar.BG, t.Surface.Canvas, 0.02},
 	}
 	for _, p := range layerPairs {
-		if lumDelta(p.a, p.b) < p.minDelta {
+		delta := lumDelta(p.a, p.b)
+		if delta < p.minDelta {
 			return fmt.Errorf(
 				"theme tokens %q and %q are too similar (luminance delta %.3f < %.3f) — increase contrast",
-				p.labelA, p.labelB, lumDelta(p.a, p.b), p.minDelta,
+				p.labelA, p.labelB, delta, p.minDelta,
 			)
 		}
 	}

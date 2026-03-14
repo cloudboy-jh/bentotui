@@ -6,7 +6,7 @@ Status: Active reference — updated after frame hierarchy cleanup (2026-03-13)
 
 BentoTUI is a **registry of copy-and-own components**, not a framework. Run
 `bento add input` and the source lands in your project. The stable shared
-imports are `theme`, `styles`, and `registry/layouts`.
+imports are `theme`, `styles`, and `registry/rooms`.
 
 ---
 
@@ -24,11 +24,11 @@ theme/ (semantic token adapter + runtime store)
 styles/ (token → lipgloss.Style mapping)
      │  styles.New(t).DialogFrame(), InputStyles(), Row(), etc.
      ▼
-registry/components/ (copy-and-own UI pieces)
+registry/bricks/ (copy-and-own UI pieces)
      │  input  bar  dialog  panel  list  table  text  surface
      │  Each component renders to a string via lipgloss
      ▼
-registry/layouts (named layout patterns)
+registry/rooms (named room patterns)
      │  Frame / FrameMainDrawer / FrameTriple + compatibility layouts
      │  screen grammar + geometry only, no theme or canvas paint
      ▼
@@ -131,6 +131,10 @@ slots to semantic layer tokens with guaranteed visual separation:
 
 | Token pair | Min luminance delta |
 |------------|-------------------|
+| `surface.panel` vs `surface.canvas` | 0.025 |
+| `surface.elevated` vs `surface.panel` | 0.020 |
+| `surface.interactive` vs `surface.panel` | 0.020 |
+| `surface.interactive` vs `surface.elevated` | 0.015 |
 | `input.bg` vs `surface.canvas` | 0.03 |
 | `selection.bg` vs `surface.canvas` | 0.05 |
 | `selection.bg` vs `input.bg` | 0.05 |
@@ -173,6 +177,8 @@ Key helpers:
 ```go
 sys := styles.New(theme.CurrentTheme())
 styles.Row(bg, fg, width, content)   // ← use this for all rows
+styles.ClipANSI(content, width)       // ANSI-safe clipping primitive
+styles.RowClip(bg, fg, width, content) // clip + paint in one call
 sys.DialogFrame()
 sys.DialogSearchRow()
 sys.DialogListRow()
@@ -180,7 +186,7 @@ sys.DialogListRowSelected()
 sys.InputStyles()                    // textinput.Styles for bubbles/textinput
 ```
 
-### `registry/components/surface/`
+### `registry/bricks/surface/`
 
 Ultraviolet-backed full-terminal cell buffer. The root canvas for every
 bento and layout. Copy into your project with `bento add surface`.
@@ -193,16 +199,16 @@ surf.DrawCenter(str)        // centered overlay for dialogs
 surf.Render()               // → ANSI string for tea.NewView
 ```
 
-### `registry/layouts/`
+### `registry/rooms/`
 
-Named layout patterns with strict cell constraints.
+Named room patterns with strict cell constraints.
 
-- `registry/layouts` does geometry only (allocation, constrain, join, overlay math)
+- `registry/rooms` does geometry only (allocation, constrain, join, overlay math)
 - It intentionally does not import `theme` or `surface`
-- Always composite layout output through `surface` in app `View()`
+- Always composite room output through `surface` in app `View()`
 
 ```go
-screen := layouts.TopbarPancake(w, h,
+screen := rooms.TopbarPancake(w, h,
     topbar,
     header,
     content,
@@ -219,7 +225,7 @@ return tea.NewView(surf.Render())
 
 ## Component Types
 
-Components in `registry/components/` have three distinct roles. Knowing which
+Bricks in `registry/bricks/` have three distinct roles. Knowing which
 type you are building determines what rendering rules apply.
 
 ### Atomic
@@ -255,7 +261,7 @@ row := styles.Row(t.Dialog.BG, t.Text.Primary, width, content)
 
 ### Surface
 
-`registry/components/surface/surface.go`
+`registry/bricks/surface/surface.go`
 
 - The **full-terminal root canvas** — one per frame, sized to terminal dimensions
 - Not a UI component — it is the compositor that everything else draws onto

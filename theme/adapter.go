@@ -1,6 +1,7 @@
 package theme
 
 import (
+	"fmt"
 	"math"
 
 	tint "github.com/lrstanley/bubbletint/v2"
@@ -47,16 +48,17 @@ func fromTint(t *tint.Tint, name string) Theme {
 	// Overlay (dialog) uses BrightBlack as base, guaranteed distinct from panel.
 	// Interactive is a lighter tint of the accent for hover surfaces.
 	canvas := bg
-	panel := ensureDistinct(bbk, canvas, blk, bacc)    // raised above canvas
-	elevated := ensureDistinct(blk, canvas, bbk, bacc) // below canvas for depth
-	overlay := ensureDistinct(bbk, canvas, blk, bacc)  // dialog body
-	interactive := bbk                                 // focus-tinted surface
+	panel := pick(bbk, blk)
+	elevated := pick(blk, bbk)
+	overlay := ensureDelta(pick(bbk, blk), canvas, 0.03)
+	interactive := pick(bbk, bacc)
+	panel, elevated, interactive = normalizeSurfaces(canvas, panel, elevated, interactive)
 
 	// Input BG must contrast against canvas but remain a dark surface color —
 	// prefer BrightBlack (raised surface), fall back to Black if BrightBlack
 	// is too close to canvas. Never fall back to the accent (bacc) — that
 	// would collide with selectionBG.
-	inputBG := ensureDistinctMin(bbk, canvas, 0.03, blk, elevated)
+	inputBG := ensureDelta(pick(bbk, blk), canvas, 0.03)
 
 	// Selection must always be the brightest available accent — clearly
 	// distinguishable from both canvas and inputBG.
@@ -65,6 +67,9 @@ func fromTint(t *tint.Tint, name string) Theme {
 	selectionBG := pickDistinctFrom([]string{bacc, bcya, bpur, byel}, []string{canvas, inputBG}, 0.05)
 	selectionFG := blk // dark text on bright selection
 	barBG := ensureDistinctMin(elevated, canvas, 0.02, panel, blk)
+	footerBG := ensureDelta(pick(selectionBG, barBG), panel, 0.03)
+	footerFG := pick(selectionFG, fg)
+	footerMuted := ensureDelta(pick(wht, bwht), footerBG, 0.12)
 
 	// ── assemble ──────────────────────────────────────────────────────────────
 	return Theme{
@@ -108,6 +113,11 @@ func fromTint(t *tint.Tint, name string) Theme {
 			BG: pick(barBG, panel),
 			FG: pick(fg, bwht),
 		},
+		Footer: FooterTokens{
+			AnchoredBG:    footerBG,
+			AnchoredFG:    footerFG,
+			AnchoredMuted: footerMuted,
+		},
 		Dialog: DialogTokens{
 			BG:     overlay,
 			FG:     fg,
@@ -115,6 +125,67 @@ func fromTint(t *tint.Tint, name string) Theme {
 			Scrim:  pick(blk, canvas),
 		},
 	}
+}
+
+func normalizeSurfaces(canvas, panel, elevated, interactive string) (string, string, string) {
+	for i := 0; i < 4; i++ {
+		panel = ensureDelta(panel, canvas, minSurfacePanelCanvasDelta)
+		elevated = ensureDelta(elevated, panel, minSurfaceElevatedPanelDelta)
+		interactive = ensureDelta(interactive, panel, minSurfaceInteractivePanelDelta)
+		interactive = ensureDelta(interactive, elevated, minSurfaceInteractiveElevatedDelta)
+	}
+	return panel, elevated, interactive
+}
+
+func ensureDelta(candidate, base string, minDelta float64) string {
+	if lumDelta(candidate, base) >= minDelta {
+		return candidate
+	}
+	best := candidate
+	bestDiff := 2.0
+	for _, target := range []string{"#000000", "#ffffff"} {
+		for step := 1; step <= 20; step++ {
+			alpha := float64(step) / 20.0
+			next := blendHex(candidate, target, alpha)
+			delta := lumDelta(next, base)
+			if delta >= minDelta {
+				if alpha < bestDiff {
+					best = next
+					bestDiff = alpha
+				}
+				break
+			}
+		}
+	}
+	return best
+}
+
+func blendHex(from, to string, alpha float64) string {
+	a := tint.FromHex(from)
+	b := tint.FromHex(to)
+	if a == nil || b == nil {
+		return from
+	}
+	if alpha < 0 {
+		alpha = 0
+	}
+	if alpha > 1 {
+		alpha = 1
+	}
+	r := int(math.Round(float64(a.R) + (float64(b.R)-float64(a.R))*alpha))
+	g := int(math.Round(float64(a.G) + (float64(b.G)-float64(a.G))*alpha))
+	bv := int(math.Round(float64(a.B) + (float64(b.B)-float64(a.B))*alpha))
+	return fmt.Sprintf("#%02x%02x%02x", clamp8(r), clamp8(g), clamp8(bv))
+}
+
+func clamp8(v int) int {
+	if v < 0 {
+		return 0
+	}
+	if v > 255 {
+		return 255
+	}
+	return v
 }
 
 // ensureDistinct returns candidate if luminance delta vs base >= 0.06,

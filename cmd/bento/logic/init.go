@@ -86,7 +86,7 @@ go 1.23
 require (
 	charm.land/bubbletea/v2 v2.0.0-rc.2
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106192539-4b304240aab7
-	github.com/cloudboy-jh/bentotui v0.3.3
+	github.com/cloudboy-jh/bentotui v0.3.4
 )
 `
 
@@ -98,15 +98,15 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/registry/components/bar"
-	"github.com/cloudboy-jh/bentotui/registry/components/dialog"
-	"github.com/cloudboy-jh/bentotui/registry/components/input"
-	"github.com/cloudboy-jh/bentotui/registry/components/surface"
-	"github.com/cloudboy-jh/bentotui/registry/layouts"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/dialog"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/input"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
+	"github.com/cloudboy-jh/bentotui/registry/rooms"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.3"
+const version = "v0.3.4"
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
 	"██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗\n" +
@@ -245,7 +245,7 @@ func (m *model) View() tea.View {
 	tipDot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("* Tip")
 	tipStr := tipDot + dim.Render("  This file is yours. Edit anything.")
 
-	body := layouts.RenderFunc(func(width, height int) string {
+	body := rooms.RenderFunc(func(width, height int) string {
 		center := func(s string) string {
 			return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
 		}
@@ -268,7 +268,7 @@ func (m *model) View() tea.View {
 		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, stack)
 	})
 
-	screen := layouts.Focus(m.width, m.height, body, m.footerBar)
+	screen := rooms.Focus(m.width, m.height, body, m.footerBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvasColor)
 	surf.Draw(0, 0, screen)

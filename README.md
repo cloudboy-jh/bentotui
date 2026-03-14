@@ -7,7 +7,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
-[![Status](https://img.shields.io/badge/status-v0.3.3%20active-6D5EF3)](#status)
+[![Status](https://img.shields.io/badge/status-v0.3.4%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
 A registry of copy-and-own terminal UI components built on
@@ -18,7 +18,7 @@ Run `bento add input` and the source lands in your project. You own it — read 
 modify it, delete what you don't need. No framework lock-in, no lifecycle hooks,
 no "extend" API to learn.
 
-Layout composition is handled by `registry/layouts`. Home/starter screens use
+Room composition is handled by `registry/rooms`. Home/starter screens use
 `Focus(...)` (body + anchored footer), while multi-row app shells can use
 `Frame(...)` (top row, subheader row, body, subfooter). Final frame painting
 and overlays are handled by `surface`.
@@ -34,12 +34,12 @@ Three building blocks ship in this repo:
 |-------|-----------|
 | **components** | Atomic UI pieces copied into your project via `bento add`. |
 | **bentos** | Runnable full-screen examples you can copy wholesale. |
-| **layouts** | Importable screen grammar under `registry/layouts` (not copied). |
+| **rooms** | Importable screen grammar under `registry/rooms` (not copied). |
 
 ```
-registry/components/   ← copied into your project by `bento add`
+registry/bricks/       ← copied into your project by `bento add`
 registry/bentos/       ← complete runnable screen patterns
-registry/layouts/      ← imported layout primitives (not copied)
+registry/rooms/        ← imported room primitives (not copied)
 ```
 
 ## Install
@@ -73,14 +73,14 @@ Home-screen demo:
 
 ## Components
 
-All components live in `registry/components/` and are copied into your project by `bento add`.
-Once copied they live at `yourmodule/components/<name>` — you own the source.
+All bricks live in `registry/bricks/` and are copied into your project by `bento add`.
+Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 
 ### Available now
 
 | Component | Description |
 |-----------|-------------|
-| `surface` | Full-screen cell buffer backed by Ultraviolet. Deterministic background paint — no ANSI whitespace bleed. Used by every full-screen layout. |
+| `surface` | Full-screen cell buffer backed by Ultraviolet. Deterministic background paint — no ANSI whitespace bleed. Used by every full-screen room. |
 | `bar` | Role-aware status/nav row with `StatusPill`, compact cards, anchored footer mode, and priority-aware overflow. |
 | `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
 | `panel` | Titled, focusable content container. |
@@ -131,7 +131,7 @@ These are stable module deps your project imports directly:
 |---------|-------------|------------|
 | `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 16 presets, goroutine-safe |
 | `styles` | `github.com/cloudboy-jh/bentotui/styles` | Theme → Lip Gloss style mapping |
-| `layouts` | `github.com/cloudboy-jh/bentotui/registry/layouts` | Named visual layout grammar (`Focus`, `Frame`, splits, dashboard, modal, and more) |
+| `rooms` | `github.com/cloudboy-jh/bentotui/registry/rooms` | Named visual room grammar (`Focus`, `Frame`, splits, dashboard, modal, and more) |
 
 `surface` remains a copy-and-own registry component (`bento add surface`) and is
 the recommended final compositor for full-frame paint (`Fill`) and overlays (`DrawCenter`).
@@ -162,7 +162,7 @@ your app code
      │
      ▼
 ┌─────────────────────────────────────────────────────┐
-│  registry/components/  (you own the source)          │
+│  registry/bricks/      (you own the source)          │
 │  surface  panel  bar  dialog  input  list  table      │
 │  text  badge  kbd  wordmark  select  checkbox         │
 │  progress  tabs  toast  separator                     │
@@ -171,7 +171,7 @@ your app code
                   ▼
 ┌─────────────────────────────────────────────────────┐
 │  bentotui module deps  (real go imports)             │
-│  theme   styles   registry/layouts                   │
+│  theme   styles   registry/rooms                     │
 └─────────────────────────────────────────────────────┘
                   │ built on
                   ▼
@@ -183,7 +183,7 @@ your app code
 
 Render contract:
 
-1. Build structure with `registry/layouts` (typically `Focus` for home/starter screens).
+1. Build structure with `registry/rooms` (typically `Focus` for home/starter screens).
 2. Paint the full frame with `surface.Fill(theme.CurrentTheme().Surface.Canvas)`.
 3. Draw layout output with `surface.Draw(0, 0, screen)`.
 4. Draw overlays/dialogs with `surface.DrawCenter(...)`.
@@ -193,7 +193,7 @@ This avoids ANSI whitespace gaps and keeps theme canvas rendering deterministic.
 ## CLI status
 
 - `bento init` scaffolds a runnable project
-- `bento add <component...>` copies registry component source into `components/<name>/`
+- `bento add <component...>` copies registry brick source into `bricks/<name>/`
 - `bento list` shows available components
 - `bento doctor` runs environment/project checks
 

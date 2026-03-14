@@ -1,19 +1,19 @@
 ---
-title: "BentoTUI Layout System + Surface Compositor Update"
-description: "Docs and examples now reflect the named layouts system with surface-based final rendering."
+title: "BentoTUI Rooms System + Surface Compositor Update"
+description: "Docs and examples now reflect the named rooms system with surface-based final rendering."
 pubDate: 2026-03-12
 tags:
   - bentotui
   - go
   - bubbletea
-  - layouts
+  - rooms
   - docs
 draft: false
 ---
 
-# BentoTUI Layout System + Surface Compositor Update
+# BentoTUI Rooms System + Surface Compositor Update
 
-This update ships the new `registry/layouts` package and aligns docs, starter
+This update ships the new `registry/rooms` package and aligns docs, starter
 flows, and bento examples with the current rendering contract.
 
 Note: current starter and shipped bento defaults now use `Focus` layout
@@ -21,20 +21,20 @@ Note: current starter and shipped bento defaults now use `Focus` layout
 
 ## What Changed
 
-- Added `registry/layouts` with 15 named layout functions
-- Added a shared sizing/constrain engine under `registry/layouts/internal/engine`
-- Added ASCII previews in layout family files so users can quickly see each shape
-- Updated starter app and shipped bentos to compose structure with layouts
+- Added `registry/rooms` with named room functions
+- Added a shared sizing/constrain engine under `registry/rooms/internal/engine`
+- Added ASCII previews in room family files so users can quickly see each shape
+- Updated starter app and shipped bentos to compose structure with rooms
 - Restored `surface` as the final compositor for full-frame canvas paint and overlays
 - Updated `bento init` scaffold template to follow the same render flow
-- Updated docs to reflect current responsibilities for `theme`, `layouts`, and `surface`
+- Updated docs to reflect current responsibilities for `theme`, `rooms`, and `surface`
 
 ## Render Contract (Canonical)
 
-Use layouts for geometry, and `surface` for final paint/composition:
+Use rooms for geometry, and `surface` for final paint/composition:
 
 ```go
-screen := layouts.Focus(width, height, content, footer)
+screen := rooms.Focus(width, height, content, footer)
 
 surf := surface.New(width, height)
 surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))
@@ -55,13 +55,13 @@ screen is rendered as raw composed strings only.
 
 ## Where to Look
 
-- Layout API: `registry/layouts/`
+- Room API: `registry/rooms/`
 - Starter reference: `cmd/starter-app/main.go`
 - Bento references:
   - `registry/bentos/home-screen/main.go`
   - `registry/bentos/app-shell/main.go`
   - `registry/bentos/dashboard/main.go`
 - Docs:
-  - `docs/layouts.md`
+  - `docs/rooms.md`
   - `docs/architecture.md`
   - `docs/components.md`

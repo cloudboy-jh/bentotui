@@ -32,7 +32,7 @@ func RunDoctor() DoctorReport {
 	for _, pkg := range []string{
 		"github.com/cloudboy-jh/bentotui/theme",
 		"github.com/cloudboy-jh/bentotui/styles",
-		"github.com/cloudboy-jh/bentotui/registry/layouts",
+		"github.com/cloudboy-jh/bentotui/registry/rooms",
 	} {
 		results = append(results, checkModDep(pkg))
 	}
@@ -144,7 +144,7 @@ func checkCopiedComponent(name string) CheckResult {
 	dir := filepath.Join("components", name)
 	entries, err := os.ReadDir(dir)
 	present := err == nil && len(entries) > 0
-	label := fmt.Sprintf("components/%s copied", name)
+	label := fmt.Sprintf("bricks/%s copied", name)
 	note := fmt.Sprintf("run: bento add %s  (optional)", name)
 	return CheckResult{Label: label, Pass: present, Note: note}
 }

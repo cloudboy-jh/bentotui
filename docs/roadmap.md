@@ -1,6 +1,6 @@
 # BentoTUI Roadmap
 
-## Current State (v0.3.3)
+## Current State (v0.3.4)
 
 The repository completed a full structural refactor in v0.2 and has a working
 baseline CLI + starter flow:
@@ -8,7 +8,7 @@ baseline CLI + starter flow:
 - Deleted the monolithic `bentotui.New()` framework API
 - Deleted `app/`, `core/`, `ui/`, `bentotui.go`
 - Moved `core/theme/` → `theme/`, `ui/styles/` → `styles/`
-- Added `registry/layouts/` with 15 named layout patterns
+- Added `registry/rooms/` with named room patterns
 - Created `registry/` with clean rewrites of every component
 - Every component reads `theme.CurrentTheme()` in `View()` — no stored theme state
 - Every row uses a single `lipgloss.NewStyle().Background().Width().Render()` call
@@ -58,13 +58,13 @@ Primitive policy: Bento does not plan a `spinner` registry component; use
 ### Bento Examples
 
 - [x] `registry/bentos/home-screen` — canonical copy-and-own starter screen (starter-app pattern)
-- [x] `registry/bentos/app-shell` — sidebar + body + status layout pattern
+- [x] `registry/bentos/app-shell` — sidebar + body + status room pattern
 - [x] `registry/bentos/dashboard` — cards + table composition pattern
 - [ ] `registry/bentos/form` — form controls and validation flow pattern
 
 ### Layout Enhancements
 
-- [ ] `layouts.Grid` — fixed-column grid helper for dashboard-style screens
+- [ ] `rooms.Grid` — fixed-column grid helper for dashboard-style screens
 - [ ] Scrollable region helper — allow body regions to scroll independently within named layouts
 
 ### Developer Experience

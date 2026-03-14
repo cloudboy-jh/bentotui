@@ -37,10 +37,10 @@ func runInitCLI(args []string) {
 	fmt.Println()
 	fmt.Println("Uses BentoTUI packages (not copied source):")
 	fmt.Println("  - github.com/cloudboy-jh/bentotui/theme")
-	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/components/bar")
-	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/components/dialog")
-	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/components/input")
-	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/components/surface")
+	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/bar")
+	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/dialog")
+	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/input")
+	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/surface")
 
 	fmt.Println()
 	fmt.Println("You can do anything from here:")
@@ -130,7 +130,7 @@ func runDoctorCLI(args []string) {
 func printAddHelp() {
 	fmt.Print(`Usage: bento add <component> [component...]
 
-Copies source into components/<name>/ and are yours to modify.
+Copies source into bricks/<name>/ and are yours to modify.
 
 Available components:
 `)

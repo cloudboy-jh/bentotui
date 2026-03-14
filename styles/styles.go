@@ -1,8 +1,18 @@
 package styles
 
+// Row paint contract:
+// +-------------------------------+
+// | ClipANSI(content, width)      |
+// +-------------------------------+
+// | Row(bg, fg, width, clipped)   |
+// +-------------------------------+
+// Every rendered row must own its full width with explicit background cells.
+// Use Row() or RowClip() for any surface-facing row output.
+
 import (
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -46,6 +56,12 @@ func (s System) StatusRowColors(role string, anchored bool) SurfaceColors {
 		}
 	case "footer":
 		if anchored {
+			if s.Theme.Footer.AnchoredBG != "" && s.Theme.Footer.AnchoredFG != "" {
+				return SurfaceColors{
+					BG: pick(s.Theme.Footer.AnchoredBG, s.Theme.Selection.BG),
+					FG: pick(s.Theme.Footer.AnchoredFG, s.Theme.Selection.FG),
+				}
+			}
 			return SurfaceColors{
 				BG: pick(s.Theme.Selection.BG, s.Theme.Border.Focus),
 				FG: pick(s.Theme.Selection.FG, s.Theme.Text.Inverse),
@@ -362,6 +378,22 @@ func Row(bg, fg string, width int, content string) string {
 		Render(content)
 }
 
+// ClipANSI truncates styled text to width cells safely.
+func ClipANSI(content string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	return ansi.Truncate(content, width, "")
+}
+
+// RowClip clips ANSI content first, then paints an exact-width row.
+func RowClip(bg, fg string, width int, content string) string {
+	if width <= 0 {
+		return ""
+	}
+	return Row(bg, fg, width, ClipANSI(content, width))
+}
+
 func pick(v, fallback string) string {
 	if v == "" {
 		return fallback
@@ -370,6 +402,12 @@ func pick(v, fallback string) string {
 }
 
 func (s System) footerCardColors(variant string, enabled bool, commandPart bool) (fg string, bg string) {
+	if s.Theme.Footer.AnchoredMuted != "" && variant == "muted" {
+		if !enabled {
+			return pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+		}
+		return pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+	}
 	if !enabled {
 		return pick(s.Theme.Text.Muted, s.Theme.Text.Primary), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
 	}

@@ -14,7 +14,6 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
@@ -164,21 +163,13 @@ func contentRow(line string, w int, bg, fg string, focused bool, sys styles.Syst
 	if w <= 0 {
 		return ""
 	}
-	plain := ansi.Truncate(line, max(0, w-1), "")
+	plain := styles.ClipANSI(line, max(0, w-2))
 	if focused && w > 1 {
 		accent := sys.FocusAccent().Render(" ")
-		rest := lipgloss.NewStyle().
-			Background(lipgloss.Color(bg)).
-			Foreground(lipgloss.Color(fg)).
-			Width(w - 1).
-			Render(" " + plain)
+		rest := styles.RowClip(bg, fg, w-1, " "+plain)
 		return accent + rest
 	}
-	return lipgloss.NewStyle().
-		Background(lipgloss.Color(bg)).
-		Foreground(lipgloss.Color(fg)).
-		Width(w).
-		Render(" " + plain)
+	return styles.RowClip(bg, fg, w, " "+plain)
 }
 
 // renderStyledRow renders content over a full-width styled background row.
@@ -187,7 +178,7 @@ func renderStyledRow(style lipgloss.Style, width int, content string) string {
 	if width <= 0 {
 		return ""
 	}
-	clipped := ansi.Truncate(content, width, "")
+	clipped := styles.ClipANSI(content, width)
 	return style.Width(width).Render(clipped)
 }
 

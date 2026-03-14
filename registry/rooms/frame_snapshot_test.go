@@ -1,4 +1,4 @@
-package layouts
+package rooms
 
 import (
 	"strings"

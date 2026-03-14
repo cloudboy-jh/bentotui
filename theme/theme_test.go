@@ -64,6 +64,10 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 			la, lb   string
 			minDelta float64
 		}{
+			{th.Surface.Panel, th.Surface.Canvas, "surface.panel", "surface.canvas", minSurfacePanelCanvasDelta},
+			{th.Surface.Elevated, th.Surface.Panel, "surface.elevated", "surface.panel", minSurfaceElevatedPanelDelta},
+			{th.Surface.Interactive, th.Surface.Panel, "surface.interactive", "surface.panel", minSurfaceInteractivePanelDelta},
+			{th.Surface.Interactive, th.Surface.Elevated, "surface.interactive", "surface.elevated", minSurfaceInteractiveElevatedDelta},
 			{th.Input.BG, th.Surface.Canvas, "input.bg", "surface.canvas", 0.03},
 			{th.Selection.BG, th.Surface.Canvas, "selection.bg", "surface.canvas", 0.05},
 			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
@@ -77,6 +81,23 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 					name, p.la, p.lb, delta, p.minDelta)
 			}
 		}
+	}
+}
+
+func TestValidateThemeRejectsPartialFooterTokens(t *testing.T) {
+	th := Preset(DefaultName)
+	th.Footer = FooterTokens{}
+	th.Footer.AnchoredBG = th.Selection.BG
+	if err := validateTheme(th); err == nil {
+		t.Fatal("expected validation to fail when footer anchored tokens are partially defined")
+	}
+}
+
+func TestValidateThemeAllowsFooterTokensUnset(t *testing.T) {
+	th := Preset(DefaultName)
+	th.Footer = FooterTokens{}
+	if err := validateTheme(th); err != nil {
+		t.Fatalf("expected validation to allow missing footer tokens, got: %v", err)
 	}
 }
 

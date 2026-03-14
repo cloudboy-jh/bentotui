@@ -202,11 +202,7 @@ func renderRow(width int, bg, fg, content string) string {
 	if width <= 0 {
 		return ""
 	}
-	return lipgloss.NewStyle().
-		Background(lipgloss.Color(bg)).
-		Foreground(lipgloss.Color(fg)).
-		Width(width).
-		Render(content)
+	return styles.RowClip(bg, fg, width, content)
 }
 
 func (m *Model) renderLeftSegment(t theme.Theme) string {
@@ -381,7 +377,7 @@ func clipWidth(s string, width int) string {
 	if width <= 0 {
 		return ""
 	}
-	return lipgloss.NewStyle().MaxWidth(width).Render(s)
+	return styles.ClipANSI(s, width)
 }
 
 func max(a, b int) int {

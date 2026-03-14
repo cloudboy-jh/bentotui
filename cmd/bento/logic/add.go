@@ -66,7 +66,7 @@ func InstallComponent(name string) InstallResult {
 	}
 
 	// Create destination directory
-	destDir := filepath.Join("components", comp.Name)
+	destDir := filepath.Join("bricks", comp.Name)
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		result.Error = fmt.Errorf("create directory %s: %w", destDir, err)
 		return result
@@ -74,7 +74,7 @@ func InstallComponent(name string) InstallResult {
 
 	// Copy each file
 	for _, f := range comp.Files {
-		srcPath := "components/" + comp.Name + "/" + f
+		srcPath := "bricks/" + comp.Name + "/" + f
 		dstPath := filepath.Join(destDir, f)
 
 		// Check if file already exists
@@ -84,7 +84,7 @@ func InstallComponent(name string) InstallResult {
 		}
 
 		// Read from embedded FS
-		srcFile, err := bentoregistry.ComponentsFS.Open(srcPath)
+		srcFile, err := bentoregistry.BricksFS.Open(srcPath)
 		if err != nil {
 			result.Error = fmt.Errorf("component %q file %q not found: %w", comp.Name, f, err)
 			return result

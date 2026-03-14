@@ -1,4 +1,4 @@
-package layouts
+package rooms
 
 import (
 	"strings"
@@ -6,7 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/registry/layouts/internal/engine"
+	"github.com/cloudboy-jh/bentotui/registry/rooms/internal/engine"
 )
 
 type mockCell struct {

@@ -6,6 +6,17 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-03-14
+
+### Changed
+
+- Renamed `registry/layouts` to `registry/rooms` and updated starter app, shipped bentos, CLI scaffold output, and doctor checks to the new import path.
+- Removed legacy `layout/` split package to eliminate overlap with room-based composition.
+- Added footer anchored semantic tokens to the theme model and decoupled anchored footer row colors from selection colors when footer tokens are present.
+- Extended theme validation with required surface hierarchy checks (`canvas/panel/elevated/interactive`) and added coverage across all built-in presets.
+- Added ANSI-safe shared clipping helpers in `styles` (`ClipANSI`, `RowClip`) and switched row-owning component render paths to the shared helpers.
+- Renamed `registry/components` to `registry/bricks`, updated imports/CLI copy paths, and aligned docs to the bricks -> rooms -> bentos composition model.
+
 ## [0.3.3] - 2026-03-13
 
 ### Changed

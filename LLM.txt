@@ -7,7 +7,7 @@ Primary reference app
 - Shell layer order: surface.Fill → components → dialogs → status bar last row.
 
 Registry model
-- Components live in registry/components/ — users copy them with `bento add <component>`
+- Bricks live in registry/bricks/ — users copy them with `bento add <component>`
 - Core deps (theme, styles) are real Go module imports from github.com/cloudboy-jh/bentotui
 - No framework API — no lifecycle hooks, no extend pattern, just plain tea.Model
 

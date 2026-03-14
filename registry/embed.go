@@ -1,7 +1,7 @@
-// Package registry provides access to the embedded component registry.
+// Package registry provides access to the embedded brick registry.
 package registry
 
 import "embed"
 
-//go:embed components/*/* bentos/*/*
-var ComponentsFS embed.FS
+//go:embed bricks/*/* bentos/*/*
+var BricksFS embed.FS

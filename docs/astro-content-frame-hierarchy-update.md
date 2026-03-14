@@ -7,7 +7,7 @@ tags:
   - go
   - bubbletea
   - themes
-  - layouts
+  - rooms
   - rendering
 draft: false
 ---
@@ -15,7 +15,7 @@ draft: false
 # BentoTUI Frame Hierarchy + Solid Row Rendering Update
 
 This update finishes the frame-level visual cleanup pass across components,
-layouts, themes, and starter/bento defaults.
+rooms, themes, and starter/bento defaults.
 
 ## What Shipped
 
@@ -67,13 +67,13 @@ foot := bar.New(
     ),
 )
 
-screen := layouts.Frame(w, h, top, sub, body, foot)
+screen := rooms.Frame(w, h, top, sub, body, foot)
 ```
 
 ## Reference Files
 
-- `registry/components/bar/bar.go`
-- `registry/components/panel/panel.go`
+- `registry/bricks/bar/bar.go`
+- `registry/bricks/panel/panel.go`
 - `styles/styles.go`
 - `theme/adapter.go`
 - `theme/theme.go`

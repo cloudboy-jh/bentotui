@@ -1,12 +1,12 @@
-# BentoTUI Layouts
+# BentoTUI Rooms
 
-`registry/layouts` provides named layout functions. Each function takes
+`registry/rooms` provides named room functions. Each function takes
 `(width, height, ...cells)` and returns a rendered `string`.
 
 Contract:
 
-- Layouts define screen grammar + geometry (allocation + constrain)
-- Layouts are theme-agnostic
+- Rooms define screen grammar + geometry (allocation + constrain)
+- Rooms are theme-agnostic
 - Use `surface` as the final compositor in app `View()`
 - Prefer `Focus` for body + anchored-footer screens; use `Frame` when you explicitly need top/subheader rows.
 - Bar roles for `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`).
@@ -14,9 +14,9 @@ Contract:
 ## API Basics
 
 ```go
-import "github.com/cloudboy-jh/bentotui/registry/layouts"
+import "github.com/cloudboy-jh/bentotui/registry/rooms"
 
-screen := layouts.Focus(w, h, content, footer)
+screen := rooms.Focus(w, h, content, footer)
 ```
 
 Cells must satisfy:
@@ -30,10 +30,10 @@ type Sizable interface {
 
 Helpers:
 
-- `layouts.Static("...")`
-- `layouts.RenderFunc(func(width, height int) string { ... })`
+- `rooms.Static("...")`
+- `rooms.RenderFunc(func(width, height int) string { ... })`
 
-## Named Layouts
+## Named Rooms
 
 Frame grammar:
 
@@ -41,7 +41,7 @@ Frame grammar:
 - `FrameMainDrawer(drawerW, top, subheader, main, drawer, subfooter)`
 - `FrameTriple(navW, listW, top, subheader, nav, list, detail, subfooter)`
 
-Compatibility layouts:
+Compatibility rooms:
 
 - `Focus(content, footer)`
 - `Pancake(header, content, footer)`
@@ -62,7 +62,7 @@ Compatibility layouts:
 ## Recommended Render Flow
 
 ```go
-screen := layouts.Focus(w, h, content, footer)
+screen := rooms.Focus(w, h, content, footer)
 
 surf := surface.New(w, h)
 surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))

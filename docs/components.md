@@ -33,20 +33,21 @@ t.State.{Info, Success, Warning, Danger}
 t.Selection.{BG, FG}
 t.Input.{BG, FG, Placeholder, Cursor, Border}
 t.Bar.{BG, FG}
+t.Footer.{AnchoredBG, AnchoredFG, AnchoredMuted}
 t.Dialog.{BG, FG, Border, Scrim}
 ```
 
-### `registry/layouts`
+### `registry/rooms`
 
 ```go
 import (
     "charm.land/lipgloss/v2"
-    "github.com/cloudboy-jh/bentotui/registry/components/surface"
-    "github.com/cloudboy-jh/bentotui/registry/layouts"
+    "github.com/cloudboy-jh/bentotui/registry/bricks/surface"
+    "github.com/cloudboy-jh/bentotui/registry/rooms"
     "github.com/cloudboy-jh/bentotui/theme"
 )
 
-screen := layouts.HolyGrail(width, height,
+screen := rooms.HolyGrail(width, height,
     28,       // sidebar width
     header,
     sidebar,
@@ -54,19 +55,19 @@ screen := layouts.HolyGrail(width, height,
     footer,
 )
 
-overlay := layouts.Modal(width, height, 56, 16,
-    layouts.Static(screen),
+overlay := rooms.Modal(width, height, 56, 16,
+    rooms.Static(screen),
     dialog,
 )
 ```
 
-All 15 layouts call `SetSize` on each child, constrain each cell to its exact
+All room templates call `SetSize` on each child, constrain each cell to its exact
 allocation, and return a final `string`.
 
 Use `surface` as the final compositor in full-screen apps:
 
 ```go
-screen := layouts.Pancake(width, height, header, body, footer)
+screen := rooms.Pancake(width, height, header, body, footer)
 surf := surface.New(width, height)
 surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))
 surf.Draw(0, 0, screen)
@@ -81,7 +82,7 @@ surf.Draw(0, 0, screen)
 Titled, focusable content container with left-edge focus stripe.
 
 ```go
-import "yourmodule/components/panel"
+import "yourmodule/bricks/panel"
 
 p := panel.New(
     panel.Title("Sidebar"),
@@ -109,7 +110,7 @@ Content receives `SetSize(width-2, height-titleRows)` if it implements `Sizeable
 Single-row header or footer bar. Truncates cards gracefully when width is tight.
 
 ```go
-import "yourmodule/components/bar"
+import "yourmodule/bricks/bar"
 
 b := bar.New(
     bar.RoleTopBar(),
@@ -148,7 +149,7 @@ Row roles: `RoleTop`, `RoleSubheader`, `RoleFooter`.
 Footer modes: `FooterModeNormal`, `FooterModeAnchored`.
 Use `bar.FooterAnchored()` for vim-style focused command rows.
 Use `StatusPill(...)` only when you have real runtime status metadata.
-Starter and shipped bentos now default to `layouts.Focus(...)` with anchored footer.
+Starter and shipped bentos now default to `rooms.Focus(...)` with anchored footer.
 
 ---
 
@@ -157,7 +158,7 @@ Starter and shipped bentos now default to `layouts.Focus(...)` with anchored foo
 Modal overlay manager plus built-in dialog types.
 
 ```go
-import "yourmodule/components/dialog"
+import "yourmodule/bricks/dialog"
 
 // In your root model
 dm := dialog.New()
@@ -247,7 +248,7 @@ dialog.Open(dialog.Custom{
 Scrollable log-style list. Returns **plain text** — the parent panel applies color.
 
 ```go
-import "yourmodule/components/list"
+import "yourmodule/bricks/list"
 
 l := list.New(200)  // max 200 items stored
 l.Append("line added to bottom")
@@ -272,7 +273,7 @@ Header row + data rows with optional compact/borderless modes and per-column
 width/alignment control.
 
 ```go
-import "yourmodule/components/table"
+import "yourmodule/bricks/table"
 
 t := table.New("Name", "Status", "Size")
 t.SetCompact(true)
@@ -294,7 +295,7 @@ Static string in `Text.Primary` color. For styled text, build a `lipgloss.Style`
 directly in your app instead of using this component.
 
 ```go
-import "yourmodule/components/text"
+import "yourmodule/bricks/text"
 
 t := text.New("All systems operational")
 t.SetText("Updated message")
@@ -311,7 +312,7 @@ Single-line text field wrapping `bubbles/textinput`. Styles update from
 without any extra wiring.
 
 ```go
-import "yourmodule/components/input"
+import "yourmodule/bricks/input"
 
 i := input.New()
 i.SetPlaceholder("Search…")
@@ -330,7 +331,7 @@ i.SetSize(width, height)
 Inline themed label for compact status/state chips.
 
 ```go
-import "yourmodule/components/badge"
+import "yourmodule/bricks/badge"
 
 b := badge.New("beta")
 b.SetVariant(badge.VariantInfo)
@@ -346,7 +347,7 @@ Variants: `VariantNeutral`, `VariantInfo`, `VariantSuccess`, `VariantWarning`, `
 Keyboard shortcut pair (`command label`) matching bar-card visual language.
 
 ```go
-import "yourmodule/components/kbd"
+import "yourmodule/bricks/kbd"
 
 k := kbd.New("ctrl+k", "commands")
 k.SetVariant("primary") // normal, primary, muted, danger
@@ -360,7 +361,7 @@ k.SetActive(true)
 Themed title/heading block.
 
 ```go
-import "yourmodule/components/wordmark"
+import "yourmodule/bricks/wordmark"
 
 w := wordmark.New("BentoTUI")
 w.SetBold(true)
@@ -373,7 +374,7 @@ w.SetBold(true)
 Single-choice inline picker with open/close and keyboard navigation.
 
 ```go
-import selectx "yourmodule/components/select"
+import selectx "yourmodule/bricks/select"
 
 s := selectx.New(
     selectx.Item{Label: "Tokyo Night", Value: "tokyo-night"},
@@ -395,7 +396,7 @@ s.SetPlaceholder("Choose theme")
 Boolean toggle input with optional focus behavior.
 
 ```go
-import "yourmodule/components/checkbox"
+import "yourmodule/bricks/checkbox"
 
 c := checkbox.New("Enable live preview")
 c.Focus()
@@ -410,7 +411,7 @@ c.Checked() bool
 Horizontal progress bar with optional label and percentage text.
 
 ```go
-import "yourmodule/components/progress"
+import "yourmodule/bricks/progress"
 
 p := progress.New(30)   // bar width in cells
 p.SetLabel("Sync")
@@ -425,7 +426,7 @@ p.SetShowPercent(true)
 Keyboard-navigable tab row.
 
 ```go
-import "yourmodule/components/tabs"
+import "yourmodule/bricks/tabs"
 
 t := tabs.New(
     tabs.Tab{ID: "overview", Label: "Overview"},
@@ -443,7 +444,7 @@ t.Active() int
 Stacked notification rows for non-blocking feedback.
 
 ```go
-import "yourmodule/components/toast"
+import "yourmodule/bricks/toast"
 
 toasts := toast.New(3) // max visible
 id := toasts.Push("Saved settings", toast.Success)
@@ -458,7 +459,7 @@ toasts.Clear()
 Horizontal or vertical divider.
 
 ```go
-import "yourmodule/components/separator"
+import "yourmodule/bricks/separator"
 
 h := separator.New(separator.Horizontal, 40)
 v := separator.New(separator.Vertical, 8)
@@ -476,13 +477,13 @@ import (
 
     tea "charm.land/bubbletea/v2"
     "charm.land/lipgloss/v2"
-    "github.com/cloudboy-jh/bentotui/registry/components/surface"
-    "github.com/cloudboy-jh/bentotui/registry/layouts"
+    "github.com/cloudboy-jh/bentotui/registry/bricks/surface"
+    "github.com/cloudboy-jh/bentotui/registry/rooms"
     "github.com/cloudboy-jh/bentotui/theme"
-    "yourmodule/components/bar"
-    "yourmodule/components/dialog"
-    "yourmodule/components/list"
-    "yourmodule/components/panel"
+    "yourmodule/bricks/bar"
+    "yourmodule/bricks/dialog"
+    "yourmodule/bricks/list"
+    "yourmodule/bricks/panel"
 )
 
 func main() {
@@ -549,7 +550,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) View() tea.View {
     t := theme.CurrentTheme()
 
-    screen := layouts.Pancake(m.w, m.h,
+    screen := rooms.Pancake(m.w, m.h,
         m.header,
         m.body,
         m.footer,

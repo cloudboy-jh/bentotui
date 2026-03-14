@@ -1,17 +1,26 @@
 package main
 
+// Dashboard room stack:
+// +----------------------+---------------------------+
+// | metric A             | metric B                  |
+// +----------------------+---------------------------+
+// | metric C             | service health table      |
+// +----------------------+---------------------------+
+// | anchored footer command row                      |
+// +--------------------------------------------------+
+
 import (
 	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/registry/components/badge"
-	"github.com/cloudboy-jh/bentotui/registry/components/bar"
-	"github.com/cloudboy-jh/bentotui/registry/components/panel"
-	"github.com/cloudboy-jh/bentotui/registry/components/surface"
-	"github.com/cloudboy-jh/bentotui/registry/components/table"
-	"github.com/cloudboy-jh/bentotui/registry/layouts"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/badge"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/panel"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/table"
+	"github.com/cloudboy-jh/bentotui/registry/rooms"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -162,14 +171,14 @@ func (m *model) View() tea.View {
 
 	body := ""
 	if m.width >= 96 {
-		body = layouts.Dashboard2x2(m.width, bodyH, m.metricA, m.metricB, m.metricC, m.tableP)
+		body = rooms.Dashboard2x2(m.width, bodyH, m.metricA, m.metricB, m.metricC, m.tableP)
 	} else {
-		top := layouts.VSplit(m.width, max(1, bodyH/2), m.metricA, m.metricB)
-		bottom := layouts.VSplit(m.width, max(1, bodyH-bodyH/2), m.metricC, m.tableP)
-		body = layouts.VSplit(m.width, bodyH, layouts.Static(top), layouts.Static(bottom))
+		top := rooms.VSplit(m.width, max(1, bodyH/2), m.metricA, m.metricB)
+		bottom := rooms.VSplit(m.width, max(1, bodyH-bodyH/2), m.metricC, m.tableP)
+		body = rooms.VSplit(m.width, bodyH, rooms.Static(top), rooms.Static(bottom))
 	}
 
-	screen := layouts.Focus(m.width, m.height, layouts.Static(body), m.botBar)
+	screen := rooms.Focus(m.width, m.height, rooms.Static(body), m.botBar)
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)
