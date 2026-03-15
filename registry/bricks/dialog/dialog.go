@@ -13,7 +13,7 @@
 //   - charm.land/bubbletea/v2
 //   - charm.land/lipgloss/v2
 //   - github.com/cloudboy-jh/bentotui/theme
-//   - github.com/cloudboy-jh/bentotui/styles
+//   - github.com/cloudboy-jh/bentotui/theme/styles
 package dialog
 
 import (
@@ -22,8 +22,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
 // Dialog is implemented by any modal that the Manager can host.

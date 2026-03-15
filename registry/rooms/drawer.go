@@ -9,10 +9,17 @@ import "github.com/cloudboy-jh/bentotui/registry/rooms/internal/engine"
 // |              |       |
 // +--------------+-------+
 // DrawerRight renders main content and a fixed-width right drawer.
-func DrawerRight(width, height, drawerW int, main, drawer Sizable) string {
+func DrawerRight(width, height, drawerW int, main, drawer Sizable, opts ...Option) string {
+	o := resolveLayoutOptions(opts)
+	if o.gutter <= 0 {
+		return engine.RenderHorizontal(width, height,
+			[]engine.Spec{{Kind: engine.Fill}, {Kind: engine.Fixed, N: drawerW}},
+			[]Sizable{main, drawer},
+		)
+	}
 	return engine.RenderHorizontal(width, height,
-		[]engine.Spec{{Kind: engine.Fill}, {Kind: engine.Fixed, N: drawerW}},
-		[]Sizable{main, drawer},
+		[]engine.Spec{{Kind: engine.Fill}, {Kind: engine.Fixed, N: o.gutter}, {Kind: engine.Fixed, N: drawerW}},
+		[]Sizable{main, dividerCell(o.gutter, height, o.divider), drawer},
 	)
 }
 

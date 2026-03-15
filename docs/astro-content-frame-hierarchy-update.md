@@ -74,7 +74,7 @@ screen := rooms.Frame(w, h, top, sub, body, foot)
 
 - `registry/bricks/bar/bar.go`
 - `registry/bricks/panel/panel.go`
-- `styles/styles.go`
+- `theme/styles/styles.go`
 - `theme/adapter.go`
 - `theme/theme.go`
 - `registry/bentos/app-shell/main.go`

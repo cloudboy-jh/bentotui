@@ -10,6 +10,8 @@ Primitive policy: Bento does not ship a `spinner` component. Use
 
 ## Module deps (import, don't copy)
 
+Untouchable Theme Engine contract: default to semantic themes, not ad-hoc color overrides.
+
 ### `theme`
 
 ```go
@@ -35,6 +37,15 @@ t.Input.{BG, FG, Placeholder, Cursor, Border}
 t.Bar.{BG, FG}
 t.Footer.{AnchoredBG, AnchoredFG, AnchoredMuted}
 t.Dialog.{BG, FG, Border, Scrim}
+```
+
+### `theme/styles`
+
+```go
+import "github.com/cloudboy-jh/bentotui/theme/styles"
+
+sys := styles.New(theme.CurrentTheme())
+row := styles.RowClip(bg, fg, width, content)
 ```
 
 ### `registry/rooms`
@@ -148,6 +159,7 @@ higher-priority cards.
 Row roles: `RoleTop`, `RoleSubheader`, `RoleFooter`.
 Footer modes: `FooterModeNormal`, `FooterModeAnchored`.
 Use `bar.FooterAnchored()` for vim-style focused command rows.
+Anchored card styles: `AnchoredCardStylePlain`, `AnchoredCardStyleChip`, `AnchoredCardStyleMixed`.
 Use `StatusPill(...)` only when you have real runtime status metadata.
 Starter and shipped bentos now default to `rooms.Focus(...)` with anchored footer.
 
@@ -254,7 +266,7 @@ l := list.New(200)  // max 200 items stored
 l.Append("line added to bottom")
 l.Prepend("line added to top")
 l.AppendSection("Today")
-l.AppendRow(list.Row{Label: "api", Status: "ok", Stat: "36ms"})
+l.AppendRow(list.Row{Primary: "api", Secondary: "health", Tone: list.ToneSuccess, RightStat: "36ms"})
 l.Clear()
 l.Items() []string  // copy of current items
 

@@ -10,6 +10,7 @@ Contract:
 - Use `surface` as the final compositor in app `View()`
 - Prefer `Focus` for body + anchored-footer screens; use `Frame` when you explicitly need top/subheader rows.
 - Bar roles for `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`).
+- Validation bento (`registry/bentos/app-shell`) is the canonical way to pressure-test room composition.
 
 ## API Basics
 
@@ -58,6 +59,18 @@ Compatibility rooms:
 - `DrawerChrome(drawerW, header, main, drawer, footer)`
 - `Modal(modalW, modalH, background, modal)`
 - `BigTopStrip(stripH, primary, strip)`
+
+Room separation options:
+
+- `rooms.WithGutter(1)` adds explicit spacing between adjacent panes
+- `rooms.WithDivider("subtle")` or `rooms.WithDivider("normal")` paints the gutter lane
+
+Examples:
+
+```go
+rooms.HSplit(w, h, left, right, rooms.WithGutter(1), rooms.WithDivider("subtle"))
+rooms.DrawerRight(w, h, 28, main, drawer, rooms.WithGutter(1), rooms.WithDivider("normal"))
+```
 
 ## Recommended Render Flow
 

@@ -6,6 +6,16 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+### Changed
+
+- Moved shared style helpers from `styles/` to `theme/styles/` and updated all imports to `github.com/cloudboy-jh/bentotui/theme/styles`.
+- Reworked `registry/bentos/app-shell` into a scenario-driven validation bento with modular `state/`, `ui/`, and `scenarios/` packages.
+- Added built-in validation scenarios (`layout`, `hierarchy`, `footer`, `list`, `overlay`, `stress`) with pass/warn/fail checks and diagnostics metrics.
+- Updated docs and README to formalize the **Untouchable Theme Engine** model and lock the architecture language to `bentos + rooms + bricks`.
+- Added room-level separation options (`WithGutter`, `WithDivider`) to split/drawer room primitives.
+- Added anchored footer card style modes in bar (`plain`, `chip`, `mixed`) and scenario coverage in app-shell.
+- Expanded list row structure with typed fields (`Primary`, `Secondary`, `RightStat`, `Tone`, `SelectedStyle`) while preserving existing `Label`/`Status`/`Stat` compatibility.
+
 ## [0.3.4] - 2026-03-14
 
 ### Changed

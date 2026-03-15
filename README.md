@@ -14,6 +14,10 @@ A registry of copy-and-own terminal UI components built on
 [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) and
 [Lip Gloss v2](https://github.com/charmbracelet/lipgloss).
 
+Official architecture: **Untouchable Theme Engine + Registry**.
+You should not hand-color components by default. Pick a theme, compose with
+`rooms`, and ship with `bricks`.
+
 Run `bento add input` and the source lands in your project. You own it — read it,
 modify it, delete what you don't need. No framework lock-in, no lifecycle hooks,
 no "extend" API to learn.
@@ -32,9 +36,9 @@ Three building blocks ship in this repo:
 
 | Thing | What it is |
 |-------|-----------|
-| **components** | Atomic UI pieces copied into your project via `bento add`. |
-| **bentos** | Runnable full-screen examples you can copy wholesale. |
-| **rooms** | Importable screen grammar under `registry/rooms` (not copied). |
+| **bricks** | UI pieces copied into your project via `bento add`. |
+| **bentos** | Full runnable apps (state machine + orchestration). |
+| **rooms** | Importable layout grammar under `registry/rooms` (not copied). |
 
 ```
 registry/bricks/       ← copied into your project by `bento add`
@@ -120,7 +124,7 @@ registry/bentos/
 | Bento | Components used |
 |-------|----------------|
 | `home-screen` | `wordmark`, `input`, `kbd`, `badge`, `bar`, `surface` |
-| `app-shell` | `panel`, `bar`, `tabs`, `surface` |
+| `app-shell` | validation bento (scenarios + diagnostics + anchored footer) |
 | `dashboard` | `panel`, `badge`, `table`, `bar`, `surface` |
 
 ## Core packages (real imports, not copied)
@@ -129,12 +133,22 @@ These are stable module deps your project imports directly:
 
 | Package | Import path | What it is |
 |---------|-------------|------------|
-| `theme` | `github.com/cloudboy-jh/bentotui/theme` | Global theme store, 16 presets, goroutine-safe |
-| `styles` | `github.com/cloudboy-jh/bentotui/styles` | Theme → Lip Gloss style mapping |
+| `theme` | `github.com/cloudboy-jh/bentotui/theme` | Untouchable Theme Engine runtime store + presets |
+| `theme/styles` | `github.com/cloudboy-jh/bentotui/theme/styles` | Theme token → Lip Gloss style mapping |
 | `rooms` | `github.com/cloudboy-jh/bentotui/registry/rooms` | Named visual room grammar (`Focus`, `Frame`, splits, dashboard, modal, and more) |
 
 `surface` remains a copy-and-own registry component (`bento add surface`) and is
 the recommended final compositor for full-frame paint (`Fill`) and overlays (`DrawCenter`).
+
+## Untouchable Theme Engine
+
+BentoTUI runs on a theme engine + registry model:
+
+- pick a theme (`theme.SetTheme(...)`)
+- compose with `rooms`
+- render with `bricks`
+
+No custom per-example color forks. Theme tokens drive all shipped bentos.
 
 ## Theme System
 
@@ -162,16 +176,15 @@ your app code
      │
      ▼
 ┌─────────────────────────────────────────────────────┐
-│  registry/bricks/      (you own the source)          │
-│  surface  panel  bar  dialog  input  list  table      │
-│  text  badge  kbd  wordmark  select  checkbox         │
-│  progress  tabs  toast  separator                     │
+│  registry/bentos/   full apps                       │
+│  registry/rooms/    layout geometry                 │
+│  registry/bricks/   ui components                    │
 └─────────────────┬───────────────────────────────────┘
                   │ imports
                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  bentotui module deps  (real go imports)             │
-│  theme   styles   registry/rooms                     │
+│  bentotui module deps                                │
+│  theme   theme/styles   registry/rooms               │
 └─────────────────────────────────────────────────────┘
                   │ built on
                   ▼

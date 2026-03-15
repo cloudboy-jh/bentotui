@@ -124,6 +124,28 @@ func TestModalCentersOverlay(t *testing.T) {
 	}
 }
 
+func TestHSplitWithGutterAndDivider(t *testing.T) {
+	out := HSplit(21, 4, Static("L"), Static("R"), WithGutter(1), WithDivider("normal"))
+	assertExact(t, out, 21, 4)
+	lines := strings.Split(out, "\n")
+	for i, line := range lines {
+		if !strings.Contains(line, "|") {
+			t.Fatalf("expected divider in line %d: %q", i, line)
+		}
+	}
+}
+
+func TestDrawerRightWithSubtleDivider(t *testing.T) {
+	out := DrawerRight(24, 4, 8, Static("main"), Static("drawer"), WithGutter(1), WithDivider("subtle"))
+	assertExact(t, out, 24, 4)
+	lines := strings.Split(out, "\n")
+	for i, line := range lines {
+		if !strings.Contains(line, ".") {
+			t.Fatalf("expected subtle divider in line %d: %q", i, line)
+		}
+	}
+}
+
 func assertExact(t *testing.T, out string, width, height int) {
 	t.Helper()
 

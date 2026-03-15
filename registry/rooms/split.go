@@ -9,10 +9,17 @@ import "github.com/cloudboy-jh/bentotui/registry/rooms/internal/engine"
 // |          |           |
 // +----------+-----------+
 // HSplit renders two equal side-by-side panels.
-func HSplit(width, height int, left, right Sizable) string {
+func HSplit(width, height int, left, right Sizable, opts ...Option) string {
+	o := resolveLayoutOptions(opts)
+	if o.gutter <= 0 {
+		return engine.RenderHorizontal(width, height,
+			[]engine.Spec{{Kind: engine.Ratio, N: 1}, {Kind: engine.Ratio, N: 1}},
+			[]Sizable{left, right},
+		)
+	}
 	return engine.RenderHorizontal(width, height,
-		[]engine.Spec{{Kind: engine.Ratio, N: 1}, {Kind: engine.Ratio, N: 1}},
-		[]Sizable{left, right},
+		[]engine.Spec{{Kind: engine.Ratio, N: 1}, {Kind: engine.Fixed, N: o.gutter}, {Kind: engine.Ratio, N: 1}},
+		[]Sizable{left, dividerCell(o.gutter, height, o.divider), right},
 	)
 }
 

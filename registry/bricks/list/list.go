@@ -31,13 +31,35 @@ const (
 	RowSection
 )
 
+type Tone string
+
+const (
+	ToneNeutral Tone = "neutral"
+	ToneInfo    Tone = "info"
+	ToneSuccess Tone = "success"
+	ToneWarn    Tone = "warn"
+	ToneDanger  Tone = "danger"
+)
+
+type SelectedStyle string
+
+const (
+	SelectedDefault SelectedStyle = "default"
+	SelectedSubtle  SelectedStyle = "subtle"
+)
+
 // Row is a structured list row.
 type Row struct {
-	Kind    RowKind
-	Label   string
-	Status  string
-	Stat    string
-	Section string
+	Kind          RowKind
+	Primary       string
+	Secondary     string
+	RightStat     string
+	Tone          Tone
+	SelectedStyle SelectedStyle
+	Label         string
+	Status        string
+	Stat          string
+	Section       string
 }
 
 // RowFormatter renders one row at the given width.
@@ -219,15 +241,34 @@ func defaultFormatter(row Row, selected bool, width int) string {
 
 	prefix := "  "
 	if selected {
-		prefix = "> "
+		if row.SelectedStyle == SelectedSubtle {
+			prefix = "· "
+		} else {
+			prefix = "> "
+		}
+	}
+	primary := strings.TrimSpace(row.Primary)
+	if primary == "" {
+		primary = strings.TrimSpace(row.Label)
+	}
+	secondary := strings.TrimSpace(row.Secondary)
+	status := strings.TrimSpace(row.Status)
+	if status == "" && row.Tone != "" && row.Tone != ToneNeutral {
+		status = string(row.Tone)
+	}
+	if secondary != "" {
+		primary = primary + " - " + secondary
 	}
 	leftParts := make([]string, 0, 2)
-	if strings.TrimSpace(row.Status) != "" {
-		leftParts = append(leftParts, row.Status)
+	if status != "" {
+		leftParts = append(leftParts, status)
 	}
-	leftParts = append(leftParts, row.Label)
+	leftParts = append(leftParts, primary)
 	left := prefix + strings.TrimSpace(strings.Join(leftParts, " "))
-	stat := strings.TrimSpace(row.Stat)
+	stat := strings.TrimSpace(row.RightStat)
+	if stat == "" {
+		stat = strings.TrimSpace(row.Stat)
+	}
 	if stat == "" || width <= 0 {
 		return left
 	}

@@ -7,7 +7,7 @@ baseline CLI + starter flow:
 
 - Deleted the monolithic `bentotui.New()` framework API
 - Deleted `app/`, `core/`, `ui/`, `bentotui.go`
-- Moved `core/theme/` → `theme/`, `ui/styles/` → `styles/`
+- Moved `core/theme/` → `theme/`, `ui/styles/` → `theme/styles/`
 - Added `registry/rooms/` with named room patterns
 - Created `registry/` with clean rewrites of every component
 - Every component reads `theme.CurrentTheme()` in `View()` — no stored theme state
@@ -58,7 +58,7 @@ Primitive policy: Bento does not plan a `spinner` registry component; use
 ### Bento Examples
 
 - [x] `registry/bentos/home-screen` — canonical copy-and-own starter screen (starter-app pattern)
-- [x] `registry/bentos/app-shell` — sidebar + body + status room pattern
+- [x] `registry/bentos/app-shell` — scenario-driven validation bento
 - [x] `registry/bentos/dashboard` — cards + table composition pattern
 - [ ] `registry/bentos/form` — form controls and validation flow pattern
 

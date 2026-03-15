@@ -6,7 +6,9 @@ Status: Active reference — updated after frame hierarchy cleanup (2026-03-13)
 
 BentoTUI is a **registry of copy-and-own components**, not a framework. Run
 `bento add input` and the source lands in your project. The stable shared
-imports are `theme`, `styles`, and `registry/rooms`.
+imports are `theme`, `theme/styles`, and `registry/rooms`.
+
+Official model: **Untouchable Theme Engine + Registry**.
 
 ---
 
@@ -16,12 +18,12 @@ imports are `theme`, `styles`, and `registry/rooms`.
 bubbletint (palette registry)
      │
      ▼
-theme/ (semantic token adapter + runtime store)
+theme/ (Untouchable Theme Engine runtime store + semantic tokens)
      │  CurrentTheme(), SetTheme(), PreviewTheme()
      │  16 built-in palettes (incl. bento-rose)
      │  Contrast validation: key layer pairs guaranteed distinct
      ▼
-styles/ (token → lipgloss.Style mapping)
+theme/styles/ (token → lipgloss.Style mapping)
      │  styles.New(t).DialogFrame(), InputStyles(), Row(), etc.
      ▼
 registry/bricks/ (copy-and-own UI pieces)
@@ -38,6 +40,16 @@ surface (Ultraviolet-backed full-terminal cell buffer)
      ▼
 Bubble Tea v2 frame (tea.NewView, AltScreen, BackgroundColor)
 ```
+
+Registry shape (author-facing):
+
+```
+registry/bentos/  -> full apps (state machine + orchestration)
+registry/rooms/   -> geometry/layout grammar only
+registry/bricks/  -> reusable UI components
+```
+
+`theme/` + `theme/styles/` are framework internals that power visuals across all three.
 
 ---
 
@@ -167,7 +179,7 @@ Goroutine-safe global theme store backed by bubbletint palettes.
 - `RegisterTheme(name, Theme) error` — add custom theme (validated)
 - `AvailableThemes() []string` — sorted list, default first
 
-### `styles/`
+### `theme/styles/`
 
 Maps `theme.Theme` tokens to `lipgloss.Style` constructors. All color
 decisions live here — components never scatter hex literals.
