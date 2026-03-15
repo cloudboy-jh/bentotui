@@ -1,11 +1,9 @@
 # BentoTUI Documentation
 
-- [components.md](./components.md) — API reference for every component and module dep
-- [rooms.md](./rooms.md) — Named room API and render contract
+- [architecture/architecture.md](./architecture/architecture.md) — Layer diagram, design principles, and render rules
+- [architecture/bricks.md](./architecture/bricks.md) — Brick API reference and module deps
+- [architecture/rooms.md](./architecture/rooms.md) — Room API and layout composition contract
 - [theme-engine.md](./theme-engine.md) — Untouchable Theme Engine contract and workflow
-- [astro-content-update.md](./astro-content-update.md) — Astro-ready changelog content for the rooms rollout
-- [astro-content-frame-hierarchy-update.md](./astro-content-frame-hierarchy-update.md) — Astro-ready content for frame hierarchy and solid-row rendering cleanup
-- [architecture.md](./architecture.md) — Layer diagram, design principles, and rules
 - [next-steps.md](./next-steps.md) — Immediate priorities based on current repo state
 - [roadmap.md](./roadmap.md) — Backlog and non-goals
 
