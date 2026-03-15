@@ -7,7 +7,7 @@
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
-[![Status](https://img.shields.io/badge/status-v0.3.4%20active-6D5EF3)](#status)
+[![Status](https://img.shields.io/badge/status-main%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
 A registry of copy-and-own terminal UI components built on
@@ -24,11 +24,20 @@ no "extend" API to learn.
 
 Room composition is handled by `registry/rooms`. Home/starter screens use
 `Focus(...)` (body + anchored footer), while multi-row app shells can use
-`Frame(...)` (top row, subheader row, body, subfooter). Final frame painting
-and overlays are handled by `surface`.
+`Frame(...)` (top row, subheader row, body, subfooter). Split layouts now also
+support explicit separation with `WithGutter(...)` + `WithDivider(...)`.
+Final frame painting and overlays are handled by `surface`.
 
 Bar rows support role-aware rendering (`top`, `subheader`, `footer`) with
-optional anchored footer mode for command focus.
+anchored footer card styles (`plain`, `chip`, `mixed`) for command focus.
+
+## Docs
+
+- `docs/architecture/architecture.md`
+- `docs/architecture/bentos.md`
+- `docs/architecture/bricks.md`
+- `docs/architecture/rooms.md`
+- `docs/theme-engine.md`
 
 ## How it works
 
@@ -85,11 +94,11 @@ Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 | Component | Description |
 |-----------|-------------|
 | `surface` | Full-screen cell buffer backed by Ultraviolet. Deterministic background paint — no ANSI whitespace bleed. Used by every full-screen room. |
-| `bar` | Role-aware status/nav row with `StatusPill`, compact cards, anchored footer mode, and priority-aware overflow. |
+| `bar` | Role-aware status/nav row with `StatusPill`, compact cards, anchored footer modes (`plain/chip/mixed`), and priority-aware overflow. |
 | `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
 | `panel` | Titled, focusable content container. |
 | `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`. |
-| `list` | Scrollable list with optional sections and row formatting hooks. |
+| `list` | Scrollable list with sections, row formatting hooks, and structured row fields (`Primary/Secondary/RightStat/Tone`). |
 | `table` | Header + data rows with compact/borderless and per-column width/align. |
 | `text` | Static styled label. |
 | `badge` | Inline themed label. |
