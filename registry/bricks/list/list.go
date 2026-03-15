@@ -1,3 +1,10 @@
+// Brick: List:
+// +-----------------------------------+
+// | row 1                              |
+// | row 2                              |
+// | ...                                |
+// +-----------------------------------+
+// Scrollable plain-text row list.
 // Package list provides a scrollable log-style list widget.
 // Copy this file into your project: bento add list
 //

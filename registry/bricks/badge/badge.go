@@ -1,3 +1,8 @@
+// Brick: Badge:
+// +-----------------------------+
+// | [ variant label text ]      |
+// +-----------------------------+
+// Inline status/emphasis pill.
 // Package badge provides a small inline themed label.
 // Copy this file into your project: bento add badge
 package badge

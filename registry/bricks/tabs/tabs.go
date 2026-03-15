@@ -1,3 +1,8 @@
+// Brick: Tabs:
+// +-----------------------------------+
+// | [Tab A] [Tab B] [Tab C]          |
+// +-----------------------------------+
+// Keyboard-navigable tab row.
 // Package tabs provides a keyboard-navigable tab row.
 // Copy this file into your project: bento add tabs
 package tabs

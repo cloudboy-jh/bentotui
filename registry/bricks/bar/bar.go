@@ -1,3 +1,8 @@
+// Brick: Bar:
+// +--------------------------------------------------+
+// | left/status            cards            right     |
+// +--------------------------------------------------+
+// Single-row command or metadata strip.
 // Package bar provides a single-row themed status/navigation bar.
 // Copy this file into your project: bento add bar
 //

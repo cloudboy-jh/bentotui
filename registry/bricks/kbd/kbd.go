@@ -1,3 +1,8 @@
+// Brick: KBD:
+// +-----------------------------+
+// | cmd  label                  |
+// +-----------------------------+
+// Compact keybind hint pair.
 // Package kbd provides a keyboard shortcut display pair.
 // Copy this file into your project: bento add kbd
 package kbd

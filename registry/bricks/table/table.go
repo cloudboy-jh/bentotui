@@ -1,3 +1,10 @@
+// Brick: Table:
+// +-----------------------------------+
+// | col A | col B | col C            |
+// +-----------------------------------+
+// | row data                          |
+// +-----------------------------------+
+// Header + row data renderer.
 // Package table provides a simple header+rows table widget.
 // Copy this file into your project: bento add table
 //

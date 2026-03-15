@@ -1,3 +1,9 @@
+// Brick: Toast:
+// +-----------------------------------+
+// | info message                       |
+// | success message                    |
+// +-----------------------------------+
+// Stacked transient notifications.
 // Package toast provides a lightweight stacked notification model.
 // Copy this file into your project: bento add toast
 package toast

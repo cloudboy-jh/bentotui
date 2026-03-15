@@ -1,3 +1,10 @@
+// Brick: Panel:
+// +-----------------------------------+
+// | title bar                          |
+// | separator                          |
+// | content rows                       |
+// +-----------------------------------+
+// Focusable surface container.
 // Package panel provides a themed, titled, focusable content container.
 // Copy this file into your project: bento add panel
 //

@@ -1,3 +1,11 @@
+// Brick: Dialog Manager:
+// +-------------------------------+
+// |            scrim              |
+// |      +---------------+        |
+// |      | dialog frame  |        |
+// |      +---------------+        |
+// +-------------------------------+
+// Centers and routes modal dialogs.
 // Package dialog provides modal dialog management for bentotui apps.
 // Copy this directory into your project: bento add dialog
 //

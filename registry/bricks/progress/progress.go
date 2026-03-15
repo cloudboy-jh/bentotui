@@ -1,3 +1,8 @@
+// Brick: Progress:
+// +-----------------------------------+
+// | label [####------] 42%            |
+// +-----------------------------------+
+// Horizontal progress indicator.
 // Package progress provides a themed horizontal progress bar.
 // Copy this file into your project: bento add progress
 package progress

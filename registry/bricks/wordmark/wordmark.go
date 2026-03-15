@@ -1,3 +1,8 @@
+// Brick: Wordmark:
+// +-----------------------------------+
+// |            TITLE                  |
+// +-----------------------------------+
+// Branded heading block.
 // Package wordmark provides a themed title/heading block.
 // Copy this file into your project: bento add wordmark
 package wordmark

@@ -1,3 +1,8 @@
+// Brick: Text:
+// +-----------------------------+
+// | static label text           |
+// +-----------------------------+
+// Simple themed text label.
 // Package text provides a static text display widget.
 // Copy this file into your project: bento add text
 //

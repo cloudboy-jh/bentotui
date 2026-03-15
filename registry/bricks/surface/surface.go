@@ -1,3 +1,10 @@
+// Brick: Surface:
+// +-----------------------------------+
+// | Fill(canvas)                      |
+// | Draw(x,y,content)                 |
+// | DrawCenter(overlay)               |
+// +-----------------------------------+
+// Root compositor for full-frame paint.
 // Package surface provides a deterministic full-terminal paint surface backed
 // by the Ultraviolet cell buffer.
 //

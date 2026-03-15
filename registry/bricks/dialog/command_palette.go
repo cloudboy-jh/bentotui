@@ -1,3 +1,10 @@
+// Brick: Command Palette:
+// +-----------------------------------+
+// | search row                        |
+// +-----------------------------------+
+// | grouped command list              |
+// +-----------------------------------+
+// Searchable grouped action picker.
 package dialog
 
 import (

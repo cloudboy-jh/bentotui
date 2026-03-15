@@ -1,3 +1,8 @@
+// Brick: Separator:
+// +-----------------------------+
+// |-----------------------------|
+// +-----------------------------+
+// Horizontal or vertical divider.
 // Package separator provides horizontal and vertical themed rules.
 // Copy this file into your project: bento add separator
 package separator

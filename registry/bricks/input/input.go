@@ -1,3 +1,8 @@
+// Brick: Input:
+// +-----------------------------------+
+// | accent | typed text / placeholder |
+// +-----------------------------------+
+// Single-line text input.
 // Package input provides a themed text input widget wrapping bubbles/textinput.
 // Copy this file into your project: bento add input
 //

@@ -1,3 +1,9 @@
+// Brick: Theme Picker:
+// +-----------------------------------+
+// | themes list                        |
+// | live preview on move               |
+// +-----------------------------------+
+// Interactive theme selection dialog.
 package dialog
 
 import (

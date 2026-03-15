@@ -1,3 +1,10 @@
+// Brick: Select:
+// +-----------------------------------+
+// | current value v                    |
+// | option 1                           |
+// | option 2                           |
+// +-----------------------------------+
+// Single-choice picker.
 // Package select provides a themed single-choice picker.
 // Copy this file into your project: bento add select
 package selectx

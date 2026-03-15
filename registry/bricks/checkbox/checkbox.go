@@ -1,3 +1,8 @@
+// Brick: Checkbox:
+// +-----------------------------+
+// | [x] label text             |
+// +-----------------------------+
+// Boolean toggle row.
 // Package checkbox provides a themed boolean toggle input.
 // Copy this file into your project: bento add checkbox
 package checkbox
