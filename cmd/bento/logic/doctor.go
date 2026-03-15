@@ -31,7 +31,7 @@ func RunDoctor() DoctorReport {
 	// Check that the three stable module deps are importable
 	for _, pkg := range []string{
 		"github.com/cloudboy-jh/bentotui/theme",
-		"github.com/cloudboy-jh/bentotui/styles",
+		"github.com/cloudboy-jh/bentotui/theme/styles",
 		"github.com/cloudboy-jh/bentotui/registry/rooms",
 	} {
 		results = append(results, checkModDep(pkg))

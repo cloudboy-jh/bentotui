@@ -2,6 +2,7 @@
 
 - [components.md](./components.md) — API reference for every component and module dep
 - [rooms.md](./rooms.md) — Named room API and render contract
+- [theme-engine.md](./theme-engine.md) — Untouchable Theme Engine contract and workflow
 - [astro-content-update.md](./astro-content-update.md) — Astro-ready changelog content for the rooms rollout
 - [astro-content-frame-hierarchy-update.md](./astro-content-frame-hierarchy-update.md) — Astro-ready content for frame hierarchy and solid-row rendering cleanup
 - [architecture.md](./architecture.md) — Layer diagram, design principles, and rules

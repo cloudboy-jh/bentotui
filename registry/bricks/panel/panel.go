@@ -12,7 +12,7 @@
 //   - charm.land/bubbletea/v2
 //   - charm.land/lipgloss/v2
 //   - github.com/cloudboy-jh/bentotui/theme
-//   - github.com/cloudboy-jh/bentotui/styles
+//   - github.com/cloudboy-jh/bentotui/theme/styles
 package panel
 
 import (
@@ -20,9 +20,9 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/styles"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
 // Model is a themed, titled, focusable content container.
@@ -106,13 +106,12 @@ func (m *Model) View() tea.View {
 	// ── title bar + separator ─────────────────────────────────────────────────
 	titleRows := 0
 	if m.title != "" && h > 0 {
-		badge := sys.PanelTitleBadge(m.focused).Render(m.title)
-		titleBar := renderStyledRow(sys.PanelTitleBar(m.focused), w, badge)
+		titleBar := renderTitleRow(m.title, w, panelBG, panelFG, m.focused, t)
 		rows = append(rows, titleBar)
 		titleRows++
 
 		if h > 1 {
-			sep := sys.SubtleDivider().Render(strings.Repeat("─", w))
+			sep := styles.RowClip(panelBG, pick(t.Border.Subtle, t.Text.Muted), w, strings.Repeat("─", w))
 			rows = append(rows, sep)
 			titleRows++
 		}
@@ -170,7 +169,7 @@ func contentRow(line string, w int, bg, fg string, focused bool, sys styles.Syst
 	if w <= 0 {
 		return ""
 	}
-	plain := styles.ClipANSI(line, max(0, w-2))
+	plain := styles.ClipANSI(ansi.Strip(line), max(0, w-2))
 	if focused && w > 1 {
 		accent := sys.FocusAccent().Render(" ")
 		rest := styles.RowClip(bg, fg, w-1, " "+plain)
@@ -179,14 +178,22 @@ func contentRow(line string, w int, bg, fg string, focused bool, sys styles.Syst
 	return styles.RowClip(bg, fg, w, " "+plain)
 }
 
-// renderStyledRow renders content over a full-width styled background row.
-// Uses a single Width().Render() — no canvas layers, no ANSI bleed.
-func renderStyledRow(style lipgloss.Style, width int, content string) string {
+func renderTitleRow(title string, width int, bg, fg string, focused bool, t theme.Theme) string {
 	if width <= 0 {
 		return ""
 	}
-	clipped := styles.ClipANSI(content, width)
-	return style.Width(width).Render(clipped)
+	badgeFG := pick(t.Text.Muted, fg)
+	if focused {
+		badgeFG = pick(t.Text.Accent, fg)
+	}
+	badge := " " + ansi.Strip(title) + " "
+	badgeW := min(width, len(badge))
+	left := styles.RowClip(bg, badgeFG, badgeW, badge)
+	if badgeW == width {
+		return left
+	}
+	right := styles.RowClip(bg, fg, width-badgeW, "")
+	return left + right
 }
 
 // viewString extracts a plain string from a tea.View.
@@ -212,6 +219,13 @@ func pick(v, fallback string) string {
 
 func max(a, b int) int {
 	if a > b {
+		return a
+	}
+	return b
+}
+
+func min(a, b int) int {
+	if a < b {
 		return a
 	}
 	return b

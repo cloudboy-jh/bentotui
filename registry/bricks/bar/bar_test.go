@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 func TestCompactCardsAndPriorityOverflow(t *testing.T) {
@@ -55,6 +56,38 @@ func TestStatusPillRenderedAsSingleUnit(t *testing.T) {
 	}
 	if strings.Contains(out, "mode") {
 		t.Fatalf("expected no split status label, got %q", out)
+	}
+}
+
+func TestAnchoredCardStyleModes(t *testing.T) {
+	tm := theme.CurrentTheme()
+	card := Card{Command: "k", Label: "save", Variant: CardPrimary, Enabled: true}
+
+	plain := renderCard(tm, card, true, true, true, AnchoredCardStylePlain)
+	chip := renderCard(tm, card, true, true, true, AnchoredCardStyleChip)
+	mixed := renderCard(tm, card, true, true, true, AnchoredCardStyleMixed)
+
+	if ansi.Strip(plain) != "k save" {
+		t.Fatalf("expected plain style text, got %q", ansi.Strip(plain))
+	}
+	if ansi.Strip(chip) != "k save" {
+		t.Fatalf("expected chip style text, got %q", ansi.Strip(chip))
+	}
+	if ansi.Strip(mixed) != "k save" {
+		t.Fatalf("expected mixed style text, got %q", ansi.Strip(mixed))
+	}
+	if plain == chip {
+		t.Fatalf("expected chip style to differ from plain rendering")
+	}
+	if mixed != chip {
+		t.Fatalf("expected mixed style to render primary cards as chip")
+	}
+
+	muted := Card{Command: "q", Label: "quit", Variant: CardMuted, Enabled: true}
+	mixedMuted := renderCard(tm, muted, true, true, true, AnchoredCardStyleMixed)
+	plainMuted := renderCard(tm, muted, true, true, true, AnchoredCardStylePlain)
+	if mixedMuted != plainMuted {
+		t.Fatalf("expected mixed style to keep muted cards plain")
 	}
 }
 

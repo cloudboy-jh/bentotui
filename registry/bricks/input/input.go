@@ -13,14 +13,14 @@
 //   - charm.land/bubbles/v2
 //   - charm.land/lipgloss/v2
 //   - github.com/cloudboy-jh/bentotui/theme
-//   - github.com/cloudboy-jh/bentotui/styles
+//   - github.com/cloudboy-jh/bentotui/theme/styles
 package input
 
 import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
-	"github.com/cloudboy-jh/bentotui/styles"
 	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
 // Model is a themed single-line text input.

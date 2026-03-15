@@ -50,6 +50,31 @@ func TestCustomFormatterUsed(t *testing.T) {
 	}
 }
 
+func TestStructuredRowFieldsFallbackAndAlignment(t *testing.T) {
+	l := New(20)
+	l.SetSize(36, 4)
+	l.AppendRow(Row{Primary: "api", Secondary: "health", Tone: ToneSuccess, RightStat: "36ms", SelectedStyle: SelectedSubtle})
+	l.SetCursor(0)
+
+	out := ansi.Strip(viewString(l.View()))
+	lines := strings.Split(out, "\n")
+	if len(lines) != 1 {
+		t.Fatalf("expected 1 line, got %d", len(lines))
+	}
+	if !strings.Contains(lines[0], "success api - health") {
+		t.Fatalf("expected tone/primary/secondary text, got %q", lines[0])
+	}
+	if !strings.HasPrefix(lines[0], "· ") {
+		t.Fatalf("expected subtle selected marker, got %q", lines[0])
+	}
+	if !strings.HasSuffix(lines[0], "36ms") {
+		t.Fatalf("expected right stat alignment, got %q", lines[0])
+	}
+	if lipgloss.Width(lines[0]) != 36 {
+		t.Fatalf("expected row width 36, got %d", lipgloss.Width(lines[0]))
+	}
+}
+
 func viewString(v tea.View) string {
 	if v.Content == nil {
 		return ""
