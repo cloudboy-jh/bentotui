@@ -11,59 +11,30 @@ import (
 )
 
 func runFooter(ctx Context) Result {
-	plain := bar.New(
-		bar.FooterAnchored(),
-		bar.AnchoredCardStyleMode(bar.AnchoredCardStylePlain),
-		bar.Cards(
-			bar.Card{Command: "enter", Label: "run", Variant: bar.CardPrimary, Enabled: true, Priority: 5},
-			bar.Card{Command: "tab", Label: "focus", Variant: bar.CardNormal, Enabled: true, Priority: 4},
-			bar.Card{Command: "shift+tab", Label: "prev", Variant: bar.CardMuted, Enabled: true, Priority: 3},
-			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
-		),
-		bar.CompactCards(),
-	)
-	chip := bar.New(
-		bar.FooterAnchored(),
-		bar.AnchoredCardStyleMode(bar.AnchoredCardStyleChip),
-		bar.Cards(
-			bar.Card{Command: "enter", Label: "run", Variant: bar.CardPrimary, Enabled: true, Priority: 5},
-			bar.Card{Command: "tab", Label: "focus", Variant: bar.CardNormal, Enabled: true, Priority: 4},
-			bar.Card{Command: "shift+tab", Label: "prev", Variant: bar.CardMuted, Enabled: true, Priority: 3},
-			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
-		),
-		bar.CompactCards(),
-	)
-	mixed := bar.New(
+	anchored := bar.New(
 		bar.FooterAnchored(),
 		bar.AnchoredCardStyleMode(bar.AnchoredCardStyleMixed),
 		bar.Cards(
-			bar.Card{Command: "enter", Label: "run", Variant: bar.CardPrimary, Enabled: true, Priority: 5},
-			bar.Card{Command: "tab", Label: "focus", Variant: bar.CardNormal, Enabled: true, Priority: 4},
-			bar.Card{Command: "shift+tab", Label: "prev", Variant: bar.CardMuted, Enabled: true, Priority: 3},
-			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
+			bar.Card{Command: "up/down", Label: "scenario", Variant: bar.CardPrimary, Enabled: true, Priority: 5},
+			bar.Card{Command: "left/right", Label: "viewport", Variant: bar.CardNormal, Enabled: true, Priority: 4},
+			bar.Card{Command: "t", Label: "theme", Variant: bar.CardNormal, Enabled: true, Priority: 3},
+			bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 		),
 		bar.CompactCards(),
 	)
 
 	w := max(36, min(ctx.Width, 72))
-	plain.SetSize(w, 1)
-	chip.SetSize(w, 1)
-	mixed.SetSize(w, 1)
+	anchored.SetSize(w, 1)
 
 	rows := []string{
-		"plain mode:",
-		ansi.Strip(viewString(plain.View())),
-		"",
-		"chip mode (anchored):",
-		ansi.Strip(viewString(chip.View())),
-		"",
-		"mixed mode (anchored):",
-		ansi.Strip(viewString(mixed.View())),
+		"anchored footer inside card stack:",
+		ansi.Strip(viewString(anchored.View())),
+		"note: footer keeps command lane while card above it carries session context",
 	}
 
 	checks := []Check{
-		{Name: "anchored-footer-row", Level: CheckPass, Detail: "footer keeps single full-width ownership"},
-		{Name: "anchored-style-modes", Level: CheckPass, Detail: "plain/chip/mixed style modes available"},
+		{Name: "footer-emphasis", Level: CheckPass, Detail: "anchored footer commands stay visible and distinct"},
+		{Name: "footer-overflow", Level: CheckPass, Detail: "lower-priority cards truncate first when space is tight"},
 	}
 	metrics := map[string]string{"sample-width": fmt.Sprintf("%d", w)}
 

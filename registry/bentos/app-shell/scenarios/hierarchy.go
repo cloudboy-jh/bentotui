@@ -16,8 +16,8 @@ func runHierarchy(ctx Context) Result {
 
 	rows := []string{
 		row("surface.panel        :: baseline panel depth", t.Surface.Panel, t.Text.Primary),
-		row("surface.elevated     :: raised depth", t.Surface.Elevated, t.Text.Primary),
 		row("surface.interactive  :: active / interactive depth", t.Surface.Interactive, t.Text.Primary),
+		row("card.bodyBG          :: card body depth", t.Card.BodyBG, t.Text.Primary),
 		row("focus owner stripe   :: visual focus authority", t.Surface.Interactive, t.Text.Primary),
 	}
 	if ctx.PaintDebug {
@@ -25,7 +25,7 @@ func runHierarchy(ctx Context) Result {
 	}
 
 	checks := []Check{
-		{Name: "depth-separation", Level: CheckPass, Detail: "panel/elevated/interactive ladders are visible"},
+		{Name: "depth-separation", Level: CheckPass, Detail: "panel/interactive/card body ladders are visible"},
 		{Name: "focus-affordance", Level: CheckPass, Detail: "focus owner is explicit in frame"},
 	}
 	metrics := map[string]string{

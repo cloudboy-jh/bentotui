@@ -92,7 +92,7 @@ func TestAllLayoutsExactDimensions(t *testing.T) {
 		Focus(w, h, b, f),
 		Pancake(w, h, hd, b, f),
 		TopbarPancake(w, h, tb, hd, b, f),
-		Sidebar(w, h, 9, sb, mn),
+		Rail(w, h, 9, sb, mn),
 		HolyGrail(w, h, 9, hd, sb, mn, f),
 		HSplit(w, h, l, r),
 		VSplit(w, h, hd, b),

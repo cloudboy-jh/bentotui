@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	mu          sync.RWMutex
-	registry    = make(map[string]Theme)
-	currentName = DefaultName
-	current     Theme
+	mu           sync.RWMutex
+	registry     = make(map[string]Theme)
+	metaRegistry = make(map[string]ThemeMeta)
+	currentName  = DefaultName
+	current      Theme
 )
 
 func init() {
@@ -90,6 +91,10 @@ func registerThemeLocked(name string, t Theme) error {
 		return fmt.Errorf("invalid theme %q: %w", name, err)
 	}
 	registry[name] = t
+	metaRegistry[name] = ThemeMeta{
+		Tier:  classifyThemeTier(name, t),
+		Score: themeQualityScore(t),
+	}
 	if current.Name == "" {
 		currentName = name
 		current = t
@@ -100,16 +105,48 @@ func registerThemeLocked(name string, t Theme) error {
 func availableThemeNames() []string {
 	mu.RLock()
 	defer mu.RUnlock()
+	return availableThemeNamesLocked(false)
+}
+
+func availableStableThemeNames() []string {
+	mu.RLock()
+	defer mu.RUnlock()
+	return availableThemeNamesLocked(true)
+}
+
+func themeMetadata(name string) (ThemeMeta, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
+	m, ok := metaRegistry[name]
+	return m, ok
+}
+
+func availableThemeNamesLocked(stableOnly bool) []string {
 	names := make([]string, 0, len(registry))
 	for name := range registry {
+		meta := metaRegistry[name]
+		if stableOnly && meta.Tier != ThemeTierStable {
+			continue
+		}
 		if name != DefaultName {
 			names = append(names, name)
 		}
 	}
-	sort.Strings(names)
+	sort.Slice(names, func(i, j int) bool {
+		a := names[i]
+		b := names[j]
+		at := metaRegistry[a].Tier
+		bt := metaRegistry[b].Tier
+		if at != bt {
+			return at == ThemeTierStable
+		}
+		return a < b
+	})
 	// Default is always first; the rest are sorted.
 	if _, ok := registry[DefaultName]; ok {
-		names = append([]string{DefaultName}, names...)
+		if !stableOnly || metaRegistry[DefaultName].Tier == ThemeTierStable {
+			names = append([]string{DefaultName}, names...)
+		}
 	}
 	return names
 }

@@ -59,7 +59,7 @@ func (m *Model) View() tea.View {
 func badgeColors(t theme.Theme, v Variant) (fg, bg string) {
 	switch v {
 	case VariantNeutral:
-		return pick(t.Text.Primary, t.Text.Inverse), pick(t.Surface.Elevated, t.Surface.Panel)
+		return pick(t.Text.Primary, t.Text.Inverse), pick(t.Surface.Panel, t.Surface.Canvas)
 	case VariantInfo:
 		return pick(t.Text.Inverse, t.Text.Primary), pick(t.State.Info, t.Text.Accent)
 	case VariantSuccess:

@@ -9,7 +9,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
-func runOverlay(ctx Context) Result {
+func runModal(ctx Context) Result {
 	t := theme.CurrentTheme()
 	base := []string{
 		styles.RowClip(t.Surface.Panel, t.Text.Primary, max(1, ctx.Width), " transcript lane                                  "),
@@ -29,8 +29,8 @@ func runOverlay(ctx Context) Result {
 	overlay := lipgloss.Place(max(1, ctx.Width), max(1, ctx.Height), lipgloss.Center, lipgloss.Center, card)
 
 	checks := []Check{
-		{Name: "overlay-z-order", Level: CheckPass, Detail: "overlay remains last draw layer"},
-		{Name: "footer-stability", Level: CheckPass, Detail: "overlay does not mutate footer geometry"},
+		{Name: "modal-layering", Level: CheckPass, Detail: "modal stays above card content"},
+		{Name: "modal-footer", Level: CheckPass, Detail: "footer lane remains stable under modal overlay"},
 	}
 	metrics := map[string]string{"dialog-width": fmt.Sprintf("%d", cardW)}
 

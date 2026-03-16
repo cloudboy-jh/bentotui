@@ -71,76 +71,121 @@ func (m *Model) View() tea.View {
 		h = 8
 	}
 
-	rail := pick(t.Border.Subtle, t.Border.Normal)
-	if m.focused {
-		rail = pick(t.Border.Focus, rail)
-	}
 	outerBG := pick(t.Surface.Panel, t.Surface.Canvas)
-	innerBG := pick(t.Surface.Elevated, t.Surface.Panel)
-	titleFG := pick(t.Text.Primary, t.Text.Muted)
+	cardColors := styles.New(t).ElevatedCardColors(m.focused)
+	borderBG := cardColors.FrameBG
+	headerBG := cardColors.HeaderBG
+	bodyBG := cardColors.BodyBG
+	footerBG := cardColors.FooterBG
+	shadowBG := cardColors.ShadowBG
+	titleFG := cardColors.FrameFG
 	bodyFG := t.Text.Primary
 	metaFG := pick(t.Text.Muted, t.Text.Primary)
 	footerFG := pick(t.Text.Muted, t.Text.Primary)
-	inset := clamp(m.inset, 0, min(max(0, (w-2)/2), max(0, (h-2)/2)))
-	innerW := w - (inset * 2)
-	innerH := h - (inset * 2)
-	if innerW < 2 || innerH < 3 {
-		inset = 0
-		innerW = w
-		innerH = h
-	}
+	leftEdgeBG := cardColors.FocusBG
 
-	innerRows := make([]string, 0, innerH)
-	innerRows = append(innerRows, row(innerW, rail, innerBG, titleFG, " "+m.title))
-	innerRows = append(innerRows, row(innerW, rail, innerBG, pick(t.Border.Subtle, t.Text.Muted), strings.Repeat("─", max(0, innerW-2))))
-	if strings.TrimSpace(m.meta) != "" {
-		innerRows = append(innerRows, row(innerW, rail, innerBG, metaFG, " "+ansi.Strip(m.meta)))
+	inset := clamp(m.inset, 0, min(max(0, (w-6)/2), max(0, (h-6)/2)))
+	shadow := w >= 10 && h >= 7
+	cardW := w - (inset * 2)
+	cardH := h - (inset * 2)
+	if shadow {
+		cardW--
+		cardH--
+	}
+	if cardW < 6 || cardH < 5 {
+		shadow = false
+		cardW = w - (inset * 2)
+		cardH = h - (inset * 2)
+	}
+	if cardW < 4 || cardH < 4 {
+		inset = 0
+		shadow = false
+		cardW = w
+		cardH = h
 	}
 
 	body := ""
 	if m.content != nil {
 		body = viewString(m.content.View())
 	}
-	lines := strings.Split(body, "\n")
-	baseRows := 2
-	if strings.TrimSpace(m.meta) != "" {
-		baseRows++
+	bodyLines := strings.Split(body, "\n")
+	for i := range bodyLines {
+		bodyLines[i] = ansi.Strip(bodyLines[i])
 	}
-	footerRows := 0
-	if strings.TrimSpace(m.footer) != "" {
-		footerRows = 2 // divider + footer
+
+	metaRow := strings.TrimSpace(m.meta) != ""
+	footerRows := strings.TrimSpace(m.footer) != ""
+	reserved := 4 // top + header + divider + bottom
+	if metaRow {
+		reserved++
 	}
-	contentLimit := max(0, innerH-baseRows-footerRows)
-	for i := 0; i < contentLimit; i++ {
-		idx := i
-		line := ""
-		if idx >= 0 && idx < len(lines) {
-			line = ansi.Strip(lines[idx])
+	if footerRows {
+		reserved += 2
+	}
+	if reserved > cardH {
+		if footerRows {
+			footerRows = false
+			reserved -= 2
 		}
-		innerRows = append(innerRows, row(innerW, rail, innerBG, bodyFG, " "+line))
 	}
-	if strings.TrimSpace(m.footer) != "" {
-		innerRows = append(innerRows, row(innerW, rail, innerBG, pick(t.Border.Subtle, t.Text.Muted), strings.Repeat("─", max(0, innerW-2))))
-		innerRows = append(innerRows, row(innerW, rail, innerBG, footerFG, " "+ansi.Strip(m.footer)))
+	if reserved > cardH {
+		metaRow = false
+		reserved = 4
 	}
-	for len(innerRows) < innerH {
-		innerRows = append(innerRows, row(innerW, rail, innerBG, bodyFG, ""))
+	contentRows := max(1, cardH-reserved)
+
+	cardRows := make([]string, 0, cardH)
+	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, titleFG, ""))
+	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, headerBG, borderBG, titleFG, ansi.Strip(m.title)))
+	if metaRow {
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, metaFG, " "+ansi.Strip(m.meta)))
 	}
+	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
+
+	for i := 0; i < contentRows; i++ {
+		line := ""
+		if i < len(bodyLines) {
+			line = bodyLines[i]
+		}
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, bodyFG, " "+line))
+	}
+
+	if footerRows {
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, footerBG, borderBG, footerFG, " "+ansi.Strip(m.footer)))
+	}
+	for len(cardRows) < cardH-1 {
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, bodyFG, ""))
+	}
+	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, titleFG, ""))
 
 	rows := make([]string, 0, h)
 	for y := 0; y < h; y++ {
-		if y < inset || y >= inset+innerH {
-			rows = append(rows, styles.RowClip(outerBG, bodyFG, w, ""))
-			continue
+		line := ""
+		if inset > 0 {
+			line += styles.RowClip(outerBG, bodyFG, inset, "")
 		}
-		inner := innerRows[y-inset]
-		if inset == 0 {
-			rows = append(rows, inner)
-			continue
+
+		inCardY := y >= inset && y < inset+cardH
+		shadowRow := shadow && y == inset+cardH
+		shadowCol := shadow && y >= inset+1 && y <= inset+cardH
+
+		used := inset
+		if inCardY {
+			line += cardRows[y-inset]
+			used += cardW
+		} else if shadowRow {
+			line += styles.RowClip(shadowBG, bodyFG, cardW, "")
+			used += cardW
 		}
-		left := styles.RowClip(outerBG, bodyFG, inset, "")
-		right := styles.RowClip(outerBG, bodyFG, w-inset-innerW, "")
-		rows = append(rows, left+inner+right)
+		if shadowCol {
+			line += styles.RowClip(shadowBG, bodyFG, 1, "")
+			used++
+		}
+		if used < w {
+			line += styles.RowClip(outerBG, bodyFG, w-used, "")
+		}
+		rows = append(rows, line)
 	}
 
 	return tea.NewView(strings.Join(rows, "\n"))
@@ -150,10 +195,29 @@ func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	if s, ok := m.content.(interface{ SetSize(int, int) }); ok {
-		inset := clamp(m.inset, 0, min(max(0, (width-2)/2), max(0, (height-2)/2)))
-		innerW := width - (inset * 2)
-		innerH := height - (inset * 2)
-		s.SetSize(max(0, innerW-2), max(0, innerH-2))
+		inset := clamp(m.inset, 0, min(max(0, (width-6)/2), max(0, (height-6)/2)))
+		shadow := width >= 10 && height >= 7
+		cardW := width - (inset * 2)
+		cardH := height - (inset * 2)
+		if shadow {
+			cardW--
+			cardH--
+		}
+		if cardW < 6 || cardH < 5 {
+			shadow = false
+			cardW = width - (inset * 2)
+			cardH = height - (inset * 2)
+		}
+
+		reserved := 4
+		if strings.TrimSpace(m.meta) != "" {
+			reserved++
+		}
+		if strings.TrimSpace(m.footer) != "" {
+			reserved += 2
+		}
+		contentH := max(1, cardH-reserved)
+		s.SetSize(max(0, cardW-2), max(0, contentH))
 	}
 }
 
@@ -165,16 +229,21 @@ func (m *Model) Focus()          { m.focused = true }
 func (m *Model) Blur()           { m.focused = false }
 func (m *Model) IsFocused() bool { return m.focused }
 
-func row(width int, rail, bg, fg, content string) string {
+func slabRow(width int, leftBG, centerBG, rightBG, fg, content string) string {
 	if width <= 0 {
 		return ""
 	}
 	if width == 1 {
-		return styles.RowClip(bg, fg, 1, "┃")
+		return styles.RowClip(centerBG, fg, 1, content)
 	}
-	left := styles.RowClip(bg, rail, 1, "┃")
-	right := styles.RowClip(bg, fg, width-1, content)
-	return left + right
+	left := styles.RowClip(leftBG, fg, 1, "")
+	if width == 2 {
+		right := styles.RowClip(rightBG, fg, 1, "")
+		return left + right
+	}
+	mid := styles.RowClip(centerBG, fg, width-2, content)
+	right := styles.RowClip(rightBG, fg, 1, "")
+	return left + mid + right
 }
 
 func viewString(v tea.View) string {

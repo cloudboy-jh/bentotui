@@ -25,6 +25,16 @@ type SurfaceColors struct {
 	FG string
 }
 
+type CardSlabColors struct {
+	HeaderBG string
+	BodyBG   string
+	FooterBG string
+	FrameBG  string
+	FrameFG  string
+	ShadowBG string
+	FocusBG  string
+}
+
 type Spacing struct {
 	XXS int
 	XS  int
@@ -51,7 +61,7 @@ func (s System) StatusRowColors(role string, anchored bool) SurfaceColors {
 	switch role {
 	case "subheader":
 		return SurfaceColors{
-			BG: pick(s.Theme.Surface.Elevated, s.Theme.Bar.BG),
+			BG: pick(s.Theme.Surface.Panel, s.Theme.Bar.BG),
 			FG: pick(s.Theme.Text.Muted, s.Theme.Bar.FG),
 		}
 	case "footer":
@@ -68,7 +78,7 @@ func (s System) StatusRowColors(role string, anchored bool) SurfaceColors {
 			}
 		}
 		return SurfaceColors{
-			BG: pick(s.Theme.Surface.Elevated, s.Theme.Bar.BG),
+			BG: pick(s.Theme.Surface.Panel, s.Theme.Bar.BG),
 			FG: pick(s.Theme.Text.Primary, s.Theme.Bar.FG),
 		}
 	default:
@@ -81,7 +91,7 @@ func (s System) InputColors() SurfaceColors {
 }
 
 func (s System) PanelFrame(focused bool) lipgloss.Style {
-	bg := pick(s.Theme.Surface.Panel, s.Theme.Surface.Elevated)
+	bg := pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 	if focused {
 		bg = pick(s.Theme.Surface.Interactive, bg)
 	}
@@ -91,7 +101,7 @@ func (s System) PanelFrame(focused bool) lipgloss.Style {
 }
 
 func (s System) PanelTitleBar(focused bool) lipgloss.Style {
-	bg := pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+	bg := pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 	fg := s.Theme.Text.Muted
 	if focused {
 		fg = pick(s.Theme.Text.Primary, s.Theme.Text.Muted)
@@ -100,7 +110,7 @@ func (s System) PanelTitleBar(focused bool) lipgloss.Style {
 }
 
 func (s System) PanelTitleBadge(focused bool) lipgloss.Style {
-	bg := pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+	bg := pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 	fg := pick(s.Theme.Text.Muted, s.Theme.Text.Primary)
 	if focused {
 		fg = pick(s.Theme.Text.Accent, s.Theme.Text.Primary)
@@ -123,7 +133,7 @@ func (s System) StatusPillMuted() lipgloss.Style {
 		Bold(true).
 		Padding(0, 1).
 		Foreground(lipgloss.Color(pick(s.Theme.Text.Primary, s.Theme.Bar.FG))).
-		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Bar.BG)))
+		Background(lipgloss.Color(pick(s.Theme.Surface.Panel, s.Theme.Bar.BG)))
 }
 
 func (s System) FooterCardCommand(variant string, enabled bool) lipgloss.Style {
@@ -207,6 +217,22 @@ func (s System) DialogListRowSelected() lipgloss.Style {
 		Foreground(lipgloss.Color(s.Theme.Selection.FG))
 }
 
+func (s System) ElevatedCardColors(focused bool) CardSlabColors {
+	focus := pick(s.Theme.Card.FocusEdgeBG, s.Theme.Border.Focus)
+	if !focused {
+		focus = pick(s.Theme.Card.FrameBG, s.Theme.Border.Normal)
+	}
+	return CardSlabColors{
+		HeaderBG: pick(s.Theme.Card.HeaderBG, s.Theme.Surface.Interactive),
+		BodyBG:   pick(s.Theme.Card.BodyBG, s.Theme.Surface.Panel),
+		FooterBG: pick(s.Theme.Card.FooterBG, s.Theme.Surface.Panel),
+		FrameBG:  pick(s.Theme.Card.FrameBG, s.Theme.Surface.Panel),
+		FrameFG:  pick(s.Theme.Card.FrameFG, s.Theme.Text.Primary),
+		ShadowBG: pick(s.Theme.Card.ShadowBG, s.Theme.Surface.Canvas),
+		FocusBG:  focus,
+	}
+}
+
 func (s System) ListItem(selected bool) lipgloss.Style {
 	if selected {
 		return lipgloss.NewStyle().
@@ -214,7 +240,7 @@ func (s System) ListItem(selected bool) lipgloss.Style {
 			Foreground(lipgloss.Color(pick(s.Theme.Selection.FG, s.Theme.Text.Inverse)))
 	}
 	return lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(s.Theme.Surface.Panel, s.Theme.Surface.Elevated))).
+		Background(lipgloss.Color(pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas))).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary))
 }
 
@@ -235,7 +261,7 @@ func (s System) PaletteItem(selected bool) lipgloss.Style {
 			Foreground(lipgloss.Color(pick(s.Theme.Selection.FG, s.Theme.Text.Inverse)))
 	}
 	return lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(s.Theme.Dialog.BG, s.Theme.Surface.Elevated))).
+		Background(lipgloss.Color(pick(s.Theme.Dialog.BG, s.Theme.Surface.Panel))).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary))
 }
 
@@ -254,7 +280,7 @@ func (s System) ActionButton(active bool) lipgloss.Style {
 	}
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(s.Theme.Text.Primary)).
-		Background(lipgloss.Color(pick(s.Theme.Surface.Interactive, s.Theme.Surface.Elevated))).
+		Background(lipgloss.Color(pick(s.Theme.Surface.Interactive, s.Theme.Surface.Panel))).
 		Padding(0, 1).
 		MarginRight(1)
 }
@@ -295,21 +321,21 @@ func (s System) FocusAccent() lipgloss.Style {
 // ElevatedFrame returns a style for secondary/nested panels.
 func (s System) ElevatedFrame() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel))).
+		Background(lipgloss.Color(pick(s.Theme.Card.BodyBG, s.Theme.Surface.Panel))).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary))
 }
 
 // DashboardPanel returns a low-noise container style.
 func (s System) DashboardPanel() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(s.Theme.Surface.Panel, s.Theme.Surface.Elevated))).
+		Background(lipgloss.Color(pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas))).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary))
 }
 
 // DashboardElevated returns a raised container style.
 func (s System) DashboardElevated() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel))).
+		Background(lipgloss.Color(pick(s.Theme.Card.BodyBG, s.Theme.Surface.Panel))).
 		Foreground(lipgloss.Color(s.Theme.Text.Primary))
 }
 
@@ -404,15 +430,15 @@ func pick(v, fallback string) string {
 func (s System) footerCardColors(variant string, enabled bool, commandPart bool) (fg string, bg string) {
 	if s.Theme.Footer.AnchoredMuted != "" && variant == "muted" {
 		if !enabled {
-			return pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+			return pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted), pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 		}
-		return pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+		return pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted), pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 	}
 	if !enabled {
-		return pick(s.Theme.Text.Muted, s.Theme.Text.Primary), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+		return pick(s.Theme.Text.Muted, s.Theme.Text.Primary), pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 	}
 	if !commandPart && variant != "muted" {
-		return pick(s.Theme.Text.Primary, s.Theme.Text.Primary), pick(s.Theme.Surface.Interactive, s.Theme.Surface.Elevated)
+		return pick(s.Theme.Text.Primary, s.Theme.Text.Primary), pick(s.Theme.Surface.Interactive, s.Theme.Surface.Panel)
 	}
 
 	switch variant {
@@ -421,7 +447,7 @@ func (s System) footerCardColors(variant string, enabled bool, commandPart bool)
 	case "danger":
 		return pick(s.Theme.Text.Inverse, s.Theme.Text.Primary), pick(s.Theme.State.Danger, s.Theme.Text.Accent)
 	case "muted":
-		return pick(s.Theme.Text.Muted, s.Theme.Text.Primary), pick(s.Theme.Surface.Elevated, s.Theme.Surface.Panel)
+		return pick(s.Theme.Text.Muted, s.Theme.Text.Primary), pick(s.Theme.Surface.Panel, s.Theme.Surface.Canvas)
 	default:
 		return pick(s.Theme.Selection.FG, s.Theme.Text.Inverse), pick(s.Theme.Border.Focus, s.Theme.Text.Accent)
 	}

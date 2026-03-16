@@ -143,21 +143,25 @@ slots to semantic layer tokens with guaranteed visual separation:
 
 | Token pair | Min luminance delta |
 |------------|-------------------|
-| `surface.panel` vs `surface.canvas` | 0.025 |
-| `surface.elevated` vs `surface.panel` | 0.020 |
-| `surface.interactive` vs `surface.panel` | 0.020 |
-| `surface.interactive` vs `surface.elevated` | 0.015 |
+| `surface.panel` vs `surface.canvas` | 0.045 |
+| `surface.interactive` vs `surface.panel` | 0.030 |
 | `input.bg` vs `surface.canvas` | 0.03 |
 | `selection.bg` vs `surface.canvas` | 0.05 |
 | `selection.bg` vs `input.bg` | 0.05 |
 | `dialog.bg` vs `surface.canvas` | 0.03 |
+| `card.headerBG` vs `card.bodyBG` | 0.025 |
+| `card.frameBG` vs `card.bodyBG` | 0.020 |
+| `card.shadowBG` vs `surface.canvas` | 0.015 |
+| `card.focusEdgeBG` vs `card.frameBG` | 0.040 |
 
 Layer hierarchy (darkest → lightest for dark themes):
 
 ```
 Surface.Canvas      ← terminal root (surface.Fill)
-Surface.Panel       ← first raised layer (panels, containers)
-Surface.Elevated    ← secondary depth (nested panels, sidebars)
+Surface.Panel       ← base app container plane
+Surface.Interactive ← generic active/focus plane
+Card.BodyBG         ← elevated-card content plane
+Card.FrameBG        ← elevated-card frame plane
 Input.BG            ← text field background (contrasts canvas)
 Dialog.BG           ← modal body (contrasts canvas)
 Selection.BG        ← always brightest accent (contrasts everything)

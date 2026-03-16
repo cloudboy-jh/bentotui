@@ -13,9 +13,9 @@ import (
 //
 //	Canvas      — terminal root background (filled by surface.Fill)
 //	Panel       — default component body (input block, panels)
-//	Elevated    — secondary surfaces (sidebars, nested panels)
 //	Overlay     — modal/dialog body
 //	Interactive — hover/focus tinted surfaces
+//	Card.*      — elevated-card slab tones (header/body/footer/frame/shadow)
 //
 // The adapter guarantees visual separation between adjacent layers by
 // checking relative luminance delta. If a mapped pair is too close it
@@ -44,15 +44,13 @@ func fromTint(t *tint.Tint, name string) Theme {
 	// ── layer assignment ──────────────────────────────────────────────────────
 	// Canvas is always t.Bg (the true terminal background).
 	// Panel must contrast against Canvas — use BrightBlack (slightly raised).
-	// Elevated is darker than Canvas for depth — use Black.
 	// Overlay (dialog) uses BrightBlack as base, guaranteed distinct from panel.
 	// Interactive is a lighter tint of the accent for hover surfaces.
 	canvas := bg
 	panel := pick(bbk, blk)
-	elevated := pick(blk, bbk)
 	overlay := ensureDelta(pick(bbk, blk), canvas, 0.03)
 	interactive := pick(bbk, bacc)
-	panel, elevated, interactive = normalizeSurfaces(canvas, panel, elevated, interactive)
+	panel, interactive = normalizeSurfaces(canvas, panel, interactive)
 
 	// Input BG must contrast against canvas but remain a dark surface color —
 	// prefer BrightBlack (raised surface), fall back to Black if BrightBlack
@@ -66,10 +64,18 @@ func fromTint(t *tint.Tint, name string) Theme {
 	// Never use surface slots (BrightBlack/Black) which can collide with inputBG.
 	selectionBG := pickDistinctFrom([]string{bacc, bcya, bpur, byel}, []string{canvas, inputBG}, 0.05)
 	selectionFG := blk // dark text on bright selection
-	barBG := ensureDistinctMin(elevated, canvas, 0.02, panel, blk)
+	barBG := ensureDistinctMin(panel, canvas, 0.02, interactive, blk)
 	footerBG := ensureDelta(pick(selectionBG, barBG), panel, 0.03)
 	footerFG := pick(selectionFG, fg)
 	footerMuted := ensureDelta(pick(wht, bwht), footerBG, 0.12)
+
+	cardBody := ensureDelta(pick(blk, panel), panel, 0.04)
+	cardHeader := ensureDelta(pick(interactive, panel), cardBody, minCardHeaderBodyDelta)
+	cardFooter := ensureDelta(pick(panel, cardBody), cardBody, 0.02)
+	cardFrame := ensureDelta(pick(panel, blk), cardBody, minCardFrameBodyDelta)
+	cardFrameFG := ensureDelta(pick(bwht, fg), cardFrame, 0.10)
+	cardShadow := ensureDelta(blendHex(canvas, blk, 0.35), canvas, minCardShadowCanvasDelta)
+	cardFocusEdge := ensureDelta(pick(bacc, bcya), cardFrame, minCardFocusEdgeFrameDelta)
 
 	// ── assemble ──────────────────────────────────────────────────────────────
 	return Theme{
@@ -77,7 +83,6 @@ func fromTint(t *tint.Tint, name string) Theme {
 		Surface: SurfaceTokens{
 			Canvas:      canvas,
 			Panel:       panel,
-			Elevated:    elevated,
 			Overlay:     overlay,
 			Interactive: interactive,
 		},
@@ -124,21 +129,25 @@ func fromTint(t *tint.Tint, name string) Theme {
 			Border: pick(bacc, bcya),
 			Scrim:  pick(blk, canvas),
 		},
+		Card: CardTokens{
+			HeaderBG:    cardHeader,
+			BodyBG:      cardBody,
+			FooterBG:    cardFooter,
+			FrameBG:     cardFrame,
+			FrameFG:     cardFrameFG,
+			ShadowBG:    cardShadow,
+			FocusEdgeBG: cardFocusEdge,
+		},
 	}
 }
 
-func normalizeSurfaces(canvas, panel, elevated, interactive string) (string, string, string) {
+func normalizeSurfaces(canvas, panel, interactive string) (string, string) {
 	for i := 0; i < 4; i++ {
 		panel = ensureDelta(panel, canvas, minSurfacePanelCanvasDelta)
-		if luminance(elevated) <= luminance(panel) {
-			elevated = blendHex(panel, "#ffffff", 0.18)
-		}
-		elevated = ensureDelta(elevated, panel, minSurfaceElevatedPanelDelta)
-		elevated = ensureDelta(elevated, canvas, minSurfaceElevatedCanvasDelta)
 		interactive = ensureDelta(interactive, panel, minSurfaceInteractivePanelDelta)
-		interactive = ensureDelta(interactive, elevated, minSurfaceInteractiveElevatedDelta)
+		interactive = ensureDelta(interactive, canvas, 0.05)
 	}
-	return panel, elevated, interactive
+	return panel, interactive
 }
 
 func ensureDelta(candidate, base string, minDelta float64) string {

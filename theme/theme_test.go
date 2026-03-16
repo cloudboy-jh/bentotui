@@ -13,9 +13,37 @@ func TestAvailableThemesStableOrder(t *testing.T) {
 		t.Fatalf("expected first theme to be %q, got %q", DefaultName, got[0])
 	}
 
-	for i := 1; i < len(got)-1; i++ {
-		if got[i] > got[i+1] {
-			t.Fatalf("themes not sorted at index %d/%d: %q > %q", i, i+1, got[i], got[i+1])
+	prevTier := ThemeTierStable
+	for i := 1; i < len(got); i++ {
+		meta, ok := ThemeMetadata(got[i])
+		if !ok {
+			t.Fatalf("missing theme metadata for %q", got[i])
+		}
+		if prevTier == ThemeTierExperimental && meta.Tier == ThemeTierStable {
+			t.Fatalf("stable theme %q appears after experimental themes", got[i])
+		}
+		if i < len(got)-1 {
+			nextMeta, _ := ThemeMetadata(got[i+1])
+			if meta.Tier == nextMeta.Tier && got[i] > got[i+1] {
+				t.Fatalf("themes not sorted within tier at %d/%d: %q > %q", i, i+1, got[i], got[i+1])
+			}
+		}
+		prevTier = meta.Tier
+	}
+}
+
+func TestAvailableStableThemesOnlyReturnsStable(t *testing.T) {
+	names := AvailableStableThemes()
+	if len(names) == 0 {
+		t.Fatal("expected at least one stable theme")
+	}
+	for _, name := range names {
+		meta, ok := ThemeMetadata(name)
+		if !ok {
+			t.Fatalf("missing metadata for stable theme %q", name)
+		}
+		if meta.Tier != ThemeTierStable {
+			t.Fatalf("expected stable tier for %q, got %q", name, meta.Tier)
 		}
 	}
 }
@@ -65,15 +93,16 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 			minDelta float64
 		}{
 			{th.Surface.Panel, th.Surface.Canvas, "surface.panel", "surface.canvas", minSurfacePanelCanvasDelta},
-			{th.Surface.Elevated, th.Surface.Panel, "surface.elevated", "surface.panel", minSurfaceElevatedPanelDelta},
-			{th.Surface.Elevated, th.Surface.Canvas, "surface.elevated", "surface.canvas", minSurfaceElevatedCanvasDelta},
 			{th.Surface.Interactive, th.Surface.Panel, "surface.interactive", "surface.panel", minSurfaceInteractivePanelDelta},
-			{th.Surface.Interactive, th.Surface.Elevated, "surface.interactive", "surface.elevated", minSurfaceInteractiveElevatedDelta},
 			{th.Input.BG, th.Surface.Canvas, "input.bg", "surface.canvas", 0.03},
 			{th.Selection.BG, th.Surface.Canvas, "selection.bg", "surface.canvas", 0.05},
 			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
 			{th.Dialog.BG, th.Surface.Canvas, "dialog.bg", "surface.canvas", 0.03},
 			{th.Bar.BG, th.Surface.Canvas, "bar.bg", "surface.canvas", 0.02},
+			{th.Card.HeaderBG, th.Card.BodyBG, "card.headerBG", "card.bodyBG", minCardHeaderBodyDelta},
+			{th.Card.FrameBG, th.Card.BodyBG, "card.frameBG", "card.bodyBG", minCardFrameBodyDelta},
+			{th.Card.ShadowBG, th.Surface.Canvas, "card.shadowBG", "surface.canvas", minCardShadowCanvasDelta},
+			{th.Card.FocusEdgeBG, th.Card.FrameBG, "card.focusEdgeBG", "card.frameBG", minCardFocusEdgeFrameDelta},
 		}
 		for _, p := range pairs {
 			delta := lumDelta(p.a, p.b)

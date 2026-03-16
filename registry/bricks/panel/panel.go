@@ -93,11 +93,11 @@ func (m *Model) View() tea.View {
 	var panelBG string
 	switch {
 	case m.elevated:
-		panelBG = pick(t.Surface.Elevated, t.Surface.Panel)
+		panelBG = pick(t.Card.BodyBG, t.Surface.Panel)
 	case m.focused:
 		panelBG = pick(t.Surface.Interactive, t.Surface.Panel)
 	default:
-		panelBG = pick(t.Surface.Panel, t.Surface.Elevated)
+		panelBG = pick(t.Surface.Panel, t.Surface.Canvas)
 	}
 	panelFG := t.Text.Primary
 

@@ -96,7 +96,7 @@ func (m *Model) View() tea.View {
 	}
 	line := strings.Join(parts, " ")
 	if m.width > 0 {
-		bg := pick(t.Surface.Panel, t.Surface.Elevated)
+		bg := pick(t.Surface.Panel, t.Surface.Canvas)
 		fg := pick(t.Text.Primary, t.Text.Primary)
 		if m.focused {
 			bg = pick(t.Surface.Interactive, t.Surface.Panel)

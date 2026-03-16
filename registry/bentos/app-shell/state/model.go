@@ -35,9 +35,11 @@ type Model struct {
 
 	navPanel   *panel.Model
 	canvasCard *elevatedcard.Model
+	centerDeck *centerDeck
 	navText    *textBlock
-	canvasText *textBlock
+	footerText *textBlock
 	footer     *bar.Model
+	footerCard *elevatedcard.Model
 
 	themeOrder []string
 	themeIdx   int
@@ -47,9 +49,13 @@ type Model struct {
 
 func NewModel() *Model {
 	navTxt := &textBlock{}
-	canvasTxt := &textBlock{}
+	footerTxt := &textBlock{}
+	deck := newCenterDeck()
 
-	names := theme.AvailableThemes()
+	names := theme.AvailableStableThemes()
+	if len(names) == 0 {
+		names = theme.AvailableThemes()
+	}
 	cur := theme.CurrentThemeName()
 	idx := 0
 	for i, n := range names {
@@ -62,7 +68,8 @@ func NewModel() *Model {
 	m := &Model{
 		scenarios:   scenarios.All(),
 		navText:     navTxt,
-		canvasText:  canvasTxt,
+		centerDeck:  deck,
+		footerText:  footerTxt,
 		themeOrder:  names,
 		themeIdx:    idx,
 		status:      "ready",
@@ -71,9 +78,16 @@ func NewModel() *Model {
 	}
 
 	m.navPanel = panel.New(panel.Title("Scenarios"), panel.Content(navTxt), panel.Elevated())
-	m.canvasCard = elevatedcard.New(elevatedcard.Title("Validation Canvas"), elevatedcard.Content(canvasTxt))
+	m.canvasCard = elevatedcard.New(elevatedcard.Title("Validation Canvas"), elevatedcard.Content(deck), elevatedcard.Inset(1))
+	m.footerCard = elevatedcard.New(elevatedcard.Title("Session"), elevatedcard.Content(footerTxt), elevatedcard.Inset(1))
 	m.navPanel.Focus()
-	m.footer = bar.New(bar.FooterAnchored(), bar.Left("validation bento"), bar.Cards(ui.FooterCards()...), bar.CompactCards())
+	m.footer = bar.New(
+		bar.FooterAnchored(),
+		bar.AnchoredCardStyleMode(bar.AnchoredCardStyleMixed),
+		bar.Left("validation bento"),
+		bar.Cards(ui.FooterCards()...),
+		bar.CompactCards(),
+	)
 	m.syncNavText()
 	return m
 }
@@ -86,6 +100,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.footer.SetSize(msg.Width, 1)
+		if cardH := m.footerCardRows(); cardH > 0 {
+			m.footerCard.SetSize(msg.Width, cardH)
+		}
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -130,11 +147,24 @@ func (m *Model) View() tea.View {
 
 	bodyH := max(1, m.height-1)
 	m.syncNavText()
+
+	footerH := 1 + m.footerCardRows()
+	bodyH = max(1, m.height-footerH)
 	m.syncScenarioText(bodyH)
 	m.syncFooterLine()
+	m.syncFooterCard()
 
 	body := m.layoutBody(bodyH)
-	screen := rooms.Focus(m.width, m.height, rooms.Static(body), m.footer)
+	m.footer.SetSize(m.width, 1)
+
+	screen := ""
+	if cardH := m.footerCardRows(); cardH > 0 {
+		m.footerCard.SetSize(m.width, cardH)
+		footerStack := rooms.BigTopStrip(m.width, footerH, 1, m.footerCard, m.footer)
+		screen = rooms.BigTopStrip(m.width, m.height, footerH, rooms.Static(body), rooms.Static(footerStack))
+	} else {
+		screen = rooms.Focus(m.width, m.height, rooms.Static(body), m.footer)
+	}
 
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
@@ -147,16 +177,15 @@ func (m *Model) View() tea.View {
 }
 
 func (m *Model) layoutBody(bodyH int) string {
-	if m.width < 84 {
-		return rooms.VSplit(m.width, bodyH, m.navPanel, m.canvasCard)
-	}
 	navW := clamp(m.width/5, 24, 34)
-	return rooms.Sidebar(m.width, bodyH, navW, m.navPanel, m.canvasCard)
+	return rooms.Rail(m.width, bodyH, navW, m.navPanel, m.canvasCard)
 }
 
 func (m *Model) syncScenarioText(bodyH int) {
 	if len(m.scenarios) == 0 {
-		m.canvasText.SetText("no scenarios")
+		m.centerDeck.SetOutput("Scenario Output", "no scenarios")
+		m.centerDeck.SetChecks("checks: none")
+		m.centerDeck.SetMetrics("context unavailable")
 		return
 	}
 	preset := viewportPresets[m.presetIdx]
@@ -183,7 +212,18 @@ func (m *Model) syncScenarioText(bodyH int) {
 	if m.paintDebug {
 		body = append(body, strings.Repeat("-", max(12, min(ctx.Width-4, 72))))
 	}
-	m.canvasText.SetText(strings.Join(body, "\n"))
+	m.centerDeck.SetOutput("Scenario Output", strings.Join(body, "\n"))
+
+	pass, warn, fail := summarizeChecks(m.checks)
+	m.centerDeck.SetChecks(fmt.Sprintf("pass: %d\nwarn: %d\nfail: %d", pass, warn, fail))
+	m.centerDeck.SetMetrics(fmt.Sprintf("scenario=%s\nviewport=%s(%dx%d)\ntheme=%s\nstatus=%s",
+		s.ID,
+		preset.Name,
+		preset.Width,
+		preset.Height,
+		theme.CurrentThemeName(),
+		m.status,
+	))
 }
 
 func (m *Model) inlineSummary() string {
@@ -198,6 +238,22 @@ func (m *Model) syncFooterLine() {
 	pass, warn, fail := summarizeChecks(m.checks)
 	m.footer.SetLeft(fmt.Sprintf("%s | %s | p:%d w:%d f:%d", m.scenarios[m.scenarioIdx].ID, p.Name, pass, warn, fail))
 	m.footer.SetRight(fmt.Sprintf("theme:%s snapshot:%t", theme.CurrentThemeName(), m.snapshot))
+}
+
+func (m *Model) syncFooterCard() {
+	p := viewportPresets[m.presetIdx]
+	pass, warn, fail := summarizeChecks(m.checks)
+	m.footerText.SetText(fmt.Sprintf("scenario=%s  status=%s\nviewport=%s(%dx%d)  theme=%s  p:%d w:%d f:%d",
+		m.scenarios[m.scenarioIdx].ID,
+		m.status,
+		p.Name,
+		p.Width,
+		p.Height,
+		theme.CurrentThemeName(),
+		pass,
+		warn,
+		fail,
+	))
 }
 
 func (m *Model) syncNavText() {
@@ -321,4 +377,20 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+const footerCardHeight = 4
+
+func (m *Model) footerCardRows() int {
+	if m.height <= 2 {
+		return 0
+	}
+	h := footerCardHeight
+	if h > m.height-2 {
+		h = m.height - 2
+	}
+	if h < 1 {
+		return 0
+	}
+	return h
 }

@@ -2,8 +2,8 @@
 
 Framework validation bento for BentoTUI.
 
-This is not a product mock. It is a minimal scenario runner used to pressure-test
-layout layering, clipping, footer behavior, and theme stability.
+This is the reference full bento used to pressure-test how bricks compose together.
+It focuses on elevated-card usage with list, table, modal, and footer patterns.
 
 ## Run
 
@@ -15,8 +15,7 @@ go run ./registry/bentos/app-shell
 
 - left rail: scenario selector
 - center rail: live scenario canvas (inside an `elevated-card` section)
-- anchored footer: controls + state tuple + pass/warn/fail counts
-- diagnostics: compact inline summary under the canvas
+- footer stack: session `elevated-card` + anchored command `bar`
 
 Responsive body modes:
 
@@ -35,9 +34,10 @@ Responsive body modes:
 
 ## Scenarios
 
-- `layout`
-- `footer`
-- `stress`
+- `cards-list`
+- `cards-table`
+- `cards-modal`
+- `cards-footer`
 
 ## Internal shape
 

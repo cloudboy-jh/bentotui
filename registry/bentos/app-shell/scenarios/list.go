@@ -9,25 +9,28 @@ import (
 
 func runList(ctx Context) Result {
 	l := list.New(32)
-	l.AppendSection("WORKTREE")
-	l.AppendRow(list.Row{Label: "README.md", Status: "M", Stat: "+12 -3"})
-	l.AppendRow(list.Row{Label: "registry/rooms/split.go", Status: "A", Stat: "+66 -0"})
-	l.AppendRow(list.Row{Label: "registry/bricks/bar/bar.go", Status: "M", Stat: "+31 -12"})
-	l.AppendSection("LONG ANSI")
-	l.AppendRow(list.Row{Label: lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Render("feature/very-long-branch-name-with-ansi-color"), Status: "?", Stat: "new"})
-	l.SetCursor(2)
+	l.AppendSection("SCENARIOS")
+	l.AppendRow(list.Row{Primary: "Cards + List", Secondary: "active", Tone: list.ToneInfo, RightStat: "ready"})
+	l.AppendRow(list.Row{Primary: "Cards + Table", Secondary: "preview", Tone: list.ToneNeutral, RightStat: "idle"})
+	l.AppendRow(list.Row{Primary: "Cards + Modal", Secondary: "overlay", Tone: list.ToneSuccess, RightStat: "ok"})
+	l.AppendSection("LONG LABEL")
+	l.AppendRow(list.Row{Primary: lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Render("feature/very-long-branch-name-with-ansi-color"), Tone: list.ToneWarn, RightStat: "clip"})
+	l.SetCursor(0)
 	l.SetSize(max(24, ctx.Width), max(8, ctx.Height))
 
-	rows := []string{"status-heavy list preview:", viewString(l.View())}
+	rows := []string{
+		"list inside elevated card:",
+		viewString(l.View()),
+	}
 	if ctx.PaintDebug {
 		rows = append(rows, "", ruler(ctx.Width))
 	}
 
 	checks := []Check{
-		{Name: "ansi-clipping", Level: CheckPass, Detail: "long ansi rows truncate safely"},
-		{Name: "right-stat-alignment", Level: CheckPass, Detail: "stats remain right aligned when space allows"},
+		{Name: "list-readable", Level: CheckPass, Detail: "list rows stay readable inside elevated card"},
+		{Name: "list-truncation", Level: CheckPass, Detail: "long labels clip without breaking card layout"},
 	}
-	metrics := map[string]string{"cursor": "2"}
+	metrics := map[string]string{"cursor": "0"}
 
 	return Result{Canvas: fitBlock(strings.Join(rows, "\n"), ctx.Width, ctx.Height), Checks: checks, Metrics: metrics}
 }

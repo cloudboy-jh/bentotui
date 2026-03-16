@@ -46,22 +46,28 @@ type Definition struct {
 func All() []Definition {
 	return []Definition{
 		{
-			ID:          "layout",
-			Title:       "Layout",
-			Description: "split/drawer/sidebar framing at 80x24, 100x30, and 140x42",
-			Run:         runLayout,
+			ID:          "cards-list",
+			Title:       "Cards + List",
+			Description: "elevated card hosting a list with sections, selection, and stats",
+			Run:         runList,
 		},
 		{
-			ID:          "footer",
-			Title:       "Footer",
-			Description: "anchored card readability and overflow under constrained width",
+			ID:          "cards-table",
+			Title:       "Cards + Table",
+			Description: "elevated card hosting a table with aligned columns",
+			Run:         runTable,
+		},
+		{
+			ID:          "cards-modal",
+			Title:       "Cards + Modal",
+			Description: "modal overlay above card content with stable footer lane",
+			Run:         runModal,
+		},
+		{
+			ID:          "cards-footer",
+			Title:       "Cards + Footer",
+			Description: "anchored command footer readability and truncation behavior",
 			Run:         runFooter,
-		},
-		{
-			ID:          "stress",
-			Title:       "Stress",
-			Description: "resize and theme churn checks for seam and clipping regressions",
-			Run:         runStress,
 		},
 	}
 }

@@ -47,8 +47,8 @@ Compatibility rooms:
 - `Focus(content, footer)`
 - `Pancake(header, content, footer)`
 - `TopbarPancake(topbar, header, content, footer)`
-- `Sidebar(sideWidth, sidebar, main)`
-- `HolyGrail(sideWidth, header, sidebar, main, footer)`
+- `Rail(railWidth, rail, main)`
+- `HolyGrail(railWidth, header, rail, main, footer)`
 - `HSplit(left, right)`
 - `VSplit(top, bottom)`
 - `HSplitFooter(left, right, footer)`

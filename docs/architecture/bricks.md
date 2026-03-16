@@ -98,7 +98,7 @@ import "yourmodule/bricks/panel"
 p := panel.New(
     panel.Title("Sidebar"),
     panel.Content(myWidget),   // any tea.Model
-    panel.Elevated(),          // Surface.Elevated bg instead of Panel
+    panel.Elevated(),          // Card.BodyBG bg instead of Surface.Panel
 )
 
 p.SetSize(width, height)
@@ -136,12 +136,12 @@ c.IsFocused() bool
 ```
 
 Layout inside elevated-card:
-- Row 0: title
-- Row 1: divider
-- Rows 2…n: content rows
+- Frame band + header band
+- Body slab rows (content)
+- Optional footer band + shadow lane
 
-Every row is full-width painted on `Surface.Elevated` with a left rail, so
-sections remain readable in dense dashboards.
+Every row is full-width painted using `card.*` tokens (header/body/footer/frame/shadow),
+so sections stay visually separated without relying on wireframe-only borders.
 
 ---
 

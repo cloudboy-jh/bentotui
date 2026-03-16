@@ -60,7 +60,7 @@ func (m *Model) View() tea.View {
 	}
 	content := strings.TrimSpace(mark + " " + m.label)
 	if m.width > 0 {
-		bg := pick(t.Input.BG, t.Surface.Elevated)
+		bg := pick(t.Input.BG, t.Surface.Panel)
 		fg := pick(t.Input.FG, t.Text.Primary)
 		if m.focused {
 			bg = pick(t.Selection.BG, t.Border.Focus)

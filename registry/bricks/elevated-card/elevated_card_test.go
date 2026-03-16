@@ -6,6 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 type mockContent struct{ text string }
@@ -39,7 +40,7 @@ func TestElevatedCardMetaAndFooterRender(t *testing.T) {
 	)
 	c.SetSize(48, 10)
 	out := viewString(c.View())
-	plain := strings.ReplaceAll(out, "┃", "")
+	plain := ansi.Strip(out)
 	if !strings.Contains(plain, "meta line") {
 		t.Fatalf("expected meta line in output")
 	}

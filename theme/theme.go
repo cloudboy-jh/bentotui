@@ -4,14 +4,22 @@ package theme
 // +-------------------------------+
 // | surface.canvas                |
 // +-------------------------------+
-// | surface.panel                |
+// | surface.panel                 |
 // +-------------------------------+
-// | surface.elevated             |
+// | surface.interactive           |
 // +-------------------------------+
-// | surface.interactive          |
+//
+// Elevated card slab model:
 // +-------------------------------+
-// Footer anchored colors are separate semantic tokens so command rows do not
-// have to reuse selection-highlight intensity.
+// | card.frameBG                  |
+// | card.headerBG                 |
+// | card.bodyBG                   |
+// | card.footerBG                 |
+// | card.shadowBG                 |
+// +-------------------------------+
+// `card.focusEdgeBG` is the accent stripe used for focused cards.
+// Footer anchored colors remain separate semantic tokens so command rows do not
+// need to reuse selection-highlight intensity.
 
 import (
 	"fmt"
@@ -22,7 +30,6 @@ import (
 type SurfaceTokens struct {
 	Canvas      string
 	Panel       string
-	Elevated    string
 	Overlay     string
 	Interactive string
 }
@@ -78,6 +85,16 @@ type DialogTokens struct {
 	Scrim  string
 }
 
+type CardTokens struct {
+	HeaderBG    string
+	BodyBG      string
+	FooterBG    string
+	FrameBG     string
+	FrameFG     string
+	ShadowBG    string
+	FocusEdgeBG string
+}
+
 type Theme struct {
 	Name      string
 	Surface   SurfaceTokens
@@ -89,14 +106,28 @@ type Theme struct {
 	Bar       BarTokens
 	Footer    FooterTokens
 	Dialog    DialogTokens
+	Card      CardTokens
+}
+
+type ThemeTier string
+
+const (
+	ThemeTierStable       ThemeTier = "stable"
+	ThemeTierExperimental ThemeTier = "experimental"
+)
+
+type ThemeMeta struct {
+	Tier  ThemeTier
+	Score float64
 }
 
 const (
-	minSurfacePanelCanvasDelta         = 0.045
-	minSurfaceElevatedPanelDelta       = 0.040
-	minSurfaceElevatedCanvasDelta      = 0.070
-	minSurfaceInteractivePanelDelta    = 0.030
-	minSurfaceInteractiveElevatedDelta = 0.020
+	minSurfacePanelCanvasDelta      = 0.045
+	minSurfaceInteractivePanelDelta = 0.030
+	minCardHeaderBodyDelta          = 0.025
+	minCardFrameBodyDelta           = 0.020
+	minCardShadowCanvasDelta        = 0.015
+	minCardFocusEdgeFrameDelta      = 0.040
 )
 
 const (
@@ -107,6 +138,14 @@ const (
 
 func AvailableThemes() []string {
 	return availableThemeNames()
+}
+
+func AvailableStableThemes() []string {
+	return availableStableThemeNames()
+}
+
+func ThemeMetadata(name string) (ThemeMeta, bool) {
+	return themeMetadata(name)
 }
 
 func Preset(name string) Theme {
@@ -136,7 +175,6 @@ func validateTheme(t Theme) error {
 	}{
 		{"surface.canvas", t.Surface.Canvas},
 		{"surface.panel", t.Surface.Panel},
-		{"surface.elevated", t.Surface.Elevated},
 		{"surface.overlay", t.Surface.Overlay},
 		{"surface.interactive", t.Surface.Interactive},
 		{"text.primary", t.Text.Primary},
@@ -163,6 +201,13 @@ func validateTheme(t Theme) error {
 		{"dialog.fg", t.Dialog.FG},
 		{"dialog.border", t.Dialog.Border},
 		{"dialog.scrim", t.Dialog.Scrim},
+		{"card.headerBG", t.Card.HeaderBG},
+		{"card.bodyBG", t.Card.BodyBG},
+		{"card.footerBG", t.Card.FooterBG},
+		{"card.frameBG", t.Card.FrameBG},
+		{"card.frameFG", t.Card.FrameFG},
+		{"card.shadowBG", t.Card.ShadowBG},
+		{"card.focusEdgeBG", t.Card.FocusEdgeBG},
 	}
 	for _, c := range required {
 		if c.value == "" {
@@ -193,15 +238,16 @@ func validateTheme(t Theme) error {
 		minDelta       float64
 	}{
 		{"surface.panel", "surface.canvas", t.Surface.Panel, t.Surface.Canvas, minSurfacePanelCanvasDelta},
-		{"surface.elevated", "surface.panel", t.Surface.Elevated, t.Surface.Panel, minSurfaceElevatedPanelDelta},
-		{"surface.elevated", "surface.canvas", t.Surface.Elevated, t.Surface.Canvas, minSurfaceElevatedCanvasDelta},
 		{"surface.interactive", "surface.panel", t.Surface.Interactive, t.Surface.Panel, minSurfaceInteractivePanelDelta},
-		{"surface.interactive", "surface.elevated", t.Surface.Interactive, t.Surface.Elevated, minSurfaceInteractiveElevatedDelta},
 		{"input.bg", "surface.canvas", t.Input.BG, t.Surface.Canvas, 0.03},
 		{"selection.bg", "surface.canvas", t.Selection.BG, t.Surface.Canvas, 0.05},
 		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
 		{"dialog.bg", "surface.canvas", t.Dialog.BG, t.Surface.Canvas, 0.03},
 		{"bar.bg", "surface.canvas", t.Bar.BG, t.Surface.Canvas, 0.02},
+		{"card.headerBG", "card.bodyBG", t.Card.HeaderBG, t.Card.BodyBG, minCardHeaderBodyDelta},
+		{"card.frameBG", "card.bodyBG", t.Card.FrameBG, t.Card.BodyBG, minCardFrameBodyDelta},
+		{"card.shadowBG", "surface.canvas", t.Card.ShadowBG, t.Surface.Canvas, minCardShadowCanvasDelta},
+		{"card.focusEdgeBG", "card.frameBG", t.Card.FocusEdgeBG, t.Card.FrameBG, minCardFocusEdgeFrameDelta},
 	}
 	for _, p := range layerPairs {
 		delta := lumDelta(p.a, p.b)

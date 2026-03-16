@@ -158,7 +158,7 @@ func (m *Model) View() tea.View {
 	if m.open {
 		caret = " ^"
 	}
-	body := []string{styles.Row(pick(t.Input.BG, t.Surface.Elevated), pick(t.Input.FG, t.Text.Primary), w, head+caret)}
+	body := []string{styles.Row(pick(t.Input.BG, t.Surface.Panel), pick(t.Input.FG, t.Text.Primary), w, head+caret)}
 	if !m.open || len(m.items) == 0 {
 		return tea.NewView(strings.Join(body, "\n"))
 	}
@@ -174,7 +174,7 @@ func (m *Model) View() tea.View {
 			body = append(body, styles.Row(pick(t.Selection.BG, t.Border.Focus), pick(t.Selection.FG, t.Text.Inverse), w, line))
 			continue
 		}
-		body = append(body, styles.Row(pick(t.Surface.Panel, t.Surface.Elevated), pick(t.Text.Primary, t.Text.Primary), w, line))
+		body = append(body, styles.Row(pick(t.Surface.Panel, t.Surface.Canvas), pick(t.Text.Primary, t.Text.Primary), w, line))
 	}
 	return tea.NewView(strings.Join(body, "\n"))
 }

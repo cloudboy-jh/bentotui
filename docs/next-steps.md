@@ -85,7 +85,7 @@ Primitive policy:
 ### Bento examples to build
 
 - `registry/bentos/home-screen` — mirror starter app pattern
-- `registry/bentos/app-shell` — header + sidebar + body + footer/status
+- `registry/bentos/app-shell` — header + rail + main + footer/status
 - `registry/bentos/dashboard` — cards + table composition
 - `registry/bentos/detail-view` — list + detail pane
 - `registry/bentos/form` — labeled inputs + validation hints

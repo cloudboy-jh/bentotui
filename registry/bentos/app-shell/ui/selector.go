@@ -8,8 +8,8 @@ import (
 )
 
 func SelectorText(items []scenarios.Definition, active int) string {
-	rows := make([]string, 0, len(items)+2)
-	rows = append(rows, "Validation scenarios", "")
+	rows := make([]string, 0, len(items)+12)
+	rows = append(rows, "Component scenarios", "")
 	for i, s := range items {
 		prefix := "  "
 		if i == active {
@@ -17,5 +17,15 @@ func SelectorText(items []scenarios.Definition, active int) string {
 		}
 		rows = append(rows, fmt.Sprintf("%s%d. %s", prefix, i+1, s.Title))
 	}
+	rows = append(rows,
+		"",
+		"Areas",
+		"  1. Rail/Nav",
+		"  2. Main/Canvas",
+		"  3. Checks",
+		"  4. Context",
+		"  5. Session",
+		"  6. Commands",
+	)
 	return strings.Join(rows, "\n")
 }
