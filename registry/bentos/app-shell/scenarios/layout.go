@@ -7,10 +7,15 @@ import (
 
 func runLayout(ctx Context) Result {
 	rows := []string{
-		"Body framing contract",
-		"wide: left + center + right",
-		"medium: left + center (diag collapsed)",
-		"narrow: top/bottom stack",
+		"Frame contract",
+		"left rail: scenario selector",
+		"center rail: scenario canvas",
+		"right rail: diagnostics (wide only)",
+		"",
+		"breakpoints:",
+		"- wide >=120: left + center + right",
+		"- medium 84..119: left + center",
+		"- narrow <84: top/bottom stack",
 		"",
 		fmt.Sprintf("virtual viewport: %dx%d", ctx.Width, ctx.Height),
 		fmt.Sprintf("focus owner: %s", ctx.FocusOwner),

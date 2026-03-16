@@ -86,7 +86,7 @@ func NewModel() *Model {
 		scenarioIdx: 0,
 		presetIdx:   1,
 		focusOwner:  FocusCenter,
-		showKeymap:  true,
+		showKeymap:  false,
 		checks:      nil,
 		metrics:     map[string]string{},
 	}
@@ -193,7 +193,7 @@ func (m *Model) layoutBody(bodyH int) string {
 
 	innerW := max(1, m.width-navW)
 	diagW := clamp(innerW/3, 30, 44)
-	main := rooms.DrawerRight(innerW, bodyH, diagW, m.canvasPanel, m.diagPanel)
+	main := rooms.DrawerRight(innerW, bodyH, diagW, m.canvasPanel, m.diagPanel, rooms.WithGutter(1), rooms.WithDivider("subtle"))
 	return rooms.Sidebar(m.width, bodyH, navW, m.navPanel, rooms.Static(main))
 }
 
@@ -264,7 +264,7 @@ func (m *Model) syncFooterLine() {
 func (m *Model) compactDiagnosticsLine() string {
 	p := viewportPresets[m.presetIdx]
 	pass, warn, fail := summarizeChecks(m.checks)
-	return fmt.Sprintf("diag: scenario=%s viewport=%s(%dx%d) theme=%s checks=%d/%d/%d focus=%s status=%s",
+	return fmt.Sprintf("diag: %s | %s(%dx%d) | %s | p:%d w:%d f:%d | focus:%s | %s",
 		m.scenarios[m.scenarioIdx].ID,
 		p.Name,
 		p.Width,

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
 
 	tea "charm.land/bubbletea/v2"
@@ -51,13 +52,13 @@ func runFooter(ctx Context) Result {
 
 	rows := []string{
 		"plain mode:",
-		viewString(plain.View()),
+		ansi.Strip(viewString(plain.View())),
 		"",
 		"chip mode (anchored):",
-		viewString(chip.View()),
+		ansi.Strip(viewString(chip.View())),
 		"",
 		"mixed mode (anchored):",
-		viewString(mixed.View()),
+		ansi.Strip(viewString(mixed.View())),
 	}
 
 	checks := []Check{
