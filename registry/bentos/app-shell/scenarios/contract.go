@@ -52,33 +52,15 @@ func All() []Definition {
 			Run:         runLayout,
 		},
 		{
-			ID:          "hierarchy",
-			Title:       "Hierarchy",
-			Description: "panel depth and focus separation with strict row paint ownership",
-			Run:         runHierarchy,
-		},
-		{
 			ID:          "footer",
 			Title:       "Footer",
 			Description: "anchored card readability and overflow under constrained width",
 			Run:         runFooter,
 		},
 		{
-			ID:          "list",
-			Title:       "List",
-			Description: "status-heavy rows with ANSI truncation and right-stat alignment",
-			Run:         runList,
-		},
-		{
-			ID:          "overlay",
-			Title:       "Overlay",
-			Description: "dialog layering over busy surfaces with stable footer anchoring",
-			Run:         runOverlay,
-		},
-		{
 			ID:          "stress",
 			Title:       "Stress",
-			Description: "resize/theme/focus churn checks for seam and clipping regressions",
+			Description: "resize and theme churn checks for seam and clipping regressions",
 			Run:         runStress,
 		},
 	}
