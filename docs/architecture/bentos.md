@@ -30,7 +30,7 @@ Recommended frame stack:
 ## Current shipped bentos
 
 - `home-screen` — starter-style entry screen
-- `dashboard` — dense panel/table composition
+- `dashboard` — dense elevated-card/table composition
 - `app-shell` — validation bento for framework QA
 
 ## app-shell role
@@ -40,12 +40,9 @@ Recommended frame stack:
 It exists to pressure-test rooms and bricks under repeatable scenarios:
 
 - layout
-- hierarchy
 - footer
-- list
-- overlay
 - stress
 
 Use `app-shell` to reproduce visual regressions with a deterministic tuple:
 
-`scenario + viewport + theme + focus + snapshot`
+`scenario + viewport + theme + snapshot`

@@ -130,7 +130,11 @@ func fromTint(t *tint.Tint, name string) Theme {
 func normalizeSurfaces(canvas, panel, elevated, interactive string) (string, string, string) {
 	for i := 0; i < 4; i++ {
 		panel = ensureDelta(panel, canvas, minSurfacePanelCanvasDelta)
+		if luminance(elevated) <= luminance(panel) {
+			elevated = blendHex(panel, "#ffffff", 0.18)
+		}
 		elevated = ensureDelta(elevated, panel, minSurfaceElevatedPanelDelta)
+		elevated = ensureDelta(elevated, canvas, minSurfaceElevatedCanvasDelta)
 		interactive = ensureDelta(interactive, panel, minSurfaceInteractivePanelDelta)
 		interactive = ensureDelta(interactive, elevated, minSurfaceInteractiveElevatedDelta)
 	}

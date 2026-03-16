@@ -17,7 +17,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/badge"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
-	"github.com/cloudboy-jh/bentotui/registry/bricks/panel"
+	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/table"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
@@ -51,10 +51,10 @@ type model struct {
 
 	botBar *bar.Model
 
-	metricA *panel.Model
-	metricB *panel.Model
-	metricC *panel.Model
-	tableP  *panel.Model
+	metricA *elevatedcard.Model
+	metricB *elevatedcard.Model
+	metricC *elevatedcard.Model
+	tableP  *elevatedcard.Model
 
 	metricATxt *textBlock
 	metricBTxt *textBlock
@@ -121,10 +121,10 @@ func newModel() *model {
 		metricCValue: "Last deploy: 23m ago",
 	}
 
-	m.metricA = panel.New(panel.Title("Requests"), panel.Content(mATxt))
-	m.metricB = panel.New(panel.Title("Errors"), panel.Content(mBTxt))
-	m.metricC = panel.New(panel.Title("Deploy"), panel.Content(mCTxt))
-	m.tableP = panel.New(panel.Title("Service Health"), panel.Content(tTxt), panel.Elevated())
+	m.metricA = elevatedcard.New(elevatedcard.Title("Requests"), elevatedcard.Content(mATxt))
+	m.metricB = elevatedcard.New(elevatedcard.Title("Errors"), elevatedcard.Content(mBTxt))
+	m.metricC = elevatedcard.New(elevatedcard.Title("Deploy"), elevatedcard.Content(mCTxt))
+	m.tableP = elevatedcard.New(elevatedcard.Title("Service Health"), elevatedcard.Content(tTxt))
 
 	return m
 }

@@ -92,10 +92,11 @@ type Theme struct {
 }
 
 const (
-	minSurfacePanelCanvasDelta         = 0.025
-	minSurfaceElevatedPanelDelta       = 0.020
-	minSurfaceInteractivePanelDelta    = 0.020
-	minSurfaceInteractiveElevatedDelta = 0.015
+	minSurfacePanelCanvasDelta         = 0.045
+	minSurfaceElevatedPanelDelta       = 0.040
+	minSurfaceElevatedCanvasDelta      = 0.070
+	minSurfaceInteractivePanelDelta    = 0.030
+	minSurfaceInteractiveElevatedDelta = 0.020
 )
 
 const (
@@ -193,6 +194,7 @@ func validateTheme(t Theme) error {
 	}{
 		{"surface.panel", "surface.canvas", t.Surface.Panel, t.Surface.Canvas, minSurfacePanelCanvasDelta},
 		{"surface.elevated", "surface.panel", t.Surface.Elevated, t.Surface.Panel, minSurfaceElevatedPanelDelta},
+		{"surface.elevated", "surface.canvas", t.Surface.Elevated, t.Surface.Canvas, minSurfaceElevatedCanvasDelta},
 		{"surface.interactive", "surface.panel", t.Surface.Interactive, t.Surface.Panel, minSurfaceInteractivePanelDelta},
 		{"surface.interactive", "surface.elevated", t.Surface.Interactive, t.Surface.Elevated, minSurfaceInteractiveElevatedDelta},
 		{"input.bg", "surface.canvas", t.Input.BG, t.Surface.Canvas, 0.03},

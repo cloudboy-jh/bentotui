@@ -21,6 +21,7 @@ func Registry() []ComponentInfo {
 	return []ComponentInfo{
 		{Name: "surface", Desc: "Full-terminal paint surface with UV cell buffer", Files: []string{"surface.go"}},
 		{Name: "panel", Desc: "Titled, focusable content container", Files: []string{"panel.go"}},
+		{Name: "elevated-card", Desc: "Raised section container with title + content", Files: []string{"elevated_card.go"}},
 		{Name: "bar", Desc: "Header/footer row with keybind cards", Files: []string{"bar.go"}},
 		{Name: "dialog", Desc: "Modal manager, Confirm, Custom, ThemePicker, CommandPalette", Files: []string{"dialog.go", "theme_picker.go", "command_palette.go"}},
 		{Name: "list", Desc: "Scrollable log-style list (plain text output)", Files: []string{"list.go"}},

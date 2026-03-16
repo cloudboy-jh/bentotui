@@ -5,10 +5,10 @@ func bentoRoseTheme() Theme {
 		Name: "bento-rose",
 		Surface: SurfaceTokens{
 			Canvas:      "#201a19",
-			Panel:       "#4a3531",
-			Elevated:    "#624742",
+			Panel:       "#5f4843",
+			Elevated:    "#7a5d56",
 			Overlay:     "#181312",
-			Interactive: "#795952",
+			Interactive: "#967267",
 		},
 		Text: TextTokens{
 			Primary: "#f4ddca",
@@ -32,14 +32,14 @@ func bentoRoseTheme() Theme {
 			FG: "#201a19",
 		},
 		Input: InputTokens{
-			BG:          "#795952",
+			BG:          "#7a5d56",
 			FG:          "#f4ddca",
 			Placeholder: "#c5a791",
 			Cursor:      "#ff92b6",
 			Border:      "#b990a1",
 		},
 		Bar: BarTokens{
-			BG: "#624742",
+			BG: "#5f4843",
 			FG: "#f4ddca",
 		},
 		Footer: FooterTokens{
@@ -48,7 +48,7 @@ func bentoRoseTheme() Theme {
 			AnchoredMuted: "#d5b8a2",
 		},
 		Dialog: DialogTokens{
-			BG:     "#624742",
+			BG:     "#7a5d56",
 			FG:     "#f4ddca",
 			Border: "#b990a1",
 			Scrim:  "#181312",

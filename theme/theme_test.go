@@ -66,6 +66,7 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 		}{
 			{th.Surface.Panel, th.Surface.Canvas, "surface.panel", "surface.canvas", minSurfacePanelCanvasDelta},
 			{th.Surface.Elevated, th.Surface.Panel, "surface.elevated", "surface.panel", minSurfaceElevatedPanelDelta},
+			{th.Surface.Elevated, th.Surface.Canvas, "surface.elevated", "surface.canvas", minSurfaceElevatedCanvasDelta},
 			{th.Surface.Interactive, th.Surface.Panel, "surface.interactive", "surface.panel", minSurfaceInteractivePanelDelta},
 			{th.Surface.Interactive, th.Surface.Elevated, "surface.interactive", "surface.elevated", minSurfaceInteractiveElevatedDelta},
 			{th.Input.BG, th.Surface.Canvas, "input.bg", "surface.canvas", 0.03},

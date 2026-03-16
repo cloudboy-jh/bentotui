@@ -15,6 +15,7 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 - Added room-level separation options (`WithGutter`, `WithDivider`) to split/drawer room primitives.
 - Added anchored footer card style modes in bar (`plain`, `chip`, `mixed`) and scenario coverage in app-shell.
 - Expanded list row structure with typed fields (`Primary`, `Secondary`, `RightStat`, `Tone`, `SelectedStyle`) while preserving existing `Label`/`Status`/`Stat` compatibility.
+- Added new `elevated-card` brick for raised section containers (`Title` + `Content`) and wired it into dashboard/app-shell composition paths.
 
 ## [0.3.4] - 2026-03-14
 

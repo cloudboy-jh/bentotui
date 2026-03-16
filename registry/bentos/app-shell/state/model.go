@@ -10,6 +10,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/scenarios"
 	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/ui"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
+	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/panel"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
@@ -32,11 +33,11 @@ type Model struct {
 	snapshot    bool
 	status      string
 
-	navPanel    *panel.Model
-	canvasPanel *panel.Model
-	navText     *textBlock
-	canvasText  *textBlock
-	footer      *bar.Model
+	navPanel   *panel.Model
+	canvasCard *elevatedcard.Model
+	navText    *textBlock
+	canvasText *textBlock
+	footer     *bar.Model
 
 	themeOrder []string
 	themeIdx   int
@@ -70,7 +71,7 @@ func NewModel() *Model {
 	}
 
 	m.navPanel = panel.New(panel.Title("Scenarios"), panel.Content(navTxt), panel.Elevated())
-	m.canvasPanel = panel.New(panel.Title("Validation Canvas"), panel.Content(canvasTxt))
+	m.canvasCard = elevatedcard.New(elevatedcard.Title("Validation Canvas"), elevatedcard.Content(canvasTxt))
 	m.navPanel.Focus()
 	m.footer = bar.New(bar.FooterAnchored(), bar.Left("validation bento"), bar.Cards(ui.FooterCards()...), bar.CompactCards())
 	m.syncNavText()
@@ -147,10 +148,10 @@ func (m *Model) View() tea.View {
 
 func (m *Model) layoutBody(bodyH int) string {
 	if m.width < 84 {
-		return rooms.VSplit(m.width, bodyH, m.navPanel, m.canvasPanel)
+		return rooms.VSplit(m.width, bodyH, m.navPanel, m.canvasCard)
 	}
 	navW := clamp(m.width/5, 24, 34)
-	return rooms.Sidebar(m.width, bodyH, navW, m.navPanel, m.canvasPanel)
+	return rooms.Sidebar(m.width, bodyH, navW, m.navPanel, m.canvasCard)
 }
 
 func (m *Model) syncScenarioText(bodyH int) {
@@ -174,9 +175,15 @@ func (m *Model) syncScenarioText(bodyH int) {
 	m.checks = append([]scenarios.Check{}, r.Checks...)
 	m.checks = append(m.checks, validateCanvasFrame(r.Canvas, ctx.Width, ctx.Height)...)
 
-	header := ui.CanvasHeader(m.scenarioIdx+1, len(m.scenarios), s.Title, s.Description, m.width < 84)
-	header = append(header, r.Canvas, "", m.inlineSummary())
-	m.canvasText.SetText(strings.Join(header, "\n"))
+	title := fmt.Sprintf("[%d/%d] %s", m.scenarioIdx+1, len(m.scenarios), s.Title)
+	m.canvasCard.SetTitle(title)
+	m.canvasCard.SetMeta(s.Description)
+	m.canvasCard.SetFooter(m.inlineSummary())
+	body := compactBodyLines(r.Canvas)
+	if m.paintDebug {
+		body = append(body, strings.Repeat("-", max(12, min(ctx.Width-4, 72))))
+	}
+	m.canvasText.SetText(strings.Join(body, "\n"))
 }
 
 func (m *Model) inlineSummary() string {
@@ -267,6 +274,22 @@ func validateCanvasFrame(canvas string, width, height int) []scenarios.Check {
 		checks = append(checks, scenarios.Check{Name: "canvas-row-width", Level: scenarios.CheckPass, Detail: "all scenario rows are width-exact"})
 	}
 	return checks
+}
+
+func compactBodyLines(canvas string) []string {
+	lines := strings.Split(canvas, "\n")
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		trimmed := strings.TrimRight(line, " ")
+		if strings.TrimSpace(trimmed) == "" {
+			continue
+		}
+		out = append(out, trimmed)
+	}
+	if len(out) == 0 {
+		return []string{"(empty scenario output)"}
+	}
+	return out
 }
 
 func ternary[T any](cond bool, t, f T) T {

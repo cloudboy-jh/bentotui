@@ -10,15 +10,13 @@ func runLayout(ctx Context) Result {
 		"Frame contract",
 		"left rail: scenario selector",
 		"center rail: scenario canvas",
-		"right rail: diagnostics (wide only)",
+		"inline summary: inside canvas card",
 		"",
 		"breakpoints:",
-		"- wide >=120: left + center + right",
-		"- medium 84..119: left + center",
+		"- wide >=84: left + center",
 		"- narrow <84: top/bottom stack",
 		"",
 		fmt.Sprintf("virtual viewport: %dx%d", ctx.Width, ctx.Height),
-		fmt.Sprintf("focus owner: %s", ctx.FocusOwner),
 		fmt.Sprintf("snapshot mode: %t", ctx.Snapshot),
 	}
 	if ctx.PaintDebug {
@@ -28,7 +26,6 @@ func runLayout(ctx Context) Result {
 	checks := []Check{{Name: "frame-layer-contract", Level: CheckPass, Detail: "z0/z1/z2/z3 draw order preserved"}}
 	metrics := map[string]string{
 		"viewport": fmt.Sprintf("%s %dx%d", ctx.Viewport.Name, ctx.Viewport.Width, ctx.Viewport.Height),
-		"focus":    ctx.FocusOwner,
 	}
 
 	return Result{Canvas: fitBlock(strings.Join(rows, "\n"), ctx.Width, ctx.Height), Checks: checks, Metrics: metrics}

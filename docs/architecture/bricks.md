@@ -116,6 +116,35 @@ Content receives `SetSize(width-2, height-titleRows)` if it implements `Sizeable
 
 ---
 
+### `elevated-card`
+
+Raised section container for dashboard/app regions. This is the default way to
+make content "sit" inside a room section with clear surface contrast.
+
+```go
+import elevatedcard "yourmodule/bricks/elevated-card"
+
+c := elevatedcard.New(
+    elevatedcard.Title("Service Health"),
+    elevatedcard.Content(myWidget),
+)
+
+c.SetSize(width, height)
+c.Focus()
+c.Blur()
+c.IsFocused() bool
+```
+
+Layout inside elevated-card:
+- Row 0: title
+- Row 1: divider
+- Rows 2…n: content rows
+
+Every row is full-width painted on `Surface.Elevated` with a left rail, so
+sections remain readable in dense dashboards.
+
+---
+
 ### `bar`
 
 Single-row header or footer bar. Truncates cards gracefully when width is tight.

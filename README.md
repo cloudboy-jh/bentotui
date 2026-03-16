@@ -96,6 +96,7 @@ Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 | `surface` | Full-screen cell buffer backed by Ultraviolet. Deterministic background paint — no ANSI whitespace bleed. Used by every full-screen room. |
 | `bar` | Role-aware status/nav row with `StatusPill`, compact cards, anchored footer modes (`plain/chip/mixed`), and priority-aware overflow. |
 | `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
+| `elevated-card` | Raised section container with title + content for dashboard/app regions. |
 | `panel` | Titled, focusable content container. |
 | `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`. |
 | `list` | Scrollable list with sections, row formatting hooks, and structured row fields (`Primary/Secondary/RightStat/Tone`). |
@@ -111,7 +112,7 @@ Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 | `toast` | Stacked notification rows. |
 | `separator` | Horizontal or vertical divider. |
 
-`bento add` currently supports: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`.
+`bento add` currently supports: `surface`, `panel`, `elevated-card`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`.
 
 Primitive policy: Bento does not ship a `spinner` registry component. Use
 `charm.land/bubbles/v2/spinner` directly.
@@ -134,7 +135,7 @@ registry/bentos/
 |-------|----------------|
 | `home-screen` | `wordmark`, `input`, `kbd`, `badge`, `bar`, `surface` |
 | `app-shell` | validation bento (scenarios + diagnostics + anchored footer) |
-| `dashboard` | `panel`, `badge`, `table`, `bar`, `surface` |
+| `dashboard` | `elevated-card`, `badge`, `table`, `bar`, `surface` |
 
 ## Core packages (real imports, not copied)
 

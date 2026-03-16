@@ -14,7 +14,7 @@ go run ./registry/bentos/app-shell
 ## Layout contract
 
 - left rail: scenario selector
-- center rail: live scenario canvas
+- center rail: live scenario canvas (inside an `elevated-card` section)
 - anchored footer: controls + state tuple + pass/warn/fail counts
 - diagnostics: compact inline summary under the canvas
 
