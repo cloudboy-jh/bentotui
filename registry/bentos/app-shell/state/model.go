@@ -10,7 +10,6 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/ui"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/dialog"
-	"github.com/cloudboy-jh/bentotui/registry/bricks/panel"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
 	"github.com/cloudboy-jh/bentotui/theme"
@@ -32,8 +31,6 @@ type Model struct {
 	progress   float64
 	status     string
 
-	navPanel   *panel.Model
-	navText    *textBlock
 	centerDeck *centerDeck
 	footer     *bar.Model
 	dialogs    *dialog.Manager
@@ -43,7 +40,6 @@ type Model struct {
 }
 
 func NewModel() *Model {
-	navTxt := &textBlock{}
 	deck := newCenterDeck()
 
 	themes := theme.AvailableThemes()
@@ -58,7 +54,6 @@ func NewModel() *Model {
 
 	m := &Model{
 		sections:   []string{"Overview", "Services", "Queue", "Progress"},
-		navText:    navTxt,
 		centerDeck: deck,
 		themeOrder: themes,
 		themeIdx:   themeIdx,
@@ -70,8 +65,6 @@ func NewModel() *Model {
 		dialogs:    dialog.New(),
 	}
 
-	m.navPanel = panel.New(panel.Title("App Shell"), panel.Content(navTxt), panel.Elevated())
-	m.navPanel.Focus()
 	m.footer = bar.New(
 		bar.FooterAnchored(),
 		bar.Left("workspace"),
@@ -176,8 +169,7 @@ func (m *Model) View() tea.View {
 
 	m.syncAll()
 
-	navW := clamp(m.width/5, 24, 32)
-	screen := rooms.RailFooterStack(m.width, m.height, navW, 0, m.navPanel, m.centerDeck, nil, m.footer)
+	screen := rooms.Focus(m.width, m.height, m.centerDeck, m.footer)
 
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
@@ -204,16 +196,12 @@ func (m *Model) syncAll() {
 		m.sectionIdx = len(m.sections) - 1
 	}
 
-	m.syncNavText()
 	m.centerDeck.SetActiveSection(m.sections[m.sectionIdx])
 	m.centerDeck.SetQueueCursor(m.queueIdx)
 	m.centerDeck.SetCompact(m.compact)
 	m.centerDeck.SetProgress(m.progress, fmt.Sprintf("section: %s", strings.ToLower(m.sections[m.sectionIdx])))
+	m.centerDeck.SetWorkspaceMeta(strings.ToLower(m.sections[m.sectionIdx]), m.compact)
 	m.syncFooterLine()
-}
-
-func (m *Model) syncNavText() {
-	m.navText.SetText(ui.SelectorText(m.sections, m.sectionIdx, theme.CurrentThemeName(), m.progress, m.compact))
 }
 
 func (m *Model) syncFooterLine() {

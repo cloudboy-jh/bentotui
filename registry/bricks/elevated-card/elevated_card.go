@@ -92,11 +92,8 @@ func (m *Model) View() tea.View {
 
 	outerBG := pick(t.Surface.Panel, t.Surface.Canvas)
 	cardColors := styles.New(t).ElevatedCardColors(m.focused)
-	borderBG := cardColors.FrameBG
-	headerBG := cardColors.HeaderBG
+	chromeBG := cardColors.ChromeBG
 	bodyBG := cardColors.BodyBG
-	footerBG := cardColors.FooterBG
-	shadowBG := cardColors.ShadowBG
 	titleFG := cardColors.FrameFG
 	bodyFG := t.Text.Primary
 	metaFG := pick(t.Text.Muted, t.Text.Primary)
@@ -107,34 +104,21 @@ func (m *Model) View() tea.View {
 	emphasis := m.variant == VariantEmphasis
 	if emphasis && !m.focused {
 		leftEdgeBG = pick(t.Card.FocusEdgeBG, leftEdgeBG)
-		headerBG = pick(t.Surface.Interactive, headerBG)
-	}
-	if dense {
-		shadowBG = borderBG
+		chromeBG = pick(t.Surface.Interactive, chromeBG)
 	}
 
 	inset := clamp(m.inset, 0, min(max(0, (w-6)/2), max(0, (h-6)/2)))
 	if dense {
 		inset = clamp(m.inset, 0, min(1, min(max(0, (w-4)/2), max(0, (h-4)/2))))
 	}
-	shadow := w >= 10 && h >= 7
-	if dense {
-		shadow = false
-	}
 	cardW := w - (inset * 2)
 	cardH := h - (inset * 2)
-	if shadow {
-		cardW--
-		cardH--
-	}
 	if cardW < 6 || cardH < 5 {
-		shadow = false
 		cardW = w - (inset * 2)
 		cardH = h - (inset * 2)
 	}
 	if cardW < 4 || cardH < 4 {
 		inset = 0
-		shadow = false
 		cardW = w
 		cardH = h
 	}
@@ -156,17 +140,10 @@ func (m *Model) View() tea.View {
 	}
 	if footerRows {
 		reserved++
-		if !dense {
-			reserved++
-		}
 	}
 	if reserved > cardH {
 		if footerRows {
-			if dense {
-				reserved--
-			} else {
-				reserved -= 2
-			}
+			reserved--
 			footerRows = false
 		}
 	}
@@ -177,9 +154,9 @@ func (m *Model) View() tea.View {
 	contentRows := max(1, cardH-reserved)
 
 	cardRows := make([]string, 0, cardH)
-	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, headerBG, borderBG, titleFG, ansi.Strip(m.title)))
+	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, chromeBG, chromeBG, titleFG, ansi.Strip(m.title)))
 	if metaRow {
-		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, metaFG, " "+ansi.Strip(m.meta)))
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, chromeBG, chromeBG, metaFG, " "+ansi.Strip(m.meta)))
 	}
 
 	for i := 0; i < contentRows; i++ {
@@ -187,19 +164,16 @@ func (m *Model) View() tea.View {
 		if i < len(bodyLines) {
 			line = bodyLines[i]
 		}
-		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, bodyFG, " "+line))
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, chromeBG, bodyFG, " "+line))
 	}
 
 	if footerRows {
-		if !dense {
-			cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
-		}
-		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, footerBG, borderBG, footerFG, " "+ansi.Strip(m.footer)))
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, chromeBG, chromeBG, footerFG, " "+ansi.Strip(m.footer)))
 	}
 	for len(cardRows) < cardH-1 {
-		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, bodyFG, ""))
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, chromeBG, bodyFG, ""))
 	}
-	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, titleFG, ""))
+	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, chromeBG, chromeBG, titleFG, ""))
 
 	rows := make([]string, 0, h)
 	for y := 0; y < h; y++ {
@@ -209,20 +183,10 @@ func (m *Model) View() tea.View {
 		}
 
 		inCardY := y >= inset && y < inset+cardH
-		shadowRow := shadow && y == inset+cardH
-		shadowCol := shadow && y >= inset+1 && y <= inset+cardH
-
 		used := inset
 		if inCardY {
 			line += cardRows[y-inset]
 			used += cardW
-		} else if shadowRow {
-			line += styles.RowClip(shadowBG, bodyFG, cardW, "")
-			used += cardW
-		}
-		if shadowCol {
-			line += styles.RowClip(shadowBG, bodyFG, 1, "")
-			used++
 		}
 		if used < w {
 			line += styles.RowClip(outerBG, bodyFG, w-used, "")
@@ -242,18 +206,9 @@ func (m *Model) SetSize(width, height int) {
 		if dense {
 			inset = clamp(m.inset, 0, min(1, min(max(0, (width-4)/2), max(0, (height-4)/2))))
 		}
-		shadow := width >= 10 && height >= 7
-		if dense {
-			shadow = false
-		}
 		cardW := width - (inset * 2)
 		cardH := height - (inset * 2)
-		if shadow {
-			cardW--
-			cardH--
-		}
 		if cardW < 6 || cardH < 5 {
-			shadow = false
 			cardW = width - (inset * 2)
 			cardH = height - (inset * 2)
 		}
@@ -264,9 +219,6 @@ func (m *Model) SetSize(width, height int) {
 		}
 		if strings.TrimSpace(m.footer) != "" {
 			reserved++
-			if !dense {
-				reserved++
-			}
 		}
 		contentH := max(1, cardH-reserved)
 		s.SetSize(max(0, cardW-2), max(0, contentH))

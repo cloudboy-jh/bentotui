@@ -53,12 +53,9 @@ func bentoRoseTheme() Theme {
 			Scrim:  "#181312",
 		},
 		Card: CardTokens{
-			HeaderBG:    "#967267",
+			ChromeBG:    "#5f4843",
 			BodyBG:      "#7a5d56",
-			FooterBG:    "#5f4843",
-			FrameBG:     "#5f4843",
 			FrameFG:     "#f4ddca",
-			ShadowBG:    "#3f2f2b",
 			FocusEdgeBG: "#ff92b6",
 		},
 	}

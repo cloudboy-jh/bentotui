@@ -11,11 +11,8 @@ package theme
 //
 // Elevated card slab model:
 // +-------------------------------+
-// | card.frameBG                  |
-// | card.headerBG                 |
+// | card.chromeBG                 |
 // | card.bodyBG                   |
-// | card.footerBG                 |
-// | card.shadowBG                 |
 // +-------------------------------+
 // `card.focusEdgeBG` is the accent stripe used for focused cards.
 // Footer anchored colors remain separate semantic tokens so command rows do not
@@ -86,12 +83,9 @@ type DialogTokens struct {
 }
 
 type CardTokens struct {
-	HeaderBG    string
+	ChromeBG    string
 	BodyBG      string
-	FooterBG    string
-	FrameBG     string
 	FrameFG     string
-	ShadowBG    string
 	FocusEdgeBG string
 }
 
@@ -124,10 +118,8 @@ type ThemeMeta struct {
 const (
 	minSurfacePanelCanvasDelta      = 0.045
 	minSurfaceInteractivePanelDelta = 0.030
-	minCardHeaderBodyDelta          = 0.025
-	minCardFrameBodyDelta           = 0.020
-	minCardShadowCanvasDelta        = 0.015
-	minCardFocusEdgeFrameDelta      = 0.040
+	minCardChromeBodyDelta          = 0.020
+	minCardFocusEdgeChromeDelta     = 0.040
 	minTextPrimaryMutedDelta        = 0.060
 	minFooterFGToBGDelta            = 0.120
 	minFooterMutedToBGDelta         = 0.070
@@ -205,12 +197,9 @@ func validateTheme(t Theme) error {
 		{"dialog.fg", t.Dialog.FG},
 		{"dialog.border", t.Dialog.Border},
 		{"dialog.scrim", t.Dialog.Scrim},
-		{"card.headerBG", t.Card.HeaderBG},
+		{"card.chromeBG", t.Card.ChromeBG},
 		{"card.bodyBG", t.Card.BodyBG},
-		{"card.footerBG", t.Card.FooterBG},
-		{"card.frameBG", t.Card.FrameBG},
 		{"card.frameFG", t.Card.FrameFG},
-		{"card.shadowBG", t.Card.ShadowBG},
 		{"card.focusEdgeBG", t.Card.FocusEdgeBG},
 	}
 	for _, c := range required {
@@ -249,10 +238,8 @@ func validateTheme(t Theme) error {
 		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
 		{"dialog.bg", "surface.canvas", t.Dialog.BG, t.Surface.Canvas, 0.03},
 		{"bar.bg", "surface.canvas", t.Bar.BG, t.Surface.Canvas, 0.02},
-		{"card.headerBG", "card.bodyBG", t.Card.HeaderBG, t.Card.BodyBG, minCardHeaderBodyDelta},
-		{"card.frameBG", "card.bodyBG", t.Card.FrameBG, t.Card.BodyBG, minCardFrameBodyDelta},
-		{"card.shadowBG", "surface.canvas", t.Card.ShadowBG, t.Surface.Canvas, minCardShadowCanvasDelta},
-		{"card.focusEdgeBG", "card.frameBG", t.Card.FocusEdgeBG, t.Card.FrameBG, minCardFocusEdgeFrameDelta},
+		{"card.chromeBG", "card.bodyBG", t.Card.ChromeBG, t.Card.BodyBG, minCardChromeBodyDelta},
+		{"card.focusEdgeBG", "card.chromeBG", t.Card.FocusEdgeBG, t.Card.ChromeBG, minCardFocusEdgeChromeDelta},
 	}
 	for _, p := range layerPairs {
 		delta := lumDelta(p.a, p.b)

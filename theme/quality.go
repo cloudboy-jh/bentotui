@@ -33,11 +33,9 @@ func themeQualityScore(t Theme) float64 {
 		{t.Selection.BG, t.Surface.Canvas, 0.05, 1.2},
 		{t.Selection.BG, t.Input.BG, 0.05, 1.0},
 		{t.Dialog.BG, t.Surface.Canvas, 0.03, 1.0},
-		{t.Card.HeaderBG, t.Card.BodyBG, minCardHeaderBodyDelta, 1.1},
-		{t.Card.FrameBG, t.Card.BodyBG, minCardFrameBodyDelta, 1.0},
-		{t.Card.FocusEdgeBG, t.Card.FrameBG, minCardFocusEdgeFrameDelta, 1.3},
-		{t.Card.ShadowBG, t.Surface.Canvas, minCardShadowCanvasDelta, 0.7},
-		{t.Card.FrameFG, t.Card.FrameBG, 0.10, 1.0},
+		{t.Card.ChromeBG, t.Card.BodyBG, minCardChromeBodyDelta, 1.3},
+		{t.Card.FocusEdgeBG, t.Card.ChromeBG, minCardFocusEdgeChromeDelta, 1.4},
+		{t.Card.FrameFG, t.Card.ChromeBG, 0.10, 1.1},
 		{t.Text.Primary, t.Card.BodyBG, 0.10, 1.0},
 	}
 

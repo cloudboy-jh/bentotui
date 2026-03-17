@@ -137,6 +137,14 @@ func (d *centerDeck) SetCompact(v bool) {
 	d.tableCard.SetMeta("stable view of key metrics")
 }
 
+func (d *centerDeck) SetWorkspaceMeta(section string, compact bool) {
+	density := "comfortable"
+	if compact {
+		density = "compact"
+	}
+	d.queueCard.SetFooter(fmt.Sprintf("section %s | %s", section, density))
+}
+
 func (d *centerDeck) SetProgress(value float64, label string) {
 	d.progress.SetValue(value, label)
 	d.progressCard.SetFooter(fmt.Sprintf("overall %.0f%%", value*100))

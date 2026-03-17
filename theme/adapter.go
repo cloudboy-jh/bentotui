@@ -15,7 +15,7 @@ import (
 //	Panel       — default component body (input block, panels)
 //	Overlay     — modal/dialog body
 //	Interactive — hover/focus tinted surfaces
-//	Card.*      — elevated-card slab tones (header/body/footer/frame/shadow)
+//	Card.*      — elevated-card slab tones (chrome/body)
 //
 // The adapter guarantees visual separation between adjacent layers by
 // checking relative luminance delta. If a mapped pair is too close it
@@ -75,12 +75,9 @@ func fromTint(t *tint.Tint, name string) Theme {
 	}
 
 	cardBody := ensureDelta(pick(blk, panel), panel, 0.04)
-	cardHeader := ensureDelta(pick(interactive, panel), cardBody, minCardHeaderBodyDelta)
-	cardFooter := ensureDelta(pick(panel, cardBody), cardBody, 0.02)
-	cardFrame := ensureDelta(pick(panel, blk), cardBody, minCardFrameBodyDelta)
-	cardFrameFG := ensureDelta(pick(bwht, fg), cardFrame, 0.10)
-	cardShadow := ensureDelta(blendHex(canvas, blk, 0.35), canvas, minCardShadowCanvasDelta)
-	cardFocusEdge := ensureDelta(pick(bacc, bcya), cardFrame, minCardFocusEdgeFrameDelta)
+	cardChrome := ensureDelta(pick(panel, interactive), cardBody, minCardChromeBodyDelta)
+	cardFrameFG := ensureDelta(pick(bwht, fg), cardChrome, 0.10)
+	cardFocusEdge := ensureDelta(pick(bacc, bcya), cardChrome, minCardFocusEdgeChromeDelta)
 
 	// ── assemble ──────────────────────────────────────────────────────────────
 	return Theme{
@@ -135,12 +132,9 @@ func fromTint(t *tint.Tint, name string) Theme {
 			Scrim:  pick(blk, canvas),
 		},
 		Card: CardTokens{
-			HeaderBG:    cardHeader,
+			ChromeBG:    cardChrome,
 			BodyBG:      cardBody,
-			FooterBG:    cardFooter,
-			FrameBG:     cardFrame,
 			FrameFG:     cardFrameFG,
-			ShadowBG:    cardShadow,
 			FocusEdgeBG: cardFocusEdge,
 		},
 	}

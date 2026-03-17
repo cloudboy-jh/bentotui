@@ -26,12 +26,9 @@ type SurfaceColors struct {
 }
 
 type CardSlabColors struct {
-	HeaderBG string
+	ChromeBG string
 	BodyBG   string
-	FooterBG string
-	FrameBG  string
 	FrameFG  string
-	ShadowBG string
 	FocusBG  string
 }
 
@@ -234,15 +231,12 @@ func (s System) DialogListRowSelected() lipgloss.Style {
 func (s System) ElevatedCardColors(focused bool) CardSlabColors {
 	focus := pick(s.Theme.Card.FocusEdgeBG, s.Theme.Border.Focus)
 	if !focused {
-		focus = pick(s.Theme.Card.FrameBG, s.Theme.Border.Normal)
+		focus = pick(s.Theme.Card.ChromeBG, s.Theme.Border.Normal)
 	}
 	return CardSlabColors{
-		HeaderBG: pick(s.Theme.Card.HeaderBG, s.Theme.Surface.Interactive),
+		ChromeBG: pick(s.Theme.Card.ChromeBG, s.Theme.Surface.Interactive),
 		BodyBG:   pick(s.Theme.Card.BodyBG, s.Theme.Surface.Panel),
-		FooterBG: pick(s.Theme.Card.FooterBG, s.Theme.Surface.Panel),
-		FrameBG:  pick(s.Theme.Card.FrameBG, s.Theme.Surface.Panel),
 		FrameFG:  pick(s.Theme.Card.FrameFG, s.Theme.Text.Primary),
-		ShadowBG: pick(s.Theme.Card.ShadowBG, s.Theme.Surface.Canvas),
 		FocusBG:  focus,
 	}
 }

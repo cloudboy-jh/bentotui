@@ -13,10 +13,9 @@ go run ./registry/bentos/app-shell
 
 ## Layout contract
 
-- left rail: app sections + lightweight status
 - main canvas: services table over queue/progress cards
 - bottom row: single anchored command bar
-- body room: `rooms.Rail(...)` with `rooms.RailFooterStack(...)`
+- body room: `rooms.Focus(...)` (workspace + footer)
 
 ## Controls
 
@@ -38,4 +37,4 @@ go run ./registry/bentos/app-shell
 ## Internal shape
 
 - `state/` root model, workspace deck, and palette actions
-- `ui/` rail/footer copy helpers
+- `ui/` footer copy helpers

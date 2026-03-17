@@ -100,10 +100,8 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
 			{th.Dialog.BG, th.Surface.Canvas, "dialog.bg", "surface.canvas", 0.03},
 			{th.Bar.BG, th.Surface.Canvas, "bar.bg", "surface.canvas", 0.02},
-			{th.Card.HeaderBG, th.Card.BodyBG, "card.headerBG", "card.bodyBG", minCardHeaderBodyDelta},
-			{th.Card.FrameBG, th.Card.BodyBG, "card.frameBG", "card.bodyBG", minCardFrameBodyDelta},
-			{th.Card.ShadowBG, th.Surface.Canvas, "card.shadowBG", "surface.canvas", minCardShadowCanvasDelta},
-			{th.Card.FocusEdgeBG, th.Card.FrameBG, "card.focusEdgeBG", "card.frameBG", minCardFocusEdgeFrameDelta},
+			{th.Card.ChromeBG, th.Card.BodyBG, "card.chromeBG", "card.bodyBG", minCardChromeBodyDelta},
+			{th.Card.FocusEdgeBG, th.Card.ChromeBG, "card.focusEdgeBG", "card.chromeBG", minCardFocusEdgeChromeDelta},
 		}
 		if th.Footer.AnchoredBG != "" && th.Footer.AnchoredFG != "" && th.Footer.AnchoredMuted != "" {
 			pairs = append(pairs,

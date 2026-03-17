@@ -24,11 +24,11 @@ func TestModelViewExactDimensions(t *testing.T) {
 	}
 }
 
-func TestModelViewContainsRailFooterAndCards(t *testing.T) {
+func TestModelViewContainsWorkspaceFooterAndCards(t *testing.T) {
 	m := NewModel()
 	_, _ = m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
 	out := viewFromTea(m.View())
-	checks := []string{"Sections", "Overview", "Services", "Queue", "Progress", "ctrl+k", "theme:"}
+	checks := []string{"Services", "Queue", "Progress", "overview | queue:1", "theme:", "ctrl+k"}
 	for _, token := range checks {
 		if !strings.Contains(out, token) {
 			t.Fatalf("expected token %q in render output", token)
