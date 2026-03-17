@@ -289,8 +289,8 @@ dialog.Open(dialog.Custom{
 
 ### `list`
 
-Scrollable list backed by `bubbles/list`. Returns **plain text** — the parent
-panel applies color.
+Scrollable list backed by `bubbles/list` with delegate-driven row rendering.
+Focus and resize are handled in `Update(...)` (`Focus`/`Blur` + `tea.WindowSizeMsg`).
 
 ```go
 import "yourmodule/bricks/list"
@@ -308,6 +308,8 @@ l.SetFormatter(func(row list.Row, selected bool, width int) string {
 })
 
 l.SetSize(width, height)  // shows last N lines that fit
+l.Focus()
+l.Blur()
 ```
 
 ---
@@ -315,12 +317,14 @@ l.SetSize(width, height)  // shows last N lines that fit
 ### `table`
 
 Table backed by `bubbles/table` with Bento-friendly compact/borderless behavior,
-column priority shrinking, and per-column alignment.
+optional painted grid structure (`VisualGrid`), column priority shrinking,
+per-column alignment, and explicit focus routing.
 
 ```go
 import "yourmodule/bricks/table"
 
 t := table.New("Name", "Status", "Size")
+t.SetVisualStyle(table.VisualGrid)
 t.SetCompact(true)
 t.SetBorderless(true)
 t.SetColumnAlign(2, table.AlignRight)
@@ -330,6 +334,8 @@ t.AddRow("go.mod", "ok", "1.1 KB")
 t.Clear()
 
 t.SetSize(width, height)
+t.Focus()
+t.Blur()
 ```
 
 ---
@@ -487,6 +493,8 @@ t.Active() int
 ### `filepicker`
 
 File and directory picker backed by `bubbles/filepicker` with Bento theme mapping.
+Selection flow follows `DidSelectFile` / `DidSelectDisabledFile`; resize is handled
+through `tea.WindowSizeMsg`.
 
 ```go
 import "yourmodule/bricks/filepicker"
@@ -501,6 +509,26 @@ fp.SetShowHidden(false)
 fp.SelectedPath() string
 fp.HighlightedPath() string
 fp.CurrentDirectory() string
+fp.Status() string
+```
+
+---
+
+### `package-manager`
+
+Sequential install flow brick inspired by Bubble Tea's `examples/package-manager`
+using spinner + progress + package count.
+
+```go
+import packagemanager "yourmodule/bricks/package-manager"
+
+pm := packagemanager.New([]string{"bubbles", "bubbletea", "lipgloss"})
+pm.SetSize(width, 1)
+
+// optional custom installer command for deterministic app flows
+pm.SetInstaller(func(pkg string) tea.Cmd {
+    return func() tea.Msg { return nil }
+})
 ```
 
 ---

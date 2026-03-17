@@ -17,6 +17,7 @@ import (
 	bubbleskey "charm.land/bubbles/v2/key"
 	bubbleslist "charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
@@ -51,7 +52,10 @@ type selectItem struct {
 
 func (i selectItem) FilterValue() string { return i.label }
 
-type selectDelegate struct{}
+// selectDelegate renders items with theme-aware colors baked in at the delegate
+// level — not via post-hoc string scanning. The owner pointer gives access to
+// current theme tokens at render time.
+type selectDelegate struct{ owner *Model }
 
 func (d selectDelegate) Height() int  { return 1 }
 func (d selectDelegate) Spacing() int { return 0 }
@@ -64,11 +68,37 @@ func (d selectDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item
 	if !ok {
 		return
 	}
+	t := theme.CurrentTheme()
+	width := d.owner.width
+	if width <= 0 {
+		width = 28
+	}
+	isSelected := index == m.Index()
 	prefix := "  "
-	if index == m.Index() {
+	if isSelected {
 		prefix = "> "
 	}
-	_, _ = io.WriteString(w, prefix+opt.label)
+	content := prefix + opt.label
+	if isSelected {
+		bg := pick(t.Selection.BG, t.Border.Focus)
+		fg := pick(t.Selection.FG, t.Text.Inverse)
+		line := lipgloss.NewStyle().
+			Background(lipgloss.Color(bg)).
+			Foreground(lipgloss.Color(fg)).
+			Bold(true).
+			Width(width).
+			Render(content)
+		_, _ = io.WriteString(w, line)
+	} else {
+		bg := pick(t.Surface.Panel, t.Surface.Canvas)
+		fg := pick(t.Text.Primary, t.Text.Primary)
+		line := lipgloss.NewStyle().
+			Background(lipgloss.Color(bg)).
+			Foreground(lipgloss.Color(fg)).
+			Width(width).
+			Render(content)
+		_, _ = io.WriteString(w, line)
+	}
 }
 
 type Model struct {
@@ -85,7 +115,13 @@ type Model struct {
 }
 
 func New(items ...Item) *Model {
-	inner := bubbleslist.New([]bubbleslist.Item{}, selectDelegate{}, 24, 4)
+	m := &Model{
+		items:       append([]Item(nil), items...),
+		selected:    -1,
+		placeholder: "Select...",
+		keys:        DefaultKeyMap(),
+	}
+	inner := bubbleslist.New([]bubbleslist.Item{}, selectDelegate{owner: m}, 24, 4)
 	inner.SetShowTitle(false)
 	inner.SetShowFilter(false)
 	inner.SetShowStatusBar(false)
@@ -93,14 +129,7 @@ func New(items ...Item) *Model {
 	inner.SetShowHelp(false)
 	inner.SetFilteringEnabled(false)
 	inner.DisableQuitKeybindings()
-
-	m := &Model{
-		items:       append([]Item(nil), items...),
-		selected:    -1,
-		placeholder: "Select...",
-		inner:       inner,
-		keys:        DefaultKeyMap(),
-	}
+	m.inner = inner
 	m.syncItems()
 	return m
 }
@@ -222,25 +251,24 @@ func (m *Model) View() tea.View {
 	if m.open {
 		caret = " ^"
 	}
-	body := []string{styles.Row(pick(t.Input.BG, t.Surface.Panel), pick(t.Input.FG, t.Text.Primary), w, head+caret)}
+	// Header row: uses input surface tokens.
+	headerRow := styles.Row(pick(t.Input.BG, t.Surface.Panel), pick(t.Input.FG, t.Text.Primary), w, head+caret)
+
 	if !m.open || len(m.items) == 0 {
-		return tea.NewView(strings.Join(body, "\n"))
+		return tea.NewView(headerRow)
 	}
+
+	// Delegate renders each row with correct bg/fg already applied —
+	// no post-hoc string scanning needed. Just consume the output directly.
 	menu := m.inner.View()
-	lines := strings.Split(menu, "\n")
-	for _, line := range lines {
+	rows := []string{headerRow}
+	for _, line := range strings.Split(menu, "\n") {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		bg := pick(t.Surface.Panel, t.Surface.Canvas)
-		fg := pick(t.Text.Primary, t.Text.Primary)
-		if strings.HasPrefix(strings.TrimLeft(line, " "), "> ") {
-			bg = pick(t.Selection.BG, t.Border.Focus)
-			fg = pick(t.Selection.FG, t.Text.Inverse)
-		}
-		body = append(body, styles.Row(bg, fg, w, line))
+		rows = append(rows, line)
 	}
-	return tea.NewView(strings.Join(body, "\n"))
+	return tea.NewView(strings.Join(rows, "\n"))
 }
 
 func (m *Model) visibleCount() int {

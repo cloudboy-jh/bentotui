@@ -49,12 +49,19 @@ func (m *Model) Focus() tea.Cmd { return m.input.Focus() }
 // Blur removes focus.
 func (m *Model) Blur() { m.input.Blur() }
 
+// IsFocused reports whether the input currently has focus.
+func (m *Model) IsFocused() bool { return m.input.Focused() }
+
 // SetPlaceholder sets the placeholder text.
 func (m *Model) SetPlaceholder(s string) { m.input.Placeholder = s }
 
 func (m *Model) Init() tea.Cmd { return nil }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if ws, ok := msg.(tea.WindowSizeMsg); ok {
+		m.SetSize(ws.Width, ws.Height)
+		return m, nil
+	}
 	updated, cmd := m.input.Update(msg)
 	m.input = updated
 	return m, cmd

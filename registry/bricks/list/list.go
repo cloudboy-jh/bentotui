@@ -4,8 +4,7 @@
 // | row 2                              |
 // | ...                                |
 // +-----------------------------------+
-// Scrollable plain-text row list.
-// Package list provides a list widget backed by bubbles/list.
+// Scrollable themed row list backed by bubbles/list.
 // Copy this file into your project: bento add list
 package list
 
@@ -17,6 +16,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/cloudboy-jh/bentotui/theme"
+	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
 // RowKind marks whether a row is normal content or a section header.
@@ -59,17 +60,20 @@ type Row struct {
 }
 
 // RowFormatter renders one row at the given width.
+// The returned string must be plain content — theme bg/fg wrapping
+// is applied by the delegate after the formatter returns.
 type RowFormatter func(row Row, selected bool, width int) string
 
-// Model is a scrollable list that shows the last N items that fit in height.
-// It produces plain text — no ANSI styling — so the parent panel can paint
-// the background without bleed-through.
+// Model is a scrollable list backed by bubbles/list.
+// Each row owns an explicit background from the Bento theme so it
+// renders correctly on any parent surface without bleed-through.
 type Model struct {
 	width     int
 	height    int
 	rows      []Row
 	max       int
 	cursor    int
+	focused   bool
 	density   Density
 	formatter RowFormatter
 	inner     bubbleslist.Model
@@ -98,6 +102,8 @@ func (i listItem) FilterValue() string {
 	return ""
 }
 
+// rowDelegate renders each row with explicit Bento theme bg/fg applied,
+// so rows are opaque on any parent surface — no transparent-row bleed.
 type rowDelegate struct{ owner *Model }
 
 func (d rowDelegate) Height() int  { return 1 }
@@ -112,7 +118,46 @@ func (d rowDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bu
 		return
 	}
 	selected := index == m.Index()
-	line := d.owner.renderRow(li.row, selected, m.Width())
+	width := m.Width()
+	if width <= 0 {
+		width = d.owner.width
+	}
+	if width <= 0 {
+		width = 1
+	}
+
+	// Build the content string (plain — no ANSI from formatter).
+	var content string
+	if d.owner.formatter != nil {
+		content = d.owner.formatter(li.row, selected, width)
+	} else {
+		content = defaultFormatter(li.row, selected, width, d.owner.density)
+	}
+
+	// Wrap content in an explicit background/foreground so the row is
+	// opaque — the parent surface does not need to compensate.
+	t := theme.CurrentTheme()
+	var line string
+	switch {
+	case li.row.Kind == RowSection:
+		bg := pick(t.Surface.Panel, t.Surface.Canvas)
+		fg := pick(t.Text.Muted, t.Text.Primary)
+		line = styles.RowClip(bg, fg, width, content)
+	case selected && d.owner.focused:
+		bg := pick(t.Selection.BG, t.Border.Focus)
+		fg := pick(t.Selection.FG, t.Text.Inverse)
+		line = styles.RowClip(bg, fg, width, content)
+	case selected && !d.owner.focused:
+		// Blurred selection: show position with accent tint, no full contrast.
+		bg := pick(t.Surface.Interactive, t.Surface.Panel)
+		fg := pick(t.Text.Accent, t.Text.Primary)
+		line = styles.RowClip(bg, fg, width, content)
+	default:
+		bg := pick(t.Surface.Panel, t.Surface.Canvas)
+		fg := pick(t.Text.Primary, t.Text.Primary)
+		line = styles.RowClip(bg, fg, width, content)
+	}
+
 	_, _ = io.WriteString(w, line)
 }
 
@@ -122,7 +167,7 @@ func New(maxItems int) *Model {
 	if maxItems <= 0 {
 		maxItems = 200
 	}
-	l := &Model{max: maxItems, density: DensityComfortable}
+	l := &Model{max: maxItems, density: DensityComfortable, focused: true}
 	d := &rowDelegate{owner: l}
 	inner := bubbleslist.New([]bubbleslist.Item{}, *d, 1, 1)
 	inner.SetShowTitle(false)
@@ -134,6 +179,7 @@ func New(maxItems int) *Model {
 	inner.DisableQuitKeybindings()
 	l.inner = inner
 	l.delegate = d
+	l.inner.SetSize(1, 1)
 	return l
 }
 
@@ -188,7 +234,7 @@ func (l *Model) Clear() {
 	l.syncInner()
 }
 
-// Items returns a copy of the current item list.
+// Items returns a copy of the current item list labels.
 func (l *Model) Items() []string {
 	out := make([]string, 0, len(l.rows))
 	for _, row := range l.rows {
@@ -201,12 +247,13 @@ func (l *Model) Items() []string {
 }
 
 // SetFormatter sets a custom row formatter.
+// The formatter returns plain content — bg/fg wrapping is handled by the delegate.
 func (l *Model) SetFormatter(f RowFormatter) {
 	l.formatter = f
 	l.syncInner()
 }
 
-// SetDensity controls row verbosity in default formatter.
+// SetDensity controls row verbosity in the default formatter.
 func (l *Model) SetDensity(v Density) {
 	switch v {
 	case DensityCompact:
@@ -219,8 +266,17 @@ func (l *Model) SetDensity(v Density) {
 
 // SetCursor sets the selected item index (item rows only).
 func (l *Model) SetCursor(i int) {
+	count := l.itemCount()
+	if count <= 0 {
+		l.cursor = 0
+		l.syncInner()
+		return
+	}
 	if i < 0 {
 		i = 0
+	}
+	if i >= count {
+		i = count - 1
 	}
 	l.cursor = i
 	l.syncInner()
@@ -229,65 +285,62 @@ func (l *Model) SetCursor(i int) {
 func (l *Model) Init() tea.Cmd { return nil }
 
 func (l *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		l.SetSize(msg.Width, msg.Height)
+		return l, nil
+	}
+	if !l.focused {
+		if _, ok := msg.(tea.KeyMsg); ok {
+			return l, nil
+		}
+	}
 	updated, cmd := l.inner.Update(msg)
 	l.inner = updated
+	l.cursor = l.rowToItemCursor(l.inner.Index())
 	return l, cmd
 }
 
 func (l *Model) View() tea.View {
-	if len(l.rows) == 0 {
+	if len(l.rows) == 0 || l.height <= 0 || l.width <= 0 {
 		return tea.NewView("")
 	}
-	l.syncInner()
-	out := l.inner.View()
-	parts := strings.Split(out, "\n")
-	clean := make([]string, 0, len(parts))
-	for _, line := range parts {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		clean = append(clean, line)
-	}
-	return tea.NewView(strings.Join(clean, "\n"))
+	return tea.NewView(l.inner.View())
 }
 
 func (l *Model) SetSize(width, height int) {
-	l.width = width
-	l.height = height
-	l.inner.SetSize(max(1, width), max(1, height))
+	l.width = max(1, width)
+	l.height = max(1, height)
+	l.inner.SetSize(l.width, l.height)
 	l.syncInner()
 }
 
 func (l *Model) GetSize() (int, int) { return l.width, l.height }
 
-func (l *Model) renderRow(row Row, selected bool, width int) string {
-	if l.formatter != nil {
-		return l.formatter(row, selected, width)
-	}
-	return defaultFormatter(row, selected, width, l.density)
-}
+func (l *Model) Focus()          { l.focused = true }
+func (l *Model) Blur()           { l.focused = false }
+func (l *Model) IsFocused() bool { return l.focused }
 
+// defaultFormatter builds the plain content string for a row.
+// No ANSI styling — theme bg/fg is applied by the delegate wrapper.
 func defaultFormatter(row Row, selected bool, width int, density Density) string {
 	if row.Kind == RowSection {
 		title := strings.TrimSpace(row.Section)
 		if title == "" {
 			title = strings.TrimSpace(row.Label)
 		}
+		if title == "" {
+			title = "section"
+		}
+		label := strings.ToUpper(title)
 		if width > 0 {
-			prefix := strings.ToUpper(title)
-			if prefix == "" {
-				prefix = "section"
-			}
-			line := "  " + prefix + " "
+			line := "  " + label + " "
 			if lipgloss.Width(line) < width {
-				line += strings.Repeat("-", width-lipgloss.Width(line))
+				line += strings.Repeat("─", width-lipgloss.Width(line))
 			}
 			return line
 		}
-		if title == "" {
-			return "  --"
-		}
-		return "  " + strings.ToUpper(title)
+		return "  " + label
 	}
 
 	prefix := "  "
@@ -320,6 +373,7 @@ func defaultFormatter(row Row, selected bool, width int, density Density) string
 	}
 	leftParts = append(leftParts, primary)
 	left := prefix + strings.TrimSpace(strings.Join(leftParts, " "))
+
 	stat := strings.TrimSpace(row.RightStat)
 	if stat == "" {
 		stat = strings.TrimSpace(row.Stat)
@@ -372,21 +426,44 @@ func (l *Model) syncInner() {
 		_ = cmd
 	}
 	l.inner.Select(selectedRowIdx)
-	w := l.width
-	if w <= 0 {
-		w = 1
-		for _, row := range l.rows {
-			line := l.renderRow(row, false, 0)
-			if lw := lipgloss.Width(line); lw > w {
-				w = lw
-			}
+	l.inner.SetSize(max(1, l.width), max(1, l.height))
+}
+
+func (l *Model) itemCount() int {
+	count := 0
+	for _, row := range l.rows {
+		if row.Kind == RowItem {
+			count++
 		}
 	}
-	h := l.height
-	if h <= 0 {
-		h = len(l.rows) + 2
+	return count
+}
+
+func (l *Model) rowToItemCursor(rowIdx int) int {
+	if rowIdx < 0 {
+		return 0
 	}
-	l.inner.SetSize(max(1, w), max(1, h))
+	itemIdx := 0
+	for i, row := range l.rows {
+		if row.Kind != RowItem {
+			continue
+		}
+		if i >= rowIdx {
+			return itemIdx
+		}
+		itemIdx++
+	}
+	if itemIdx > 0 {
+		return itemIdx - 1
+	}
+	return 0
+}
+
+func pick(v, fallback string) string {
+	if v == "" {
+		return fallback
+	}
+	return v
 }
 
 func max(a, b int) int {

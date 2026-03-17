@@ -6,6 +6,20 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+### Changed
+
+- Reworked `registry/bricks/list` to keep delegate-driven rendering without lossy `View()` flattening, added explicit focus routing, and made keyboard navigation + `tea.WindowSizeMsg` behavior predictable.
+- Reworked `registry/bricks/table` to use true multi-column/multi-row `bubbles/table` behavior with cleaner focus/blur semantics and resize handling.
+- Added table visual preset support with `VisualClean` (default) and `VisualGrid` (painted row/column structure) for stronger scanability when desired.
+- Reworked `registry/bricks/filepicker` to align with upstream `DidSelectFile` / `DidSelectDisabledFile` flow, improve status behavior, and harden path handling for cross-platform usage.
+- Added focused interaction guards and resize handling improvements in `panel` and `elevated-card`; added focus query + resize handling in `input`.
+- Fixed dialog sizing persistence for value-backed `Confirm`/`Custom` dialogs in manager resize/open paths.
+
+### Added
+
+- Added `registry/bricks/package-manager`, a spinner + progress install-flow brick modeled on Bubble Tea `examples/package-manager`.
+- Added `registry/bentos/dashboard-brick-lab`, a dashboard-room validation bento with one elevated card each for `list`, `table`, `filepicker`, and `package-manager`.
+
 ## [0.3.5] - 2026-03-17
 
 ### Changed

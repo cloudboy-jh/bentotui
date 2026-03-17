@@ -35,6 +35,7 @@ func Registry() []ComponentInfo {
 		{Name: "select", Desc: "Single-choice picker wrapping bubbles/list", Files: []string{"select.go"}},
 		{Name: "checkbox", Desc: "Boolean toggle using bubbles key bindings", Files: []string{"checkbox.go"}},
 		{Name: "progress", Desc: "Horizontal progress bar wrapping bubbles/progress", Files: []string{"progress.go"}},
+		{Name: "package-manager", Desc: "Sequential install flow with spinner + progress", Files: []string{"package_manager.go"}},
 		{Name: "tabs", Desc: "Tab row with bubbles key/paginator input", Files: []string{"tabs.go"}},
 		{Name: "toast", Desc: "Stacked notification rows", Files: []string{"toast.go"}},
 		{Name: "separator", Desc: "Horizontal or vertical divider", Files: []string{"separator.go"}},

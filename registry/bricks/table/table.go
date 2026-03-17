@@ -11,7 +11,6 @@ package table
 
 import (
 	"sort"
-	"strings"
 
 	bubblestable "charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
@@ -26,6 +25,13 @@ const (
 	AlignLeft   Align = "left"
 	AlignCenter Align = "center"
 	AlignRight  Align = "right"
+)
+
+type VisualStyle string
+
+const (
+	VisualClean VisualStyle = "clean"
+	VisualGrid  VisualStyle = "grid"
 )
 
 type Column struct {
@@ -44,6 +50,8 @@ type Model struct {
 	rows       [][]string
 	borderless bool
 	compact    bool
+	visual     VisualStyle
+	focused    bool
 	inner      bubblestable.Model
 }
 
@@ -53,21 +61,48 @@ func New(headers ...string) *Model {
 	for i, h := range headers {
 		cols[i] = Column{Header: h, Align: AlignLeft, Min: 4, Pri: 1}
 	}
-	inner := bubblestable.New(bubblestable.WithColumns([]bubblestable.Column{{Title: "", Width: 1}}), bubblestable.WithRows(nil), bubblestable.WithWidth(1), bubblestable.WithHeight(1))
-	inner.Blur()
-	return &Model{columns: cols, inner: inner}
+	inner := bubblestable.New(
+		bubblestable.WithColumns([]bubblestable.Column{{Title: "", Width: 1}}),
+		bubblestable.WithRows(nil),
+		bubblestable.WithWidth(1),
+		bubblestable.WithHeight(2),
+		bubblestable.WithFocused(true),
+	)
+	t := &Model{columns: cols, inner: inner, focused: true, width: 1, height: 2, visual: VisualClean}
+	t.syncData()
+	return t
 }
 
 // AddRow appends a data row. Extra cells are ignored; missing cells are blank.
 func (t *Model) AddRow(cells ...string) {
 	t.rows = append(t.rows, cells)
+	t.syncData()
 }
 
 // Clear removes all data rows (keeps headers).
-func (t *Model) Clear() { t.rows = nil }
+func (t *Model) Clear() {
+	t.rows = nil
+	t.syncData()
+}
 
-func (t *Model) SetBorderless(v bool) { t.borderless = v }
-func (t *Model) SetCompact(v bool)    { t.compact = v }
+func (t *Model) SetBorderless(v bool) {
+	t.borderless = v
+	t.syncData()
+}
+
+func (t *Model) SetCompact(v bool) {
+	t.compact = v
+	t.syncData()
+}
+
+func (t *Model) SetVisualStyle(v VisualStyle) {
+	switch v {
+	case VisualGrid:
+		t.visual = VisualGrid
+	default:
+		t.visual = VisualClean
+	}
+}
 
 func (t *Model) SetColumn(index int, col Column) {
 	if index < 0 || index >= len(t.columns) {
@@ -83,6 +118,7 @@ func (t *Model) SetColumn(index int, col Column) {
 		col.Pri = 1
 	}
 	t.columns[index] = col
+	t.syncData()
 }
 
 func (t *Model) SetColumnWidth(index, width int) {
@@ -90,6 +126,7 @@ func (t *Model) SetColumnWidth(index, width int) {
 		return
 	}
 	t.columns[index].Width = width
+	t.syncData()
 }
 
 func (t *Model) SetColumnAlign(index int, align Align) {
@@ -97,6 +134,7 @@ func (t *Model) SetColumnAlign(index int, align Align) {
 		return
 	}
 	t.columns[index].Align = align
+	t.syncData()
 }
 
 func (t *Model) SetColumnMinWidth(index, width int) {
@@ -107,6 +145,7 @@ func (t *Model) SetColumnMinWidth(index, width int) {
 		width = 1
 	}
 	t.columns[index].Min = width
+	t.syncData()
 }
 
 func (t *Model) SetColumnPriority(index, priority int) {
@@ -117,64 +156,172 @@ func (t *Model) SetColumnPriority(index, priority int) {
 		priority = 1
 	}
 	t.columns[index].Pri = priority
+	t.syncData()
 }
 
 func (t *Model) Init() tea.Cmd { return nil }
 
 func (t *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		t.SetSize(msg.Width, msg.Height)
+		return t, nil
+	}
+	if !t.focused {
+		if _, ok := msg.(tea.KeyMsg); ok {
+			return t, nil
+		}
+	}
 	updated, cmd := t.inner.Update(msg)
 	t.inner = updated
 	return t, cmd
 }
 
 func (t *Model) View() tea.View {
-	if t.width <= 0 || len(t.columns) == 0 {
+	if t.width <= 0 || t.height <= 0 || len(t.columns) == 0 {
 		return tea.NewView("")
 	}
-	t.syncInner()
+	// Theme is applied here — at render time — never during data mutations.
+	t.applyTheme()
 	return tea.NewView(t.inner.View())
 }
 
 func (t *Model) SetSize(width, height int) {
-	t.width = width
-	t.height = height
+	t.width = max(1, width)
+	t.height = max(2, height)
+	t.syncData()
 }
 
 func (t *Model) GetSize() (int, int) { return t.width, t.height }
 
-func (t *Model) separator() string {
-	if t.compact {
-		return " "
-	}
-	if t.borderless {
-		return "  "
-	}
-	return " | "
+func (t *Model) Focus() {
+	t.focused = true
+	t.inner.Focus()
 }
 
-func (t *Model) divider(widths []int, sep string) string {
-	if t.borderless {
-		return strings.Repeat("-", t.width)
-	}
-	parts := make([]string, len(widths))
-	for i, w := range widths {
-		parts[i] = strings.Repeat("-", w)
-	}
-	if t.compact {
-		return strings.Join(parts, " ")
-	}
-	return strings.Join(parts, strings.Repeat("-", len(sep)))
+func (t *Model) Blur() {
+	t.focused = false
+	t.inner.Blur()
 }
 
-func (t *Model) computeColumnWidths(totalWidth, sepWidth int) []int {
+func (t *Model) IsFocused() bool { return t.focused }
+
+// applyTheme sets Lip Gloss styles on the inner bubbles table at render time.
+//
+// KEY RULE — Cell must NOT carry Background:
+// The upstream bubbles/table renderRow() calls Cell.Render() on each cell
+// individually, then joins the cells into a row string, then calls
+// Selected.Render() on the joined string for the selected row.
+// If Cell.Background is set, those ANSI escape codes are already embedded
+// in the joined string before Selected re-paints — the result is color bleed
+// on the internal padding chars of each cell (they carry the Cell BG color,
+// not the Selected BG color). Leave Background unpainted on Cell; Selected
+// owns the whole-row background, and the parent surface paints normal rows.
+func (t *Model) applyTheme() {
+	th := theme.CurrentTheme()
+	styles := bubblestable.DefaultStyles()
+
+	headerBG := pick(th.Surface.Panel, th.Surface.Canvas)
+	selectedBG := pick(th.Selection.BG, th.Border.Focus)
+	selectedFG := pick(th.Selection.FG, th.Text.Inverse)
+	textFG := pick(th.Text.Primary, th.Bar.FG)
+
+	pad := 1
+	if t.compact || t.borderless {
+		pad = 0
+	}
+
+	// Header: background is safe — never re-wrapped by Selected.
+	styles.Header = lipgloss.NewStyle().
+		Bold(true).
+		Padding(0, pad).
+		Foreground(lipgloss.Color(textFG)).
+		Background(lipgloss.Color(headerBG))
+
+	// Cell: NO Background — see doc above.
+	styles.Cell = lipgloss.NewStyle().
+		Padding(0, pad).
+		Foreground(lipgloss.Color(textFG))
+
+	// Selected: owns full-row background — no conflict.
+	if t.focused {
+		styles.Selected = lipgloss.NewStyle().
+			Bold(true).
+			Padding(0, pad).
+			Foreground(lipgloss.Color(selectedFG)).
+			Background(lipgloss.Color(selectedBG))
+	} else {
+		// Blurred: show position without high-contrast selection.
+		styles.Selected = lipgloss.NewStyle().
+			Padding(0, pad).
+			Foreground(lipgloss.Color(pick(th.Text.Accent, th.Text.Primary)))
+	}
+
+	if t.visual == VisualGrid && !t.borderless {
+		gridBorder := lipgloss.NormalBorder()
+		headerBorderFG := lipgloss.Color(pick(th.Border.Focus, th.Border.Normal))
+		cellBorderFG := lipgloss.Color(pick(th.Border.Subtle, th.Border.Normal))
+		styles.Header = styles.Header.
+			BorderStyle(gridBorder).
+			BorderBottom(true).
+			BorderRight(true).
+			BorderForeground(headerBorderFG)
+		styles.Cell = styles.Cell.
+			BorderStyle(gridBorder).
+			BorderBottom(true).
+			BorderRight(true).
+			BorderForeground(cellBorderFG)
+		styles.Selected = styles.Selected.
+			BorderStyle(gridBorder).
+			BorderBottom(true).
+			BorderRight(true).
+			BorderForeground(headerBorderFG)
+	}
+
+	t.inner.SetStyles(styles)
+}
+
+// syncData pushes column definitions, row data, and dimensions into the
+// inner bubbles table. No theme/style work happens here — see applyTheme().
+func (t *Model) syncData() {
+	colWidths := t.computeColumnWidths(max(1, t.width))
+	cols := make([]bubblestable.Column, 0, len(t.columns))
+	for i, col := range t.columns {
+		cols = append(cols, bubblestable.Column{Title: col.Header, Width: colWidths[i]})
+	}
+
+	rows := make([]bubblestable.Row, 0, len(t.rows))
+	for _, row := range t.rows {
+		cells := make([]string, len(t.columns))
+		for i := range t.columns {
+			cell := ""
+			if i < len(row) {
+				cell = row[i]
+			}
+			cells[i] = alignText(cell, colWidths[i], t.columns[i].Align)
+		}
+		rows = append(rows, bubblestable.Row(cells))
+	}
+
+	t.inner.SetColumns(cols)
+	t.inner.SetRows(rows)
+	t.inner.SetWidth(max(1, t.width))
+	t.inner.SetHeight(max(2, t.height))
+	if t.focused {
+		t.inner.Focus()
+	} else {
+		t.inner.Blur()
+	}
+}
+
+func (t *Model) computeColumnWidths(totalWidth int) []int {
 	count := len(t.columns)
 	if count == 0 {
 		return nil
 	}
 	widths := make([]int, count)
 	mins := make([]int, count)
-	seps := (count - 1) * sepWidth
-	available := totalWidth - seps
+	available := totalWidth
 	if available < count {
 		available = count
 	}
@@ -271,7 +418,7 @@ func alignText(s string, width int, align Align) string {
 		return ""
 	}
 	if lipgloss.Width(s) > width {
-		s = ansi.Truncate(s, width, "")
+		s = ansi.Truncate(s, width, "…")
 	}
 	cell := lipgloss.NewStyle().Width(width)
 	switch align {
@@ -284,46 +431,11 @@ func alignText(s string, width int, align Align) string {
 	}
 }
 
-func (t *Model) syncInner() {
-	th := theme.CurrentTheme()
-	styles := bubblestable.DefaultStyles()
-	styles.Header = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(th.Text.Primary))
-	styles.Cell = lipgloss.NewStyle().Foreground(lipgloss.Color(th.Text.Primary))
-	styles.Selected = lipgloss.NewStyle().Foreground(lipgloss.Color(th.Text.Primary))
-	t.inner.SetStyles(styles)
-
-	sep := t.separator()
-	colWidths := t.computeColumnWidths(t.width, len(sep))
-
-	headerCells := make([]string, len(t.columns))
-	for i, col := range t.columns {
-		headerCells[i] = alignText(col.Header, colWidths[i], col.Align)
+func pick(v, fallback string) string {
+	if v == "" {
+		return fallback
 	}
-	headerLine := strings.Join(headerCells, sep)
-	headerLine = lipgloss.NewStyle().Width(max(1, t.width)).MaxWidth(max(1, t.width)).Render(headerLine)
-
-	rows := make([]bubblestable.Row, 0, len(t.rows)+1)
-	if !t.compact {
-		rows = append(rows, bubblestable.Row{t.divider(colWidths, sep)})
-	}
-	for _, row := range t.rows {
-		cells := make([]string, len(t.columns))
-		for i := range t.columns {
-			cell := ""
-			if i < len(row) {
-				cell = row[i]
-			}
-			cells[i] = alignText(cell, colWidths[i], t.columns[i].Align)
-		}
-		line := strings.Join(cells, sep)
-		line = lipgloss.NewStyle().Width(max(1, t.width)).MaxWidth(max(1, t.width)).Render(line)
-		rows = append(rows, bubblestable.Row{line})
-	}
-
-	t.inner.SetColumns([]bubblestable.Column{{Title: headerLine, Width: max(1, t.width)}})
-	t.inner.SetRows(rows)
-	t.inner.SetWidth(max(1, t.width))
-	t.inner.SetHeight(max(2, t.height))
+	return v
 }
 
 func min(a, b int) int {

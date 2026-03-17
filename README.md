@@ -78,6 +78,7 @@ go run ./cmd/starter-app
 go run ./registry/bentos/home-screen
 go run ./registry/bentos/app-shell
 go run ./registry/bentos/dashboard
+go run ./registry/bentos/dashboard-brick-lab
 
 # Copy components into your project
 bento add input bar surface
@@ -112,11 +113,12 @@ Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 | `select` | Single-choice inline picker backed by `bubbles/list`. |
 | `checkbox` | Boolean toggle input using `bubbles/key` bindings. |
 | `progress` | Horizontal progress bar backed by `bubbles/progress`. |
+| `package-manager` | Sequential install flow with spinner + progress (Bubble Tea package-manager style). |
 | `tabs` | Keyboard-navigable tab row using `bubbles/key` + `bubbles/paginator`. |
 | `toast` | Stacked notification rows. |
 | `separator` | Horizontal or vertical divider. |
 
-`bento add` currently supports: `surface`, `panel`, `elevated-card`, `bar`, `dialog`, `filepicker`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`.
+`bento add` currently supports: `surface`, `panel`, `elevated-card`, `bar`, `dialog`, `filepicker`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `package-manager`, `tabs`, `toast`, `separator`.
 
 Primitive policy: Bento does not ship a `spinner` registry component. Use
 `charm.land/bubbles/v2/spinner` directly.
@@ -140,6 +142,7 @@ registry/bentos/
 | `home-screen` | `wordmark`, `input`, `kbd`, `badge`, `bar`, `surface` |
 | `app-shell` | single-screen UX bento (`rail + table + list + progress + command palette + anchored footer`) |
 | `dashboard` | `elevated-card`, `badge`, `table`, `bar`, `surface` |
+| `dashboard-brick-lab` | dashboard room interaction harness (`list`, `table`, `filepicker`, `package-manager` in one elevated card each) |
 
 ## Core packages (real imports, not copied)
 

@@ -59,7 +59,7 @@ func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case OpenMsg:
 		m.active = v.Dialog
 		if m.active != nil {
-			m.active.SetSize(m.width, m.height)
+			m.active = resizeDialog(m.active, m.width, m.height)
 		}
 		return m, nil
 	case CloseMsg:
@@ -120,7 +120,7 @@ func (m *Manager) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	if m.active != nil {
-		m.active.SetSize(width, height)
+		m.active = resizeDialog(m.active, width, height)
 	}
 }
 
@@ -193,6 +193,41 @@ func (c Custom) View() tea.View {
 }
 
 func (c Custom) SetSize(width, height int) {
+	applyCustomSize(&c, width, height)
+}
+
+func (c Custom) Title() string { return c.DialogTitle }
+
+func resizeDialog(d Dialog, width, height int) Dialog {
+	switch v := d.(type) {
+	case Confirm:
+		v.width = width
+		v.height = height
+		return v
+	case *Confirm:
+		if v != nil {
+			v.width = width
+			v.height = height
+		}
+		return v
+	case Custom:
+		applyCustomSize(&v, width, height)
+		return v
+	case *Custom:
+		if v != nil {
+			applyCustomSize(v, width, height)
+		}
+		return v
+	default:
+		d.SetSize(width, height)
+		return d
+	}
+}
+
+func applyCustomSize(c *Custom, width, height int) {
+	if c == nil {
+		return
+	}
 	if c.Width == 0 {
 		c.Width = width / 2
 	}
@@ -209,8 +244,6 @@ func (c Custom) SetSize(width, height int) {
 		s.SetSize(max(1, c.Width-4), max(1, c.Height-4))
 	}
 }
-
-func (c Custom) Title() string { return c.DialogTitle }
 
 // ── rendering ─────────────────────────────────────────────────────────────────
 

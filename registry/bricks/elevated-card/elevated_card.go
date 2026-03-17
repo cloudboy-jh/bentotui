@@ -72,6 +72,15 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if ws, ok := msg.(tea.WindowSizeMsg); ok {
+		m.SetSize(ws.Width, ws.Height)
+		return m, nil
+	}
+	if !m.focused {
+		if _, ok := msg.(tea.KeyMsg); ok {
+			return m, nil
+		}
+	}
 	if m.content == nil {
 		return m, nil
 	}

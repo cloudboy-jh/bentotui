@@ -15,6 +15,7 @@ import (
 	bubblesfilepicker "charm.land/bubbles/v2/filepicker"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
@@ -29,26 +30,32 @@ type Model struct {
 
 func New(startDir string) *Model {
 	fp := bubblesfilepicker.New()
-	if strings.TrimSpace(startDir) != "" {
-		fp.CurrentDirectory = startDir
-	}
+	fp.CurrentDirectory = cleanPath(startDir)
 	fp.AutoHeight = false
 	fp.SetHeight(10)
-	return &Model{picker: fp, focused: true}
+	return &Model{picker: fp, focused: true, width: 1, height: 10}
 }
 
 func (m *Model) Init() tea.Cmd { return m.picker.Init() }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if !m.focused {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.SetSize(msg.Width, msg.Height)
 		return m, nil
+	}
+	if !m.focused {
+		if _, ok := msg.(tea.KeyMsg); ok {
+			return m, nil
+		}
 	}
 	updated, cmd := m.picker.Update(msg)
 	m.picker = updated
 	if ok, path := m.picker.DidSelectFile(msg); ok {
-		m.selectedPath = path
+		m.selectedPath = cleanPath(path)
 		m.status = "selected " + filepath.Base(path)
 	} else if ok, path := m.picker.DidSelectDisabledFile(msg); ok {
+		m.selectedPath = ""
 		m.status = "blocked " + filepath.Base(path)
 	}
 	return m, cmd
@@ -56,19 +63,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() tea.View {
 	m.syncStyles()
-	return tea.NewView(m.picker.View())
+	out := m.picker.View()
+	if m.width > 0 {
+		out = clipRows(out, m.width)
+	}
+	return tea.NewView(out)
 }
 
 func (m *Model) SetSize(width, height int) {
-	if width > 0 {
-		m.width = width
-	}
-	if height > 0 {
-		m.height = height
-	}
-	if m.height > 0 {
-		m.picker.SetHeight(m.height)
-	}
+	m.width = max(1, width)
+	m.height = max(1, height)
+	m.picker.SetHeight(m.height)
 }
 
 func (m *Model) GetSize() (int, int) {
@@ -83,7 +88,7 @@ func (m *Model) SetDirectory(path string) {
 	if strings.TrimSpace(path) == "" {
 		return
 	}
-	m.picker.CurrentDirectory = path
+	m.picker.CurrentDirectory = cleanPath(path)
 }
 
 func (m *Model) SetAllowedTypes(exts ...string) {
@@ -109,7 +114,11 @@ func (m *Model) syncStyles() {
 	s.DisabledFile = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Muted)))
 	s.Permission = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Border.Normal)))
 	s.FileSize = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Muted))).Align(lipgloss.Right)
-	s.Selected = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Selection.BG, t.Text.Accent))).Bold(true)
+	s.Symlink = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Text.Primary)))
+	s.Selected = lipgloss.NewStyle().
+		Background(lipgloss.Color(pick(t.Selection.BG, t.Border.Focus))).
+		Foreground(lipgloss.Color(pick(t.Selection.FG, t.Text.Inverse))).
+		Bold(true)
 	s.DisabledSelected = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Border.Subtle, t.Text.Muted)))
 	s.EmptyDirectory = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Muted))).SetString("No files")
 	m.picker.Styles = s
@@ -127,4 +136,24 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func cleanPath(path string) string {
+	trimmed := strings.TrimSpace(path)
+	if trimmed == "" {
+		return "."
+	}
+	return filepath.Clean(trimmed)
+}
+
+func clipRows(content string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	lines := strings.Split(content, "\n")
+	clipped := make([]string, 0, len(lines))
+	for _, line := range lines {
+		clipped = append(clipped, ansi.Truncate(line, width, ""))
+	}
+	return strings.Join(clipped, "\n")
 }
