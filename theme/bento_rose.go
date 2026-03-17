@@ -7,7 +7,7 @@ func bentoRoseTheme() Theme {
 			Canvas:      "#201a19",
 			Panel:       "#5f4843",
 			Overlay:     "#181312",
-			Interactive: "#967267",
+			Interactive: "#7a5d56",
 		},
 		Text: TextTokens{
 			Primary: "#f4ddca",
@@ -53,8 +53,8 @@ func bentoRoseTheme() Theme {
 			Scrim:  "#181312",
 		},
 		Card: CardTokens{
-			ChromeBG:    "#5f4843",
-			BodyBG:      "#7a5d56",
+			ChromeBG:    "#3d2d2a",
+			BodyBG:      "#5f4843",
 			FrameFG:     "#f4ddca",
 			FocusEdgeBG: "#ff92b6",
 		},

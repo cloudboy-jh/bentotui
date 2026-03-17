@@ -21,6 +21,10 @@ type model struct {
 	height int
 	active int
 
+	// theme cycling
+	themeOrder []string
+	themeIdx   int
+
 	footer *bar.Model
 
 	list       *list.Model
@@ -42,6 +46,12 @@ func main() {
 }
 
 func newModel() *model {
+	// Default to catppuccin-mocha for high-contrast visual testing baseline.
+	if _, err := theme.SetTheme("catppuccin-mocha"); err != nil {
+		// fall back to whatever is registered
+		_ = err
+	}
+
 	l := list.New(200)
 	l.AppendSection("SERVICES")
 	l.AppendRow(list.Row{Primary: "api", Secondary: "healthy", Tone: list.ToneSuccess, RightStat: "36ms"})
@@ -64,8 +74,19 @@ func newModel() *model {
 	pm := packagemanager.New([]string{"bubbletea", "bubbles", "lipgloss", "bentotui"})
 	pm.SetQuitOnDone(false)
 
+	themes := theme.AvailableThemes()
+	themeIdx := 0
+	for i, n := range themes {
+		if n == theme.CurrentThemeName() {
+			themeIdx = i
+			break
+		}
+	}
+
 	m := &model{
 		active:     0,
+		themeOrder: themes,
+		themeIdx:   themeIdx,
 		list:       l,
 		table:      tb,
 		filepicker: fp,
@@ -74,8 +95,10 @@ func newModel() *model {
 			bar.FooterAnchored(),
 			bar.Left("focus: list"),
 			bar.Cards(
-				bar.Card{Command: "arrows", Label: "move focus", Variant: bar.CardPrimary, Enabled: true, Priority: 3},
-				bar.Card{Command: "enter", Label: "open/select", Variant: bar.CardNormal, Enabled: true, Priority: 2},
+				bar.Card{Command: "arrows", Label: "focus", Variant: bar.CardPrimary, Enabled: true, Priority: 5},
+				bar.Card{Command: "t", Label: "theme", Variant: bar.CardNormal, Enabled: true, Priority: 4},
+				bar.Card{Command: "T", Label: "theme←", Variant: bar.CardNormal, Enabled: true, Priority: 3},
+				bar.Card{Command: "enter", Label: "select", Variant: bar.CardNormal, Enabled: true, Priority: 2},
 				bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 1},
 			),
 			bar.CompactCards(),
@@ -101,10 +124,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.layout()
 		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
+
+		// panel focus navigation
 		case "left":
 			if m.active%2 == 1 {
 				m.active--
@@ -129,11 +155,22 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.syncFocus()
 			}
 			return m, nil
+
+		// theme cycling
+		case "t":
+			m.shiftTheme(1)
+			return m, nil
+		case "T":
+			m.shiftTheme(-1)
+			return m, nil
 		}
+
 		return m, m.updateActive(msg)
 	}
 
-	cmds := make([]tea.Cmd, 0, 2)
+	// Non-key messages: always route to filepicker and package-manager
+	// since they need ticker/init messages regardless of focus.
+	var cmds []tea.Cmd
 	if cmd := m.updateFilepicker(msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
@@ -156,13 +193,7 @@ func (m *model) View() tea.View {
 
 	bodyH := max(1, m.height-1)
 	m.layout()
-	m.footer.SetLeft("focus: " + m.activeLabel())
-	if m.filepicker.Status() != "" {
-		m.fpCard.SetMeta(m.filepicker.Status())
-	}
-	if m.pkg.Done() {
-		m.pkgCard.SetMeta("done")
-	}
+	m.syncFooter()
 
 	body := rooms.Dashboard2x2(m.width, bodyH, m.listCard, m.tblCard, m.fpCard, m.pkgCard)
 	screen := rooms.Focus(m.width, m.height, rooms.Static(body), m.footer)
@@ -174,6 +205,18 @@ func (m *model) View() tea.View {
 	v.AltScreen = true
 	v.BackgroundColor = canvas
 	return v
+}
+
+func (m *model) syncFooter() {
+	m.footer.SetLeft("focus: " + m.activeLabel())
+	m.footer.SetRight("theme: " + theme.CurrentThemeName())
+
+	if m.filepicker.Status() != "" {
+		m.fpCard.SetMeta(m.filepicker.Status())
+	}
+	if m.pkg.Done() {
+		m.pkgCard.SetMeta("done")
+	}
 }
 
 func (m *model) layout() {
@@ -214,6 +257,18 @@ func (m *model) syncFocus() {
 		m.fpCard.SetVariant(elevatedcard.VariantEmphasis)
 	case 3:
 		m.pkgCard.SetVariant(elevatedcard.VariantEmphasis)
+	}
+}
+
+func (m *model) shiftTheme(step int) {
+	if len(m.themeOrder) == 0 {
+		return
+	}
+	m.themeIdx = (m.themeIdx + step + len(m.themeOrder)) % len(m.themeOrder)
+	if _, err := theme.SetTheme(m.themeOrder[m.themeIdx]); err != nil {
+		// skip invalid theme, advance again
+		m.themeIdx = (m.themeIdx + step + len(m.themeOrder)) % len(m.themeOrder)
+		_, _ = theme.SetTheme(m.themeOrder[m.themeIdx])
 	}
 }
 
