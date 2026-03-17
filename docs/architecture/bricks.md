@@ -6,6 +6,9 @@ All components are copy-and-own — run `bento add <name>` to copy source into y
 Primitive policy: Bento does not ship a `spinner` component. Use
 `charm.land/bubbles/v2/spinner` directly when you need loading indicators.
 
+Charm-first policy: when Charm already ships a mature primitive, Bento bricks
+wrap that primitive and map Bento theme tokens on top.
+
 ---
 
 ## Module deps (import, don't copy)
@@ -286,7 +289,8 @@ dialog.Open(dialog.Custom{
 
 ### `list`
 
-Scrollable log-style list. Returns **plain text** — the parent panel applies color.
+Scrollable list backed by `bubbles/list`. Returns **plain text** — the parent
+panel applies color.
 
 ```go
 import "yourmodule/bricks/list"
@@ -310,8 +314,8 @@ l.SetSize(width, height)  // shows last N lines that fit
 
 ### `table`
 
-Header row + data rows with optional compact/borderless modes and per-column
-width/alignment control.
+Table backed by `bubbles/table` with Bento-friendly compact/borderless behavior,
+column priority shrinking, and per-column alignment.
 
 ```go
 import "yourmodule/bricks/table"
@@ -412,7 +416,7 @@ w.SetBold(true)
 
 ### `select`
 
-Single-choice inline picker with open/close and keyboard navigation.
+Single-choice inline picker backed by `bubbles/list` + `bubbles/key`.
 
 ```go
 import selectx "yourmodule/bricks/select"
@@ -434,7 +438,7 @@ s.SetPlaceholder("Choose theme")
 
 ### `checkbox`
 
-Boolean toggle input with optional focus behavior.
+Boolean toggle input with optional focus behavior, using `bubbles/key` bindings.
 
 ```go
 import "yourmodule/bricks/checkbox"
@@ -449,7 +453,7 @@ c.Checked() bool
 
 ### `progress`
 
-Horizontal progress bar with optional label and percentage text.
+Horizontal progress bar backed by `bubbles/progress` with optional label and percentage text.
 
 ```go
 import "yourmodule/bricks/progress"
@@ -464,7 +468,7 @@ p.SetShowPercent(true)
 
 ### `tabs`
 
-Keyboard-navigable tab row.
+Keyboard-navigable tab row using `bubbles/key` + `bubbles/paginator`.
 
 ```go
 import "yourmodule/bricks/tabs"
@@ -476,6 +480,27 @@ t := tabs.New(
 t.Focus()
 t.SetActive(1)
 t.Active() int
+```
+
+---
+
+### `filepicker`
+
+File and directory picker backed by `bubbles/filepicker` with Bento theme mapping.
+
+```go
+import "yourmodule/bricks/filepicker"
+
+fp := filepicker.New(".")
+fp.SetAllowFiles(true)
+fp.SetAllowDirectories(false)
+fp.SetAllowedTypes(".go", ".md")
+fp.SetShowHidden(false)
+
+// selection helpers
+fp.SelectedPath() string
+fp.HighlightedPath() string
+fp.CurrentDirectory() string
 ```
 
 ---

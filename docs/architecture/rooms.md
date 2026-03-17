@@ -10,7 +10,7 @@ Contract:
 - Use `surface` as the final compositor in app `View()`
 - Prefer `Focus` for body + anchored-footer screens; use `Frame` when you explicitly need top/subheader rows.
 - Bar roles for `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`).
-- Validation bento (`registry/bentos/app-shell`) is the canonical way to pressure-test room composition.
+- Reference bento (`registry/bentos/app-shell`) is the canonical way to validate room composition in a real app screen.
 
 ## API Basics
 

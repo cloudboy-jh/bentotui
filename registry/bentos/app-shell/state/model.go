@@ -7,88 +7,78 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/scenarios"
 	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/ui"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
-	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/dialog"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/panel"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-var viewportPresets = []scenarios.Viewport{
-	{Name: "narrow", Width: 80, Height: 24},
-	{Name: "medium", Width: 100, Height: 30},
-	{Name: "wide", Width: 140, Height: 42},
-}
+type setThemeMsg struct{ Name string }
+type setSectionMsg struct{ Index int }
+type toggleCompactMsg struct{}
+type pulseProgressMsg struct{}
 
 type Model struct {
-	width       int
-	height      int
-	scenarios   []scenarios.Definition
-	scenarioIdx int
-	presetIdx   int
-	paintDebug  bool
-	snapshot    bool
-	status      string
+	width  int
+	height int
+
+	sections   []string
+	sectionIdx int
+	queueIdx   int
+	compact    bool
+	progress   float64
+	status     string
 
 	navPanel   *panel.Model
-	canvasCard *elevatedcard.Model
-	centerDeck *centerDeck
 	navText    *textBlock
-	footerText *textBlock
+	centerDeck *centerDeck
 	footer     *bar.Model
-	footerCard *elevatedcard.Model
+	dialogs    *dialog.Manager
 
 	themeOrder []string
 	themeIdx   int
-
-	checks []scenarios.Check
 }
 
 func NewModel() *Model {
 	navTxt := &textBlock{}
-	footerTxt := &textBlock{}
 	deck := newCenterDeck()
 
-	names := theme.AvailableStableThemes()
-	if len(names) == 0 {
-		names = theme.AvailableThemes()
-	}
+	themes := theme.AvailableThemes()
 	cur := theme.CurrentThemeName()
-	idx := 0
-	for i, n := range names {
+	themeIdx := 0
+	for i, n := range themes {
 		if n == cur {
-			idx = i
+			themeIdx = i
 			break
 		}
 	}
 
 	m := &Model{
-		scenarios:   scenarios.All(),
-		navText:     navTxt,
-		centerDeck:  deck,
-		footerText:  footerTxt,
-		themeOrder:  names,
-		themeIdx:    idx,
-		status:      "ready",
-		scenarioIdx: 0,
-		presetIdx:   1,
+		sections:   []string{"Overview", "Services", "Queue", "Progress"},
+		navText:    navTxt,
+		centerDeck: deck,
+		themeOrder: themes,
+		themeIdx:   themeIdx,
+		sectionIdx: 0,
+		queueIdx:   0,
+		compact:    true,
+		progress:   0.62,
+		status:     "ready",
+		dialogs:    dialog.New(),
 	}
 
-	m.navPanel = panel.New(panel.Title("Scenarios"), panel.Content(navTxt), panel.Elevated())
-	m.canvasCard = elevatedcard.New(elevatedcard.Title("UI Sandbox"), elevatedcard.Content(deck), elevatedcard.Inset(1))
-	m.footerCard = elevatedcard.New(elevatedcard.Title("Session"), elevatedcard.Content(footerTxt), elevatedcard.CardVariant(elevatedcard.VariantDense), elevatedcard.Inset(1))
+	m.navPanel = panel.New(panel.Title("App Shell"), panel.Content(navTxt), panel.Elevated())
 	m.navPanel.Focus()
 	m.footer = bar.New(
 		bar.FooterAnchored(),
-		bar.AnchoredCardStyleMode(bar.AnchoredCardStyleMixed),
-		bar.Left("validation bento"),
+		bar.Left("workspace"),
 		bar.Cards(ui.FooterCards()...),
 		bar.CompactCards(),
 	)
-	m.syncNavText()
+	m.syncAll()
 	return m
 }
 
@@ -100,37 +90,76 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.footer.SetSize(msg.Width, 1)
-		if cardH := m.footerCardRows(); cardH > 0 {
-			m.footerCard.SetSize(msg.Width, cardH)
-		}
+		m.dialogs.SetSize(msg.Width, msg.Height)
 		return m, nil
+
+	case dialog.OpenMsg, dialog.CloseMsg:
+		u, cmd := m.dialogs.Update(msg)
+		m.dialogs = u.(*dialog.Manager)
+		return m, cmd
+
+	case setThemeMsg:
+		m.applyTheme(msg.Name)
+		return m, nil
+
+	case setSectionMsg:
+		m.setSection(msg.Index)
+		return m, nil
+
+	case toggleCompactMsg:
+		m.compact = !m.compact
+		m.status = ternary(m.compact, "table compact", "table comfortable")
+		return m, nil
+
+	case pulseProgressMsg:
+		m.progress += 0.07
+		if m.progress > 1 {
+			m.progress = 0.08
+		}
+		m.status = fmt.Sprintf("progress %.0f%%", m.progress*100)
+		return m, nil
+
 	case tea.KeyMsg:
+		if m.dialogs.IsOpen() {
+			u, cmd := m.dialogs.Update(msg)
+			m.dialogs = u.(*dialog.Manager)
+			return m, cmd
+		}
+
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "up":
-			m.selectScenario(m.scenarioIdx - 1)
+			m.setSection(m.sectionIdx - 1)
 		case "down":
-			m.selectScenario(m.scenarioIdx + 1)
+			m.setSection(m.sectionIdx + 1)
 		case "left":
-			m.shiftPreset(-1)
+			m.queueIdx = max(0, m.queueIdx-1)
+			m.status = "queue cursor <-"
 		case "right":
-			m.shiftPreset(1)
+			m.queueIdx = min(3, m.queueIdx+1)
+			m.status = "queue cursor ->"
+		case "enter":
+			m.progress += 0.05
+			if m.progress > 1 {
+				m.progress = 0.1
+			}
+			m.status = fmt.Sprintf("pulse %.0f%%", m.progress*100)
 		case "t":
 			m.shiftTheme(1)
-		case "d":
-			m.paintDebug = !m.paintDebug
-			m.status = ternary(m.paintDebug, "paint debug enabled", "paint debug disabled")
-		case "s":
-			m.snapshot = !m.snapshot
-			m.status = ternary(m.snapshot, "snapshot mode enabled", "snapshot mode disabled")
+		case "c":
+			m.compact = !m.compact
+			m.status = ternary(m.compact, "table compact", "table comfortable")
+		case "ctrl+k":
+			return m, m.openPalette()
 		default:
 			if n, err := strconv.Atoi(msg.String()); err == nil {
-				m.selectScenario(n - 1)
+				m.setSection(n - 1)
 			}
 		}
 		return m, nil
 	}
+
 	return m, nil
 }
 
@@ -145,23 +174,17 @@ func (m *Model) View() tea.View {
 		return v
 	}
 
-	m.syncNavText()
-	cardH := m.footerCardRows()
-	bodyH := max(1, m.height-1-cardH)
-	m.syncScenarioText(bodyH)
-	m.syncFooterLine()
-	m.syncFooterCard()
+	m.syncAll()
 
-	m.footer.SetSize(m.width, 1)
-	if cardH > 0 {
-		m.footerCard.SetSize(m.width, cardH)
-	}
-	navW := clamp(m.width/5, 24, 34)
-	screen := rooms.RailFooterStack(m.width, m.height, navW, cardH, m.navPanel, m.canvasCard, m.footerCard, m.footer)
+	navW := clamp(m.width/5, 24, 32)
+	screen := rooms.RailFooterStack(m.width, m.height, navW, 0, m.navPanel, m.centerDeck, nil, m.footer)
 
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
 	surf.Draw(0, 0, screen)
+	if m.dialogs.IsOpen() {
+		surf.DrawCenter(viewString(m.dialogs.View()))
+	}
 
 	v := tea.NewView(surf.Render())
 	v.AltScreen = true
@@ -169,131 +192,49 @@ func (m *Model) View() tea.View {
 	return v
 }
 
-func (m *Model) syncScenarioText(bodyH int) {
-	if len(m.scenarios) == 0 {
-		m.centerDeck.SetOutput("Scenario Output", "no scenarios")
-		m.centerDeck.SetChecks("checks: none")
-		m.centerDeck.SetMetrics("context unavailable")
-		return
+func (m *Model) syncAll() {
+	if len(m.sections) == 0 {
+		m.sections = []string{"Overview"}
+		m.sectionIdx = 0
 	}
-	preset := viewportPresets[m.presetIdx]
-	s := m.scenarios[m.scenarioIdx]
-	ctx := scenarios.Context{
-		Width:      min(max(32, m.width-40), preset.Width),
-		Height:     min(max(10, bodyH-6), preset.Height),
-		Viewport:   preset,
-		PaintDebug: m.paintDebug,
-		Snapshot:   m.snapshot,
-		FocusOwner: "center",
-		StressStep: m.themeIdx*10 + m.presetIdx,
+	if m.sectionIdx < 0 {
+		m.sectionIdx = 0
+	}
+	if m.sectionIdx >= len(m.sections) {
+		m.sectionIdx = len(m.sections) - 1
 	}
 
-	r := s.Run(ctx)
-	m.checks = append([]scenarios.Check{}, r.Checks...)
-
-	title := fmt.Sprintf("[%d/%d] %s", m.scenarioIdx+1, len(m.scenarios), s.Title)
-	m.canvasCard.SetTitle(title)
-	m.canvasCard.SetMeta(s.Description)
-	m.canvasCard.SetFooter(m.inlineSummary())
-	body := compactBodyLines(r.Canvas)
-	if m.paintDebug {
-		body = append(body, strings.Repeat("-", max(12, min(ctx.Width-4, 72))))
-	}
-	m.centerDeck.SetOutput("Scenario Output", strings.Join(body, "\n"))
-
-	m.centerDeck.SetChecks(formatChecksForCard(m.checks))
-	m.centerDeck.SetMetrics(fmt.Sprintf("scenario=%s\nviewport=%s(%dx%d)\ntheme=%s\nstatus=%s",
-		s.ID,
-		preset.Name,
-		preset.Width,
-		preset.Height,
-		theme.CurrentThemeName(),
-		m.status,
-	))
-}
-
-func (m *Model) inlineSummary() string {
-	p := viewportPresets[m.presetIdx]
-	return fmt.Sprintf("summary: %s | viewport=%s(%dx%d) | theme=%s | %s",
-		m.scenarios[m.scenarioIdx].ID,
-		p.Name,
-		p.Width,
-		p.Height,
-		theme.CurrentThemeName(),
-		m.status,
-	)
-}
-
-func (m *Model) syncFooterLine() {
-	p := viewportPresets[m.presetIdx]
-	m.footer.SetLeft(fmt.Sprintf("%s | %s", m.scenarios[m.scenarioIdx].ID, p.Name))
-	m.footer.SetRight(fmt.Sprintf("theme:%s snapshot:%t", theme.CurrentThemeName(), m.snapshot))
-}
-
-func (m *Model) syncFooterCard() {
-	p := viewportPresets[m.presetIdx]
-	pass, warn, fail := summarizeChecks(m.checks)
-	m.footerText.SetText(fmt.Sprintf("scenario=%s  status=%s\nviewport=%s(%dx%d)  theme=%s\nchecks: pass=%d warn=%d fail=%d",
-		m.scenarios[m.scenarioIdx].ID,
-		m.status,
-		p.Name,
-		p.Width,
-		p.Height,
-		theme.CurrentThemeName(),
-		pass,
-		warn,
-		fail,
-	))
-}
-
-func formatChecksForCard(checks []scenarios.Check) string {
-	if len(checks) == 0 {
-		return "No checks yet"
-	}
-	lines := make([]string, 0, len(checks))
-	for i := 0; i < len(checks) && i < 6; i++ {
-		c := checks[i]
-		prefix := "ok"
-		switch c.Level {
-		case scenarios.CheckWarn:
-			prefix = "warn"
-		case scenarios.CheckFail:
-			prefix = "fail"
-		}
-		detail := strings.TrimSpace(c.Detail)
-		if detail == "" {
-			detail = c.Name
-		}
-		lines = append(lines, fmt.Sprintf("%s %s", prefix, detail))
-	}
-	return strings.Join(lines, "\n")
+	m.syncNavText()
+	m.centerDeck.SetActiveSection(m.sections[m.sectionIdx])
+	m.centerDeck.SetQueueCursor(m.queueIdx)
+	m.centerDeck.SetCompact(m.compact)
+	m.centerDeck.SetProgress(m.progress, fmt.Sprintf("section: %s", strings.ToLower(m.sections[m.sectionIdx])))
+	m.syncFooterLine()
 }
 
 func (m *Model) syncNavText() {
-	m.navText.SetText(ui.SelectorText(m.scenarios, m.scenarioIdx))
+	m.navText.SetText(ui.SelectorText(m.sections, m.sectionIdx, theme.CurrentThemeName(), m.progress, m.compact))
 }
 
-func (m *Model) selectScenario(idx int) {
-	if len(m.scenarios) == 0 {
+func (m *Model) syncFooterLine() {
+	left := fmt.Sprintf("%s | queue:%d", strings.ToLower(m.sections[m.sectionIdx]), m.queueIdx+1)
+	right := fmt.Sprintf("theme:%s compact:%t %s", theme.CurrentThemeName(), m.compact, m.status)
+	m.footer.SetLeft(left)
+	m.footer.SetRight(right)
+}
+
+func (m *Model) setSection(idx int) {
+	if len(m.sections) == 0 {
 		return
 	}
 	if idx < 0 {
-		idx = len(m.scenarios) - 1
+		idx = len(m.sections) - 1
 	}
-	if idx >= len(m.scenarios) {
+	if idx >= len(m.sections) {
 		idx = 0
 	}
-	m.scenarioIdx = idx
-	m.status = "scenario -> " + m.scenarios[idx].ID
-}
-
-func (m *Model) shiftPreset(step int) {
-	if len(viewportPresets) == 0 {
-		return
-	}
-	m.presetIdx = (m.presetIdx + step + len(viewportPresets)) % len(viewportPresets)
-	p := viewportPresets[m.presetIdx]
-	m.status = fmt.Sprintf("viewport -> %s (%dx%d)", p.Name, p.Width, p.Height)
+	m.sectionIdx = idx
+	m.status = "section -> " + strings.ToLower(m.sections[idx])
 }
 
 func (m *Model) shiftTheme(step int) {
@@ -302,42 +243,58 @@ func (m *Model) shiftTheme(step int) {
 		return
 	}
 	m.themeIdx = (m.themeIdx + step + len(m.themeOrder)) % len(m.themeOrder)
-	name := m.themeOrder[m.themeIdx]
+	m.applyTheme(m.themeOrder[m.themeIdx])
+}
+
+func (m *Model) applyTheme(name string) {
 	if _, err := theme.SetTheme(name); err != nil {
 		m.status = "theme error: " + err.Error()
 		return
 	}
+	for i, n := range m.themeOrder {
+		if n == name {
+			m.themeIdx = i
+			break
+		}
+	}
 	m.status = "theme -> " + name
 }
 
-func summarizeChecks(checks []scenarios.Check) (pass, warn, fail int) {
-	for _, c := range checks {
-		switch c.Level {
-		case scenarios.CheckWarn:
-			warn++
-		case scenarios.CheckFail:
-			fail++
-		default:
-			pass++
-		}
+func (m *Model) openPalette() tea.Cmd {
+	commands := make([]dialog.Command, 0, len(m.sections)+len(m.themeOrder)+4)
+	for i, section := range m.sections {
+		idx := i
+		commands = append(commands, dialog.Command{
+			Label:   "Go to " + section,
+			Group:   "Navigate",
+			Keybind: strconv.Itoa(i + 1),
+			Action:  func() tea.Msg { return setSectionMsg{Index: idx} },
+		})
 	}
-	return pass, warn, fail
-}
+	commands = append(commands,
+		dialog.Command{Label: "Toggle compact table", Group: "View", Keybind: "c", Action: func() tea.Msg { return toggleCompactMsg{} }},
+		dialog.Command{Label: "Pulse progress", Group: "View", Keybind: "enter", Action: func() tea.Msg { return pulseProgressMsg{} }},
+	)
+	for _, name := range m.themeOrder {
+		themeName := name
+		commands = append(commands, dialog.Command{
+			Label:   "Switch to " + themeName,
+			Group:   "Theme",
+			Keybind: "t",
+			Action:  func() tea.Msg { return setThemeMsg{Name: themeName} },
+		})
+	}
 
-func compactBodyLines(canvas string) []string {
-	lines := strings.Split(canvas, "\n")
-	out := make([]string, 0, len(lines))
-	for _, line := range lines {
-		trimmed := strings.TrimRight(line, " ")
-		if strings.TrimSpace(trimmed) == "" {
-			continue
-		}
-		out = append(out, trimmed)
+	return func() tea.Msg {
+		palette := dialog.NewCommandPalette(commands)
+		h := clamp(min(24, m.height-4), 12, 24)
+		return dialog.Open(dialog.Custom{
+			DialogTitle: "Command Palette",
+			Content:     palette,
+			Width:       56,
+			Height:      h,
+		})
 	}
-	if len(out) == 0 {
-		return []string{"(empty scenario output)"}
-	}
-	return out
 }
 
 func ternary[T any](cond bool, t, f T) T {
@@ -369,20 +326,4 @@ func max(a, b int) int {
 		return a
 	}
 	return b
-}
-
-const footerCardHeight = 4
-
-func (m *Model) footerCardRows() int {
-	if m.height <= 2 {
-		return 0
-	}
-	h := footerCardHeight
-	if h > m.height-2 {
-		h = m.height - 2
-	}
-	if h < 1 {
-		return 0
-	}
-	return h
 }

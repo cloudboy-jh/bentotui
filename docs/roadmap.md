@@ -1,6 +1,6 @@
 # BentoTUI Roadmap
 
-## Current State (v0.3.4)
+## Current State (v0.3.5)
 
 The repository completed a full structural refactor in v0.2 and has a working
 baseline CLI + starter flow:
@@ -40,10 +40,11 @@ See [next-steps.md](./next-steps.md) for the current priorities.
 
 ### New Components
 
-- [x] `tabs` — keyboard-navigable tab bar with panel content area
-- [x] `select` — dropdown/select widget (wraps or reimplements bubbles/list)
-- [x] `progress` — horizontal progress bar with theme colors
-- [x] `checkbox` — boolean toggle
+- [x] `tabs` — keyboard-navigable tab row (bubbles key + paginator)
+- [x] `select` — single-choice picker wrapping bubbles/list
+- [x] `progress` — horizontal progress bar wrapping bubbles/progress
+- [x] `checkbox` — boolean toggle using bubbles key bindings
+- [x] `filepicker` — file/directory picker wrapping bubbles/filepicker
 - [x] `badge` — inline colored label (useful inside panel titles)
 - [x] `kbd` — keyboard shortcut display pair
 - [x] `wordmark` — large title/header display helper
@@ -52,13 +53,16 @@ See [next-steps.md](./next-steps.md) for the current priorities.
 
 Already shipped in registry: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`.
 
+Charm-first policy is now active: `list`, `table`, `progress`, `select`, `checkbox`,
+`tabs`, and `filepicker` are Charm-backed wrappers, not custom reimplementations.
+
 Primitive policy: Bento does not plan a `spinner` registry component; use
 `charm.land/bubbles/v2/spinner` directly.
 
 ### Bento Examples
 
 - [x] `registry/bentos/home-screen` — canonical copy-and-own starter screen (starter-app pattern)
-- [x] `registry/bentos/app-shell` — scenario-driven validation bento
+- [x] `registry/bentos/app-shell` — single-screen composition bento + command palette
 - [x] `registry/bentos/dashboard` — cards + table composition pattern
 - [ ] `registry/bentos/form` — form controls and validation flow pattern
 

@@ -3,39 +3,53 @@
 // | [x] label text             |
 // +-----------------------------+
 // Boolean toggle row.
-// Package checkbox provides a themed boolean toggle input.
+// Package checkbox provides a themed boolean toggle input using bubbles/key.
 // Copy this file into your project: bento add checkbox
 package checkbox
 
 import (
 	"strings"
 
+	bubbleskey "charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
+
+type KeyMap struct {
+	Toggle bubbleskey.Binding
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		Toggle: bubbleskey.NewBinding(bubbleskey.WithKeys(" ", "enter"), bubbleskey.WithHelp("space", "toggle")),
+	}
+}
 
 type Model struct {
 	label   string
 	checked bool
 	focused bool
 	width   int
+	keys    KeyMap
 }
 
 func New(label string) *Model {
-	return &Model{label: label}
+	return &Model{label: label, keys: DefaultKeyMap()}
 }
 
-func (m *Model) Toggle()              { m.checked = !m.checked }
-func (m *Model) Checked() bool        { return m.checked }
-func (m *Model) SetChecked(v bool)    { m.checked = v }
-func (m *Model) SetLabel(v string)    { m.label = v }
-func (m *Model) Focus()               { m.focused = true }
-func (m *Model) Blur()                { m.focused = false }
-func (m *Model) IsFocused() bool      { return m.focused }
-func (m *Model) Init() tea.Cmd        { return nil }
-func (m *Model) SetSize(width, _ int) { m.width = width }
-func (m *Model) GetSize() (int, int)  { return m.width, 1 }
+func (m *Model) Toggle()           { m.checked = !m.checked }
+func (m *Model) Checked() bool     { return m.checked }
+func (m *Model) SetChecked(v bool) { m.checked = v }
+func (m *Model) SetLabel(v string) { m.label = v }
+func (m *Model) Focus()            { m.focused = true }
+func (m *Model) Blur()             { m.focused = false }
+func (m *Model) IsFocused() bool   { return m.focused }
+func (m *Model) Init() tea.Cmd     { return nil }
+func (m *Model) SetSize(width, _ int) {
+	m.width = width
+}
+func (m *Model) GetSize() (int, int) { return m.width, 1 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.focused {
@@ -45,8 +59,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
-	switch k.String() {
-	case " ", "enter":
+	if bubbleskey.Matches(k, m.keys.Toggle) {
 		m.Toggle()
 	}
 	return m, nil

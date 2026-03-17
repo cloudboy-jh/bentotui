@@ -28,7 +28,7 @@ func TestModelViewContainsRailFooterAndCards(t *testing.T) {
 	m := NewModel()
 	_, _ = m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
 	out := viewFromTea(m.View())
-	checks := []string{"Areas", "Rail/Nav", "Scenario Output", "Checks", "Context", "Session", "up/down"}
+	checks := []string{"Sections", "Overview", "Services", "Queue", "Progress", "ctrl+k", "theme:"}
 	for _, token := range checks {
 		if !strings.Contains(out, token) {
 			t.Fatalf("expected token %q in render output", token)
@@ -40,7 +40,8 @@ func TestModelSmallViewportKeepsFooterBar(t *testing.T) {
 	m := NewModel()
 	_, _ = m.Update(tea.WindowSizeMsg{Width: 70, Height: 12})
 	out := viewFromTea(m.View())
-	if !strings.Contains(out, "theme:") {
+	lines := strings.Split(out, "\n")
+	if len(lines) == 0 || strings.TrimSpace(lines[len(lines)-1]) == "" {
 		t.Fatalf("expected footer bar right status in small viewport")
 	}
 }

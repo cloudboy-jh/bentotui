@@ -20,7 +20,7 @@ per-component color systems for normal usage.
 ## User paths
 
 1. Copy a prebuilt bento (`registry/bentos/home-screen`, `dashboard`) and change behavior/content.
-2. Start from `registry/bentos/app-shell` to validate framework composition and layering.
+2. Start from `registry/bentos/app-shell` to validate UX composition, layering, and theme switching in a single-screen app.
 3. Build custom app from `rooms + bricks` and rely on theme tokens for visual system defaults.
 
 ## Non-goals right now

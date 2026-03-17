@@ -9,7 +9,7 @@ is the full app composition layer:
 - focus ownership
 - keymap and interaction flow
 - draw/layer order
-- scenario orchestration and diagnostics
+- product-facing UX composition
 
 ## Contract
 
@@ -31,18 +31,16 @@ Recommended frame stack:
 
 - `home-screen` — starter-style entry screen
 - `dashboard` — dense elevated-card/table composition
-- `app-shell` — validation bento for framework QA
+- `app-shell` — single-screen composition bento (rail + table + list + progress + palette)
 
 ## app-shell role
 
-`registry/bentos/app-shell` is the canonical framework validation bento.
+`registry/bentos/app-shell` is the canonical UX proving ground.
 
-It exists to pressure-test rooms and bricks under repeatable scenarios:
+It demonstrates the Bento contract directly:
 
-- layout
-- footer
-- stress
+- rooms provide grammar (`RailFooterStack`)
+- bricks provide UI primitives (table/list/progress/dialog/footer)
+- theme switching is global (footer + command palette)
 
-Use `app-shell` to reproduce visual regressions with a deterministic tuple:
-
-`scenario + viewport + theme + snapshot`
+It is intentionally a minimal app surface, not a scenario harness.

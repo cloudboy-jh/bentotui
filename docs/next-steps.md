@@ -7,11 +7,11 @@ Completed in this directory today:
 - Starter app is present and runnable at `cmd/starter-app/main.go`
 - Registry embedding is wired via `registry/embed.go`
 - `bento` CLI has working `init`, `add`, `list`, and `doctor` paths under `cmd/bento/`
-- Registry component catalog is finalized and shipped (`surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`)
+- Registry component catalog is finalized and shipped (`surface`, `panel`, `bar`, `dialog`, `filepicker`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`)
 - Wave 1 bento examples are present under `registry/bentos/` (`home-screen`, `app-shell`, `dashboard`)
 - `detail-view` reference bento is also shipped under `registry/bentos/detail-view`
 - Named room catalog shipped at `registry/rooms/` with `Rail` as the canonical rail+main contract
-- App-shell has shifted to a UX-first sandbox role (list/table/modal/footer/theme behavior)
+- App-shell has shifted to a single-screen UX app role (rail + table + list + progress + palette)
 - Theme engine now enforces card/footer contrast and stable-vs-experimental theme tiers
 
 ---
@@ -29,8 +29,8 @@ Completed in this directory today:
 ### 2) App-shell as UX proving ground
 
 - Keep app-shell focused on UX composition quality (not geometry/math diagnostics)
-- Validate list/table/modal/footer/theme behavior before promoting brick changes
-- Keep one scenario (`theme-audit`) as the only diagnostic-heavy scenario
+- Validate rail/main/footer layering, command palette behavior, and theme switching
+- Keep diagnostics out of default runtime UX surface
 
 ### 3) Brick policy (strict extraction gate)
 
@@ -76,6 +76,7 @@ Display helpers:
 
 Form/feedback components:
 
+- `filepicker`
 - `select`
 - `checkbox`
 - `progress`
@@ -89,14 +90,14 @@ Advanced composition helpers:
 Primitive policy:
 
 - Do not add `spinner` as a Bento component; use `charm.land/bubbles/v2/spinner`
-- Default to direct Bubbles primitives unless Bento-specific composition value is clear
-- Existing shipped primitive-like components remain supported, but are not the growth focus
+- Default to Charm-backed wrappers unless Bento-specific composition value is clear
+- Existing primitive-like bricks should wrap Bubbles/Huh internals where applicable
 - Do not add new bricks unless at least 2 bentos need the same abstraction
 
 ### Bento examples to build
 
 - `registry/bentos/home-screen` — mirror starter app pattern
-- `registry/bentos/app-shell` — header + rail + main + footer/status
+- `registry/bentos/app-shell` — rail + main workspace + anchored footer + command palette
 - `registry/bentos/dashboard` — cards + table composition
 - `registry/bentos/detail-view` — list + detail pane (shipped)
 - `registry/bentos/form` — labeled inputs + validation hints
@@ -123,7 +124,7 @@ Primitive policy:
 
 1. Keep `registry/bentos/home-screen` aligned with starter-app behavior
 2. Ship Wave 2 bentos (`form`, `settings`, `log-viewer`, `command-view`) using existing bricks first
-3. Use app-shell as the UX sandbox for promotion gates (list/table/modal/footer/theme)
+3. Use app-shell as the UX sandbox for promotion gates (list/table/progress/footer/palette/theme)
 4. Add tests for registry rendering + CLI logic
 5. Improve `bento init` scaffold clarity
 6. Implement `bento wrap` deterministic pipeline

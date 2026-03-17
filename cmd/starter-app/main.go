@@ -17,7 +17,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.4"
+const version = "v0.3.5"
 
 // wordmark is large ASCII art rendered centered in the upper body.
 const wordmark = "" +

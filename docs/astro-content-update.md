@@ -1,6 +1,6 @@
 ---
-title: "BentoTUI Architecture Freeze: Untouchable Theme Engine + Validation Bento"
-description: "BentoTUI now locks the core model around bentos, rooms, and bricks, with app-shell as a scenario-driven framework validation bento."
+title: "BentoTUI Architecture Freeze: Untouchable Theme Engine + Charm-Backed Bricks"
+description: "BentoTUI now locks the core model around bentos, rooms, and bricks, with app-shell as a single-screen UX proving ground and Charm-backed component internals."
 pubDate: 2026-03-15
 tags:
   - bentotui
@@ -12,7 +12,7 @@ tags:
 draft: false
 ---
 
-# BentoTUI Architecture Freeze: Untouchable Theme Engine + Validation Bento
+# BentoTUI Architecture Freeze: Untouchable Theme Engine + Charm-Backed Bricks
 
 BentoTUI now has a locked architecture contract:
 
@@ -25,29 +25,24 @@ And the visual system is now officially documented as the **Untouchable Theme En
 ## What changed
 
 - Moved shared style helpers from `styles/` to `theme/styles/`.
-- Reworked `registry/bentos/app-shell` into a scenario-driven validation bento.
+- Reworked `registry/bentos/app-shell` into a single-screen UX proving ground.
 - Added room-level split separation options (`WithGutter`, `WithDivider`).
 - Added anchored footer card style modes (`plain`, `chip`, `mixed`).
-- Expanded structured list rows with typed fields while keeping compatibility.
+- Migrated `list`, `table`, `progress`, `select`, `checkbox`, and `tabs` to Charm-backed internals.
+- Added `filepicker` brick backed by `bubbles/filepicker`.
 - Hardened panel render contract for ANSI-heavy content.
 
-## Validation bento role
+## App-shell role
 
-`registry/bentos/app-shell` is now the canonical proving ground for framework quality,
-not a static demo.
+`registry/bentos/app-shell` is now the canonical proving ground for UX composition
+quality, not a scenario harness.
 
-It ships scenario groups for:
+It demonstrates one intentional screen using rooms + bricks:
 
-- layout
-- hierarchy
-- footer
-- list
-- overlay
-- stress
-
-This makes regressions reproducible via a deterministic tuple:
-
-`scenario + viewport + theme + focus + snapshot`
+- left rail
+- main table/list/progress workspace
+- anchored command footer
+- command palette with full theme switching
 
 ## Docs reshaped
 
@@ -70,7 +65,7 @@ This removes layout/color guesswork by making responsibilities explicit:
 
 - bentos orchestrate
 - rooms allocate
-- bricks paint
+- bricks wrap Charm primitives, then paint with Bento theme tokens
 
 With themes driving visual semantics globally, app teams can compose faster
 without per-screen color glue.

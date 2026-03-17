@@ -176,7 +176,7 @@ Theme registry policy:
 - Graduation from `experimental` to `stable` requires:
   - quality score >= 82 from `themeQualityScore`
   - pass on card hierarchy checks (`card.headerBG/bodyBG/frameBG/shadowBG/focusEdgeBG`)
-  - manual visual spot-check in app-shell theme-audit scenario
+  - manual visual spot-check in app-shell single-screen UI with command-palette theme sweep
 
 ---
 

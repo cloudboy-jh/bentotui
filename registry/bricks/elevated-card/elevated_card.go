@@ -150,36 +150,36 @@ func (m *Model) View() tea.View {
 
 	metaRow := strings.TrimSpace(m.meta) != ""
 	footerRows := strings.TrimSpace(m.footer) != ""
-	reserved := 4 // top + header + divider + bottom
-	if dense {
-		reserved = 3 // top + header + bottom
-	}
+	reserved := 2 // header + bottom
 	if metaRow {
 		reserved++
 	}
 	if footerRows {
-		reserved += 2
+		reserved++
+		if !dense {
+			reserved++
+		}
 	}
 	if reserved > cardH {
 		if footerRows {
+			if dense {
+				reserved--
+			} else {
+				reserved -= 2
+			}
 			footerRows = false
-			reserved -= 2
 		}
 	}
 	if reserved > cardH {
 		metaRow = false
-		reserved = 4
+		reserved = 2
 	}
 	contentRows := max(1, cardH-reserved)
 
 	cardRows := make([]string, 0, cardH)
-	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, titleFG, ""))
 	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, headerBG, borderBG, titleFG, ansi.Strip(m.title)))
 	if metaRow {
 		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, metaFG, " "+ansi.Strip(m.meta)))
-	}
-	if !dense {
-		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
 	}
 
 	for i := 0; i < contentRows; i++ {
@@ -258,15 +258,15 @@ func (m *Model) SetSize(width, height int) {
 			cardH = height - (inset * 2)
 		}
 
-		reserved := 4
-		if dense {
-			reserved = 3
-		}
+		reserved := 2
 		if strings.TrimSpace(m.meta) != "" {
 			reserved++
 		}
 		if strings.TrimSpace(m.footer) != "" {
-			reserved += 2
+			reserved++
+			if !dense {
+				reserved++
+			}
 		}
 		contentH := max(1, cardH-reserved)
 		s.SetSize(max(0, cardW-2), max(0, contentH))

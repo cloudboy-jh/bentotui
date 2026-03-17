@@ -5,14 +5,17 @@
 // | option 2                           |
 // +-----------------------------------+
 // Single-choice picker.
-// Package select provides a themed single-choice picker.
+// Package select provides a themed single-choice picker backed by bubbles/list.
 // Copy this file into your project: bento add select
 package selectx
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
+	bubbleskey "charm.land/bubbles/v2/key"
+	bubbleslist "charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/theme/styles"
@@ -21,6 +24,51 @@ import (
 type Item struct {
 	Label string
 	Value string
+}
+
+type KeyMap struct {
+	Toggle bubbleskey.Binding
+	Close  bubbleskey.Binding
+	Up     bubbleskey.Binding
+	Down   bubbleskey.Binding
+	Choose bubbleskey.Binding
+}
+
+func DefaultKeyMap() KeyMap {
+	return KeyMap{
+		Toggle: bubbleskey.NewBinding(bubbleskey.WithKeys("enter", " "), bubbleskey.WithHelp("enter", "open")),
+		Close:  bubbleskey.NewBinding(bubbleskey.WithKeys("esc"), bubbleskey.WithHelp("esc", "close")),
+		Up:     bubbleskey.NewBinding(bubbleskey.WithKeys("up", "k"), bubbleskey.WithHelp("up", "up")),
+		Down:   bubbleskey.NewBinding(bubbleskey.WithKeys("down", "j"), bubbleskey.WithHelp("down", "down")),
+		Choose: bubbleskey.NewBinding(bubbleskey.WithKeys("enter"), bubbleskey.WithHelp("enter", "choose")),
+	}
+}
+
+type selectItem struct {
+	label string
+	value string
+}
+
+func (i selectItem) FilterValue() string { return i.label }
+
+type selectDelegate struct{}
+
+func (d selectDelegate) Height() int  { return 1 }
+func (d selectDelegate) Spacing() int { return 0 }
+func (d selectDelegate) Update(msg tea.Msg, m *bubbleslist.Model) tea.Cmd {
+	return nil
+}
+
+func (d selectDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bubbleslist.Item) {
+	opt, ok := item.(selectItem)
+	if !ok {
+		return
+	}
+	prefix := "  "
+	if index == m.Index() {
+		prefix = "> "
+	}
+	_, _ = io.WriteString(w, prefix+opt.label)
 }
 
 type Model struct {
@@ -32,10 +80,29 @@ type Model struct {
 	placeholder string
 	width       int
 	height      int
+	inner       bubbleslist.Model
+	keys        KeyMap
 }
 
 func New(items ...Item) *Model {
-	return &Model{items: append([]Item(nil), items...), selected: -1, placeholder: "Select..."}
+	inner := bubbleslist.New([]bubbleslist.Item{}, selectDelegate{}, 24, 4)
+	inner.SetShowTitle(false)
+	inner.SetShowFilter(false)
+	inner.SetShowStatusBar(false)
+	inner.SetShowPagination(false)
+	inner.SetShowHelp(false)
+	inner.SetFilteringEnabled(false)
+	inner.DisableQuitKeybindings()
+
+	m := &Model{
+		items:       append([]Item(nil), items...),
+		selected:    -1,
+		placeholder: "Select...",
+		inner:       inner,
+		keys:        DefaultKeyMap(),
+	}
+	m.syncItems()
+	return m
 }
 
 func (m *Model) SetItems(items []Item) {
@@ -43,6 +110,7 @@ func (m *Model) SetItems(items []Item) {
 	if len(m.items) == 0 {
 		m.cursor = 0
 		m.selected = -1
+		m.syncItems()
 		return
 	}
 	if m.cursor >= len(m.items) {
@@ -51,6 +119,7 @@ func (m *Model) SetItems(items []Item) {
 	if m.selected >= len(m.items) {
 		m.selected = -1
 	}
+	m.syncItems()
 }
 
 func (m *Model) SetPlaceholder(v string) { m.placeholder = v }
@@ -60,6 +129,7 @@ func (m *Model) IsFocused() bool         { return m.focused }
 func (m *Model) Open() {
 	if len(m.items) > 0 {
 		m.open = true
+		m.syncItems()
 	}
 }
 func (m *Model) Close() { m.open = false }
@@ -75,6 +145,7 @@ func (m *Model) SetSize(width, height int) {
 		m.width = width
 	}
 	m.height = height
+	m.syncItems()
 }
 func (m *Model) GetSize() (int, int) {
 	if m.open {
@@ -110,34 +181,27 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
-	switch k.String() {
-	case "enter", " ":
-		if m.open {
-			m.selected = m.cursor
-			m.open = false
-		} else {
+
+	if !m.open {
+		if bubbleskey.Matches(k, m.keys.Toggle, m.keys.Choose) {
 			m.Open()
 		}
-	case "esc":
-		m.open = false
-	case "down", "j":
-		if !m.open {
-			m.Open()
-			break
-		}
-		if m.cursor < len(m.items)-1 {
-			m.cursor++
-		}
-	case "up", "k":
-		if !m.open {
-			m.Open()
-			break
-		}
-		if m.cursor > 0 {
-			m.cursor--
-		}
+		return m, nil
 	}
-	return m, nil
+
+	if bubbleskey.Matches(k, m.keys.Close) {
+		m.Close()
+		return m, nil
+	}
+
+	updated, cmd := m.inner.Update(msg)
+	m.inner = updated
+	m.cursor = m.inner.Index()
+	if bubbleskey.Matches(k, m.keys.Choose) {
+		m.selected = m.cursor
+		m.open = false
+	}
+	return m, cmd
 }
 
 func (m *Model) View() tea.View {
@@ -162,19 +226,19 @@ func (m *Model) View() tea.View {
 	if !m.open || len(m.items) == 0 {
 		return tea.NewView(strings.Join(body, "\n"))
 	}
-
-	count := m.visibleCount()
-	for i := 0; i < count; i++ {
-		idx := i
-		line := "  " + m.items[idx].Label
-		if idx == m.selected {
-			line = "* " + m.items[idx].Label
-		}
-		if idx == m.cursor {
-			body = append(body, styles.Row(pick(t.Selection.BG, t.Border.Focus), pick(t.Selection.FG, t.Text.Inverse), w, line))
+	menu := m.inner.View()
+	lines := strings.Split(menu, "\n")
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		body = append(body, styles.Row(pick(t.Surface.Panel, t.Surface.Canvas), pick(t.Text.Primary, t.Text.Primary), w, line))
+		bg := pick(t.Surface.Panel, t.Surface.Canvas)
+		fg := pick(t.Text.Primary, t.Text.Primary)
+		if strings.HasPrefix(strings.TrimLeft(line, " "), "> ") {
+			bg = pick(t.Selection.BG, t.Border.Focus)
+			fg = pick(t.Selection.FG, t.Text.Inverse)
+		}
+		body = append(body, styles.Row(bg, fg, w, line))
 	}
 	return tea.NewView(strings.Join(body, "\n"))
 }
@@ -201,9 +265,36 @@ func (m *Model) String() string {
 	return fmt.Sprintf("%s", item.Label)
 }
 
+func (m *Model) syncItems() {
+	items := make([]bubbleslist.Item, 0, len(m.items))
+	for _, item := range m.items {
+		items = append(items, selectItem{label: item.Label, value: item.Value})
+	}
+	if cmd := m.inner.SetItems(items); cmd != nil {
+		_ = cmd
+	}
+	if m.cursor < 0 {
+		m.cursor = 0
+	}
+	if m.cursor >= len(items) && len(items) > 0 {
+		m.cursor = len(items) - 1
+	}
+	m.inner.Select(m.cursor)
+	w := max(10, m.width)
+	h := max(1, m.visibleCount())
+	m.inner.SetSize(w, h)
+}
+
 func pick(v, fallback string) string {
 	if v == "" {
 		return fallback
 	}
 	return v
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

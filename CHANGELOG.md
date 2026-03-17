@@ -6,16 +6,20 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-03-17
+
 ### Changed
 
 - Moved shared style helpers from `styles/` to `theme/styles/` and updated all imports to `github.com/cloudboy-jh/bentotui/theme/styles`.
-- Reworked `registry/bentos/app-shell` into a scenario-driven validation bento with modular `state/`, `ui/`, and `scenarios/` packages.
-- Added built-in validation scenarios (`layout`, `hierarchy`, `footer`, `list`, `overlay`, `stress`) with pass/warn/fail checks and diagnostics metrics.
+- Reworked `registry/bentos/app-shell` into a single-screen composition bento with rail + workspace + anchored footer + command palette.
+- Retired scenario-driven app-shell runtime paths and removed scenario harness logic from default app-shell behavior.
 - Updated docs and README to formalize the **Untouchable Theme Engine** model and lock the architecture language to `bentos + rooms + bricks`.
 - Added room-level separation options (`WithGutter`, `WithDivider`) to split/drawer room primitives.
-- Added anchored footer card style modes in bar (`plain`, `chip`, `mixed`) and scenario coverage in app-shell.
+- Added anchored footer card style modes in bar (`plain`, `chip`, `mixed`) and aligned default bento usage around anchored command lanes.
 - Expanded list row structure with typed fields (`Primary`, `Secondary`, `RightStat`, `Tone`, `SelectedStyle`) while preserving existing `Label`/`Status`/`Stat` compatibility.
 - Added new `elevated-card` brick for raised section containers (`Title` + `Content`) and wired it into dashboard/app-shell composition paths.
+- Migrated `list`, `table`, `progress`, `select`, `checkbox`, and `tabs` bricks to Charm-backed internals (`bubbles/*`) while keeping Bento wrapper APIs.
+- Added `filepicker` brick backed by `charm.land/bubbles/v2/filepicker` and exposed it via `bento add filepicker`.
 
 ## [0.3.4] - 2026-03-14
 

@@ -31,6 +31,9 @@ Final frame painting and overlays are handled by `surface`.
 Bar rows support role-aware rendering (`top`, `subheader`, `footer`) with
 anchored footer card styles (`plain`, `chip`, `mixed`) for command focus.
 
+Charm-first brick policy is active: if Charm already ships a mature primitive,
+Bento wraps it and layers Bento theme/composition behavior on top.
+
 ## Docs
 
 - `docs/architecture/architecture.md`
@@ -98,21 +101,22 @@ Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 | `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
 | `elevated-card` | Raised section container with title + content for dashboard/app regions. |
 | `panel` | Titled, focusable content container. |
-| `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`. |
-| `list` | Scrollable list with sections, row formatting hooks, and structured row fields (`Primary/Secondary/RightStat/Tone`). |
-| `table` | Header + data rows with compact/borderless and per-column width/align. |
+| `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`, `CommandPalette`. |
+| `filepicker` | File and directory picker wrapping `bubbles/filepicker`. |
+| `list` | Scrollable list with sections and structured rows, backed by `bubbles/list`. |
+| `table` | Header + data rows with compact/borderless and per-column width/align, backed by `bubbles/table`. |
 | `text` | Static styled label. |
 | `badge` | Inline themed label. |
 | `kbd` | Keyboard shortcut command + label pair. |
 | `wordmark` | Themed heading/title block. |
-| `select` | Single-choice inline picker. |
-| `checkbox` | Boolean toggle input. |
-| `progress` | Horizontal progress bar. |
-| `tabs` | Keyboard-navigable tab row. |
+| `select` | Single-choice inline picker backed by `bubbles/list`. |
+| `checkbox` | Boolean toggle input using `bubbles/key` bindings. |
+| `progress` | Horizontal progress bar backed by `bubbles/progress`. |
+| `tabs` | Keyboard-navigable tab row using `bubbles/key` + `bubbles/paginator`. |
 | `toast` | Stacked notification rows. |
 | `separator` | Horizontal or vertical divider. |
 
-`bento add` currently supports: `surface`, `panel`, `elevated-card`, `bar`, `dialog`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`.
+`bento add` currently supports: `surface`, `panel`, `elevated-card`, `bar`, `dialog`, `filepicker`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`.
 
 Primitive policy: Bento does not ship a `spinner` registry component. Use
 `charm.land/bubbles/v2/spinner` directly.
@@ -134,7 +138,7 @@ registry/bentos/
 | Bento | Components used |
 |-------|----------------|
 | `home-screen` | `wordmark`, `input`, `kbd`, `badge`, `bar`, `surface` |
-| `app-shell` | validation bento (scenarios + diagnostics + anchored footer) |
+| `app-shell` | single-screen UX bento (`rail + table + list + progress + command palette + anchored footer`) |
 | `dashboard` | `elevated-card`, `badge`, `table`, `bar`, `surface` |
 
 ## Core packages (real imports, not copied)

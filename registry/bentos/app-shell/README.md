@@ -1,10 +1,9 @@
 # app-shell
 
-Reference UX/UI sandbox bento for BentoTUI.
+Reference single-screen app bento for BentoTUI.
 
-This is the first full bento used to validate how rooms and bricks compose into
-an intentional interface. It focuses on elevated-card usage with list, table,
-modal, footer, and theme-audit patterns.
+This bento shows how rooms + bricks can compose into a complete app shell
+without rolling a custom TUI framework.
 
 ## Run
 
@@ -14,36 +13,29 @@ go run ./registry/bentos/app-shell
 
 ## Layout contract
 
-- left rail: scenario selector
-- center rail: live scenario canvas (inside an `elevated-card` section)
-- footer stack: session `elevated-card` + anchored command `bar`
-- body room: `rooms.Rail(...)` (fixed rail + flexible main)
+- left rail: app sections + lightweight status
+- main canvas: services table over queue/progress cards
+- bottom row: single anchored command bar
+- body room: `rooms.Rail(...)` with `rooms.RailFooterStack(...)`
 
 ## Controls
 
-- `up/down`: scenario
-- `left/right`: viewport preset (`80x24`, `100x30`, `140x42`)
-- `1-9`: jump scenario
+- `up/down`: switch active section
+- `left/right`: move queue cursor
+- `enter`: pulse progress value
 - `t`: cycle theme
-- `d`: toggle paint debug ruler
-- `s`: snapshot mode
+- `c`: toggle compact table mode
+- `ctrl+k`: open command palette
+- `1-9`: jump section
 - `q`: quit
 
-Theme behavior:
+## Command Palette
 
-- app-shell defaults to `AvailableStableThemes()`
-- falls back to `AvailableThemes()` if stable list is empty
-
-## Scenarios
-
-- `cards-list`
-- `cards-table`
-- `cards-modal`
-- `cards-footer`
-- `cards-theme-audit`
+- powered by `registry/bricks/dialog/command_palette.go`
+- includes full theme list from `theme.AvailableThemes()`
+- supports section jumps and view toggles
 
 ## Internal shape
 
-- `state/` root model and orchestration
-- `ui/` selector/footer helpers
-- `scenarios/` scenario contracts and scenario implementations
+- `state/` root model, workspace deck, and palette actions
+- `ui/` rail/footer copy helpers

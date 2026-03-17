@@ -5,19 +5,15 @@
 // | ...                                |
 // +-----------------------------------+
 // Scrollable plain-text row list.
-// Package list provides a scrollable log-style list widget.
+// Package list provides a list widget backed by bubbles/list.
 // Copy this file into your project: bento add list
-//
-// The widget returns plain text — the containing panel applies all color.
-// Dependencies:
-//   - charm.land/bubbletea/v2
-//   - charm.land/lipgloss/v2
-//   - github.com/charmbracelet/x/ansi
 package list
 
 import (
+	"io"
 	"strings"
 
+	bubbleslist "charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -76,6 +72,8 @@ type Model struct {
 	cursor    int
 	density   Density
 	formatter RowFormatter
+	inner     bubbleslist.Model
+	delegate  *rowDelegate
 }
 
 type Density string
@@ -85,13 +83,58 @@ const (
 	DensityCompact     Density = "compact"
 )
 
+type listItem struct{ row Row }
+
+func (i listItem) FilterValue() string {
+	if strings.TrimSpace(i.row.Primary) != "" {
+		return i.row.Primary
+	}
+	if strings.TrimSpace(i.row.Label) != "" {
+		return i.row.Label
+	}
+	if strings.TrimSpace(i.row.Section) != "" {
+		return i.row.Section
+	}
+	return ""
+}
+
+type rowDelegate struct{ owner *Model }
+
+func (d rowDelegate) Height() int  { return 1 }
+func (d rowDelegate) Spacing() int { return 0 }
+func (d rowDelegate) Update(msg tea.Msg, m *bubbleslist.Model) tea.Cmd {
+	return nil
+}
+
+func (d rowDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bubbleslist.Item) {
+	li, ok := item.(listItem)
+	if !ok {
+		return
+	}
+	selected := index == m.Index()
+	line := d.owner.renderRow(li.row, selected, m.Width())
+	_, _ = io.WriteString(w, line)
+}
+
 // New creates a list with an optional cap on stored items.
 // maxItems <= 0 defaults to 200.
 func New(maxItems int) *Model {
 	if maxItems <= 0 {
 		maxItems = 200
 	}
-	return &Model{max: maxItems, density: DensityComfortable}
+	l := &Model{max: maxItems, density: DensityComfortable}
+	d := &rowDelegate{owner: l}
+	inner := bubbleslist.New([]bubbleslist.Item{}, *d, 1, 1)
+	inner.SetShowTitle(false)
+	inner.SetShowFilter(false)
+	inner.SetShowStatusBar(false)
+	inner.SetShowPagination(false)
+	inner.SetShowHelp(false)
+	inner.SetFilteringEnabled(false)
+	inner.DisableQuitKeybindings()
+	l.inner = inner
+	l.delegate = d
+	return l
 }
 
 // Append adds an item to the bottom of the list.
@@ -108,6 +151,7 @@ func (l *Model) AppendRow(row Row) {
 	if len(l.rows) > l.max {
 		l.rows = l.rows[1:]
 	}
+	l.syncInner()
 }
 
 // AppendSection adds a section/header row to the bottom.
@@ -129,6 +173,7 @@ func (l *Model) PrependRow(row Row) {
 	if len(l.rows) > l.max {
 		l.rows = l.rows[:l.max]
 	}
+	l.syncInner()
 }
 
 // PrependSection adds a section/header row to the top.
@@ -137,7 +182,11 @@ func (l *Model) PrependSection(title string) {
 }
 
 // Clear removes all items.
-func (l *Model) Clear() { l.rows = nil }
+func (l *Model) Clear() {
+	l.rows = nil
+	l.cursor = 0
+	l.syncInner()
+}
 
 // Items returns a copy of the current item list.
 func (l *Model) Items() []string {
@@ -152,7 +201,10 @@ func (l *Model) Items() []string {
 }
 
 // SetFormatter sets a custom row formatter.
-func (l *Model) SetFormatter(f RowFormatter) { l.formatter = f }
+func (l *Model) SetFormatter(f RowFormatter) {
+	l.formatter = f
+	l.syncInner()
+}
 
 // SetDensity controls row verbosity in default formatter.
 func (l *Model) SetDensity(v Density) {
@@ -162,6 +214,7 @@ func (l *Model) SetDensity(v Density) {
 	default:
 		l.density = DensityComfortable
 	}
+	l.syncInner()
 }
 
 // SetCursor sets the selected item index (item rows only).
@@ -170,59 +223,39 @@ func (l *Model) SetCursor(i int) {
 		i = 0
 	}
 	l.cursor = i
+	l.syncInner()
 }
 
-func (l *Model) Init() tea.Cmd                           { return nil }
-func (l *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return l, nil }
+func (l *Model) Init() tea.Cmd { return nil }
+
+func (l *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	updated, cmd := l.inner.Update(msg)
+	l.inner = updated
+	return l, cmd
+}
 
 func (l *Model) View() tea.View {
 	if len(l.rows) == 0 {
 		return tea.NewView("")
 	}
-	if l.width <= 0 || l.height <= 0 {
-		lines := make([]string, 0, len(l.rows))
-		itemIdx := 0
-		for _, row := range l.rows {
-			selected := row.Kind == RowItem && itemIdx == l.cursor
-			lines = append(lines, l.renderRow(row, selected, 0))
-			if row.Kind == RowItem {
-				itemIdx++
-			}
+	l.syncInner()
+	out := l.inner.View()
+	parts := strings.Split(out, "\n")
+	clean := make([]string, 0, len(parts))
+	for _, line := range parts {
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
-		return tea.NewView(strings.Join(lines, "\n"))
+		clean = append(clean, line)
 	}
-
-	start := len(l.rows) - l.height
-	if start < 0 {
-		start = 0
-	}
-	lines := make([]string, 0, l.height)
-
-	itemIdx := 0
-	for i := 0; i < start; i++ {
-		if l.rows[i].Kind == RowItem {
-			itemIdx++
-		}
-	}
-
-	for i := start; i < len(l.rows); i++ {
-		row := l.rows[i]
-		selected := row.Kind == RowItem && itemIdx == l.cursor
-		line := l.renderRow(row, selected, l.width)
-		if lipgloss.Width(line) > l.width {
-			line = ansi.Truncate(line, l.width, "")
-		}
-		lines = append(lines, line)
-		if row.Kind == RowItem {
-			itemIdx++
-		}
-	}
-	return tea.NewView(strings.Join(lines, "\n"))
+	return tea.NewView(strings.Join(clean, "\n"))
 }
 
 func (l *Model) SetSize(width, height int) {
 	l.width = width
 	l.height = height
+	l.inner.SetSize(max(1, width), max(1, height))
+	l.syncInner()
 }
 
 func (l *Model) GetSize() (int, int) { return l.width, l.height }
@@ -319,4 +352,46 @@ func fitLeftRight(left, right string, width int) string {
 		space = 1
 	}
 	return l + strings.Repeat(" ", space) + right
+}
+
+func (l *Model) syncInner() {
+	items := make([]bubbleslist.Item, 0, len(l.rows))
+	selectedRowIdx := 0
+	itemIdx := 0
+	for i, row := range l.rows {
+		items = append(items, listItem{row: row})
+		if row.Kind != RowItem {
+			continue
+		}
+		if itemIdx == l.cursor {
+			selectedRowIdx = i
+		}
+		itemIdx++
+	}
+	if cmd := l.inner.SetItems(items); cmd != nil {
+		_ = cmd
+	}
+	l.inner.Select(selectedRowIdx)
+	w := l.width
+	if w <= 0 {
+		w = 1
+		for _, row := range l.rows {
+			line := l.renderRow(row, false, 0)
+			if lw := lipgloss.Width(line); lw > w {
+				w = lw
+			}
+		}
+	}
+	h := l.height
+	if h <= 0 {
+		h = len(l.rows) + 2
+	}
+	l.inner.SetSize(max(1, w), max(1, h))
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

@@ -3,29 +3,31 @@ package ui
 import (
 	"fmt"
 	"strings"
-
-	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/scenarios"
 )
 
-func SelectorText(items []scenarios.Definition, active int) string {
-	rows := make([]string, 0, len(items)+12)
-	rows = append(rows, "Component scenarios", "")
-	for i, s := range items {
+func SelectorText(sections []string, active int, themeName string, progress float64, compact bool) string {
+	rows := make([]string, 0, len(sections)+10)
+	rows = append(rows, "Sections")
+	for i, s := range sections {
 		prefix := "  "
 		if i == active {
 			prefix = "> "
 		}
-		rows = append(rows, fmt.Sprintf("%s%d. %s", prefix, i+1, s.Title))
+		rows = append(rows, fmt.Sprintf("%s%d. %s", prefix, i+1, s))
 	}
 	rows = append(rows,
 		"",
-		"Areas",
-		"  1. Rail/Nav",
-		"  2. Main/Canvas",
-		"  3. Checks",
-		"  4. Context",
-		"  5. Session",
-		"  6. Commands",
+		"Rail",
+		fmt.Sprintf("  Theme     %s", themeName),
+		fmt.Sprintf("  Progress  %3.0f%%", progress*100),
+		fmt.Sprintf("  Table     %s", ternary(compact, "compact", "comfortable")),
 	)
 	return strings.Join(rows, "\n")
+}
+
+func ternary[T any](cond bool, t, f T) T {
+	if cond {
+		return t
+	}
+	return f
 }

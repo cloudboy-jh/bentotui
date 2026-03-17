@@ -3,13 +3,15 @@
 // | label [####------] 42%            |
 // +-----------------------------------+
 // Horizontal progress indicator.
-// Package progress provides a themed horizontal progress bar.
+// Package progress provides a themed horizontal progress bar backed by
+// bubbles/progress.
 // Copy this file into your project: bento add progress
 package progress
 
 import (
 	"fmt"
 
+	bubblesprogress "charm.land/bubbles/v2/progress"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/theme"
@@ -20,55 +22,61 @@ type Model struct {
 	width       int
 	label       string
 	showPercent bool
+	bar         bubblesprogress.Model
 }
 
 func New(width int) *Model {
 	if width < 10 {
 		width = 24
 	}
-	return &Model{width: width, showPercent: true}
+	b := bubblesprogress.New(bubblesprogress.WithWidth(width), bubblesprogress.WithFillCharacters('█', '─'))
+	return &Model{width: width, showPercent: true, bar: b}
 }
 
-func (m *Model) SetValue(v float64)                  { m.value = clamp01(v) }
-func (m *Model) Value() float64                      { return m.value }
-func (m *Model) SetLabel(v string)                   { m.label = v }
-func (m *Model) SetShowPercent(v bool)               { m.showPercent = v }
-func (m *Model) Init() tea.Cmd                       { return nil }
-func (m *Model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
-func (m *Model) SetSize(width, _ int) {
-	if width > 0 {
-		m.width = width
+func (m *Model) SetValue(v float64) { m.value = clamp01(v) }
+func (m *Model) Value() float64     { return m.value }
+func (m *Model) SetLabel(v string)  { m.label = v }
+func (m *Model) SetShowPercent(v bool) {
+	m.showPercent = v
+	if v {
+		m.bar.ShowPercentage = true
+		return
 	}
+	m.bar.ShowPercentage = false
 }
+
+func (m *Model) Init() tea.Cmd { return nil }
+
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	updated, cmd := m.bar.Update(msg)
+	m.bar = updated
+	return m, cmd
+}
+
+func (m *Model) SetSize(width, _ int) {
+	if width <= 0 {
+		return
+	}
+	m.width = width
+	m.bar.SetWidth(width)
+}
+
 func (m *Model) GetSize() (int, int) { return m.width, 1 }
 
 func (m *Model) View() tea.View {
 	t := theme.CurrentTheme()
-	barWidth := m.width
-	if barWidth < 10 {
-		barWidth = 24
+	m.bar.FullColor = lipgloss.Color(pick(t.Selection.BG, t.Text.Accent))
+	m.bar.EmptyColor = lipgloss.Color(pick(t.Border.Subtle, t.Text.Muted))
+	m.bar.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Primary)))
+	m.bar.ShowPercentage = m.showPercent
+	if m.width > 0 {
+		m.bar.SetWidth(m.width)
 	}
-	filled := int(float64(barWidth) * m.value)
-	if filled > barWidth {
-		filled = barWidth
-	}
-	if filled < 0 {
-		filled = 0
-	}
-	empty := barWidth - filled
-
-	fillStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Selection.BG, t.Text.Accent)))
-	emptyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Border.Subtle, t.Text.Muted)))
-	bar := fillStyle.Render(repeat("#", filled)) + emptyStyle.Render(repeat("-", empty))
-
-	out := bar
-	if m.showPercent {
-		out += fmt.Sprintf(" %3.0f%%", m.value*100)
-	}
+	line := m.bar.ViewAs(m.value)
 	if m.label != "" {
-		out = m.label + " " + out
+		line = fmt.Sprintf("%s %s", m.label, line)
 	}
-	return tea.NewView(out)
+	return tea.NewView(line)
 }
 
 func clamp01(v float64) float64 {
@@ -79,17 +87,6 @@ func clamp01(v float64) float64 {
 		return 1
 	}
 	return v
-}
-
-func repeat(s string, n int) string {
-	if n <= 0 {
-		return ""
-	}
-	out := ""
-	for i := 0; i < n; i++ {
-		out += s
-	}
-	return out
 }
 
 func pick(v, fallback string) string {

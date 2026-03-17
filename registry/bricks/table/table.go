@@ -5,20 +5,15 @@
 // | row data                          |
 // +-----------------------------------+
 // Header + row data renderer.
-// Package table provides a simple header+rows table widget.
+// Package table provides a table widget backed by bubbles/table.
 // Copy this file into your project: bento add table
-//
-// The widget calls theme.CurrentTheme() in View() — never stores theme state.
-// Dependencies:
-//   - charm.land/bubbletea/v2
-//   - charm.land/lipgloss/v2
-//   - github.com/cloudboy-jh/bentotui/theme
 package table
 
 import (
 	"sort"
 	"strings"
 
+	bubblestable "charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -49,6 +44,7 @@ type Model struct {
 	rows       [][]string
 	borderless bool
 	compact    bool
+	inner      bubblestable.Model
 }
 
 // New creates a table with the given column headers.
@@ -57,7 +53,9 @@ func New(headers ...string) *Model {
 	for i, h := range headers {
 		cols[i] = Column{Header: h, Align: AlignLeft, Min: 4, Pri: 1}
 	}
-	return &Model{columns: cols}
+	inner := bubblestable.New(bubblestable.WithColumns([]bubblestable.Column{{Title: "", Width: 1}}), bubblestable.WithRows(nil), bubblestable.WithWidth(1), bubblestable.WithHeight(1))
+	inner.Blur()
+	return &Model{columns: cols, inner: inner}
 }
 
 // AddRow appends a data row. Extra cells are ignored; missing cells are blank.
@@ -121,61 +119,20 @@ func (t *Model) SetColumnPriority(index, priority int) {
 	t.columns[index].Pri = priority
 }
 
-func (t *Model) Init() tea.Cmd                           { return nil }
-func (t *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return t, nil }
+func (t *Model) Init() tea.Cmd { return nil }
+
+func (t *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	updated, cmd := t.inner.Update(msg)
+	t.inner = updated
+	return t, cmd
+}
 
 func (t *Model) View() tea.View {
 	if t.width <= 0 || len(t.columns) == 0 {
 		return tea.NewView("")
 	}
-
-	th := theme.CurrentTheme()
-	sep := t.separator()
-	colWidths := t.computeColumnWidths(t.width, len(sep))
-
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(th.Text.Primary))
-	borderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(th.Border.Normal))
-	cellStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(th.Text.Primary))
-
-	lines := make([]string, 0, 2+len(t.rows))
-
-	headerCells := make([]string, len(t.columns))
-	for i, col := range t.columns {
-		headerCells[i] = headerStyle.Render(alignText(col.Header, colWidths[i], col.Align))
-	}
-	lines = append(lines, strings.Join(headerCells, sep))
-	if !t.compact {
-		lines = append(lines, borderStyle.Render(t.divider(colWidths, sep)))
-	}
-
-	rowsToRender := t.rows
-	if t.height > 0 {
-		reserved := 1
-		if !t.compact {
-			reserved++
-		}
-		maxRows := t.height - reserved
-		if maxRows < 0 {
-			maxRows = 0
-		}
-		if len(rowsToRender) > maxRows {
-			rowsToRender = rowsToRender[:maxRows]
-		}
-	}
-
-	for _, row := range rowsToRender {
-		cells := make([]string, len(t.columns))
-		for i := range t.columns {
-			cell := ""
-			if i < len(row) {
-				cell = row[i]
-			}
-			cells[i] = cellStyle.Render(alignText(cell, colWidths[i], t.columns[i].Align))
-		}
-		lines = append(lines, strings.Join(cells, sep))
-	}
-
-	return tea.NewView(strings.Join(lines, "\n"))
+	t.syncInner()
+	return tea.NewView(t.inner.View())
 }
 
 func (t *Model) SetSize(width, height int) {
@@ -197,16 +154,16 @@ func (t *Model) separator() string {
 
 func (t *Model) divider(widths []int, sep string) string {
 	if t.borderless {
-		return strings.Repeat("─", t.width)
+		return strings.Repeat("-", t.width)
 	}
 	parts := make([]string, len(widths))
 	for i, w := range widths {
-		parts[i] = strings.Repeat("─", w)
+		parts[i] = strings.Repeat("-", w)
 	}
 	if t.compact {
 		return strings.Join(parts, " ")
 	}
-	return strings.Join(parts, strings.Repeat("─", len(sep)))
+	return strings.Join(parts, strings.Repeat("-", len(sep)))
 }
 
 func (t *Model) computeColumnWidths(totalWidth, sepWidth int) []int {
@@ -325,4 +282,60 @@ func alignText(s string, width int, align Align) string {
 	default:
 		return cell.Align(lipgloss.Left).Render(s)
 	}
+}
+
+func (t *Model) syncInner() {
+	th := theme.CurrentTheme()
+	styles := bubblestable.DefaultStyles()
+	styles.Header = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(th.Text.Primary))
+	styles.Cell = lipgloss.NewStyle().Foreground(lipgloss.Color(th.Text.Primary))
+	styles.Selected = lipgloss.NewStyle().Foreground(lipgloss.Color(th.Text.Primary))
+	t.inner.SetStyles(styles)
+
+	sep := t.separator()
+	colWidths := t.computeColumnWidths(t.width, len(sep))
+
+	headerCells := make([]string, len(t.columns))
+	for i, col := range t.columns {
+		headerCells[i] = alignText(col.Header, colWidths[i], col.Align)
+	}
+	headerLine := strings.Join(headerCells, sep)
+	headerLine = lipgloss.NewStyle().Width(max(1, t.width)).MaxWidth(max(1, t.width)).Render(headerLine)
+
+	rows := make([]bubblestable.Row, 0, len(t.rows)+1)
+	if !t.compact {
+		rows = append(rows, bubblestable.Row{t.divider(colWidths, sep)})
+	}
+	for _, row := range t.rows {
+		cells := make([]string, len(t.columns))
+		for i := range t.columns {
+			cell := ""
+			if i < len(row) {
+				cell = row[i]
+			}
+			cells[i] = alignText(cell, colWidths[i], t.columns[i].Align)
+		}
+		line := strings.Join(cells, sep)
+		line = lipgloss.NewStyle().Width(max(1, t.width)).MaxWidth(max(1, t.width)).Render(line)
+		rows = append(rows, bubblestable.Row{line})
+	}
+
+	t.inner.SetColumns([]bubblestable.Column{{Title: headerLine, Width: max(1, t.width)}})
+	t.inner.SetRows(rows)
+	t.inner.SetWidth(max(1, t.width))
+	t.inner.SetHeight(max(2, t.height))
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
