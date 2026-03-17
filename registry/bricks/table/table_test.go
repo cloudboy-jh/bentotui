@@ -35,6 +35,33 @@ func TestCompactBorderlessColumnAlign(t *testing.T) {
 	}
 }
 
+func TestColumnPriorityShrinkKeepsNumericAlignment(t *testing.T) {
+	tb := New("SERVICE", "OWNER", "P95", "ERR%", "DEPLOY")
+	tb.SetCompact(true)
+	tb.SetBorderless(true)
+	tb.SetColumnAlign(2, AlignRight)
+	tb.SetColumnAlign(3, AlignRight)
+	tb.SetColumnMinWidth(0, 8)
+	tb.SetColumnMinWidth(1, 6)
+	tb.SetColumnMinWidth(4, 6)
+	tb.SetColumnPriority(4, 5)
+	tb.SetColumnPriority(1, 4)
+	tb.AddRow("checkout-api", "kai", "112ms", "1.7", "27m ago")
+	tb.SetSize(34, 4)
+
+	out := ansi.Strip(viewString(tb.View()))
+	lines := strings.Split(out, "\n")
+	if len(lines) < 2 {
+		t.Fatalf("expected at least 2 lines, got %d", len(lines))
+	}
+	if lipgloss.Width(lines[1]) != 34 {
+		t.Fatalf("expected row width 34, got %d", lipgloss.Width(lines[1]))
+	}
+	if !strings.Contains(lines[1], "112") || !strings.Contains(lines[1], "1.7") {
+		t.Fatalf("expected numeric columns preserved under shrink, got %q", lines[1])
+	}
+}
+
 func viewString(v tea.View) string {
 	if v.Content == nil {
 		return ""

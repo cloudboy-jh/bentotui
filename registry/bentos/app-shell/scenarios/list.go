@@ -3,23 +3,23 @@ package scenarios
 import (
 	"strings"
 
-	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/list"
 )
 
 func runList(ctx Context) Result {
 	l := list.New(32)
-	l.AppendSection("SCENARIOS")
-	l.AppendRow(list.Row{Primary: "Cards + List", Secondary: "active", Tone: list.ToneInfo, RightStat: "ready"})
-	l.AppendRow(list.Row{Primary: "Cards + Table", Secondary: "preview", Tone: list.ToneNeutral, RightStat: "idle"})
-	l.AppendRow(list.Row{Primary: "Cards + Modal", Secondary: "overlay", Tone: list.ToneSuccess, RightStat: "ok"})
-	l.AppendSection("LONG LABEL")
-	l.AppendRow(list.Row{Primary: lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Render("feature/very-long-branch-name-with-ansi-color"), Tone: list.ToneWarn, RightStat: "clip"})
-	l.SetCursor(0)
+	l.SetDensity(list.DensityCompact)
+	l.AppendSection("WORKSPACES")
+	l.AppendRow(list.Row{Primary: "Checkout API", Secondary: "pager active", Tone: list.ToneDanger, RightStat: "2m"})
+	l.AppendRow(list.Row{Primary: "Billing Events", Secondary: "healthy", Tone: list.ToneSuccess, RightStat: "9m"})
+	l.AppendRow(list.Row{Primary: "Growth Experiments", Secondary: "in review", Tone: list.ToneInfo, RightStat: "18m"})
+	l.AppendSection("BACKLOG")
+	l.AppendRow(list.Row{Primary: "Customer imports from legacy warehouse with long labels", Secondary: "triage", Tone: list.ToneWarn, RightStat: "27m"})
+	l.SetCursor(1)
 	l.SetSize(max(24, ctx.Width), max(8, ctx.Height))
 
 	rows := []string{
-		"list inside elevated card:",
+		"workspace list inside elevated card:",
 		viewString(l.View()),
 	}
 	if ctx.PaintDebug {
@@ -27,10 +27,11 @@ func runList(ctx Context) Result {
 	}
 
 	checks := []Check{
-		{Name: "list-readable", Level: CheckPass, Detail: "list rows stay readable inside elevated card"},
-		{Name: "list-truncation", Level: CheckPass, Detail: "long labels clip without breaking card layout"},
+		{Name: "list-scannable", Level: CheckPass, Detail: "status lane and right-time lane stay easy to scan"},
+		{Name: "list-selected-row", Level: CheckPass, Detail: "selected row remains obvious in dense mode"},
+		{Name: "list-overflow", Level: CheckPass, Detail: "long labels truncate while preserving right stats"},
 	}
-	metrics := map[string]string{"cursor": "0"}
+	metrics := map[string]string{"cursor": "1", "density": "compact"}
 
 	return Result{Canvas: fitBlock(strings.Join(rows, "\n"), ctx.Width, ctx.Height), Checks: checks, Metrics: metrics}
 }

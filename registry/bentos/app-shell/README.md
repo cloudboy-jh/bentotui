@@ -1,9 +1,10 @@
 # app-shell
 
-Framework validation bento for BentoTUI.
+Reference UX/UI sandbox bento for BentoTUI.
 
-This is the reference full bento used to pressure-test how bricks compose together.
-It focuses on elevated-card usage with list, table, modal, and footer patterns.
+This is the first full bento used to validate how rooms and bricks compose into
+an intentional interface. It focuses on elevated-card usage with list, table,
+modal, footer, and theme-audit patterns.
 
 ## Run
 
@@ -16,21 +17,22 @@ go run ./registry/bentos/app-shell
 - left rail: scenario selector
 - center rail: live scenario canvas (inside an `elevated-card` section)
 - footer stack: session `elevated-card` + anchored command `bar`
-
-Responsive body modes:
-
-- wide (`>=84`): left + center
-- narrow (`<84`): vertical stack (left over center)
+- body room: `rooms.Rail(...)` (fixed rail + flexible main)
 
 ## Controls
 
 - `up/down`: scenario
 - `left/right`: viewport preset (`80x24`, `100x30`, `140x42`)
-- `1-3`: jump scenario
+- `1-9`: jump scenario
 - `t`: cycle theme
 - `d`: toggle paint debug ruler
 - `s`: snapshot mode
 - `q`: quit
+
+Theme behavior:
+
+- app-shell defaults to `AvailableStableThemes()`
+- falls back to `AvailableThemes()` if stable list is empty
 
 ## Scenarios
 
@@ -38,6 +40,7 @@ Responsive body modes:
 - `cards-table`
 - `cards-modal`
 - `cards-footer`
+- `cards-theme-audit`
 
 ## Internal shape
 

@@ -87,7 +87,7 @@ Primitive policy:
 - `registry/bentos/home-screen` — mirror starter app pattern
 - `registry/bentos/app-shell` — header + rail + main + footer/status
 - `registry/bentos/dashboard` — cards + table composition
-- `registry/bentos/detail-view` — list + detail pane
+- `registry/bentos/detail-view` — list + detail pane (shipped)
 - `registry/bentos/form` — labeled inputs + validation hints
 - `registry/bentos/log-viewer` — filter + scrollable output
 - `registry/bentos/settings` — left nav + settings content

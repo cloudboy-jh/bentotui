@@ -128,6 +128,10 @@ const (
 	minCardFrameBodyDelta           = 0.020
 	minCardShadowCanvasDelta        = 0.015
 	minCardFocusEdgeFrameDelta      = 0.040
+	minTextPrimaryMutedDelta        = 0.060
+	minFooterFGToBGDelta            = 0.120
+	minFooterMutedToBGDelta         = 0.070
+	minFooterFGMutedDelta           = 0.040
 )
 
 const (
@@ -239,6 +243,7 @@ func validateTheme(t Theme) error {
 	}{
 		{"surface.panel", "surface.canvas", t.Surface.Panel, t.Surface.Canvas, minSurfacePanelCanvasDelta},
 		{"surface.interactive", "surface.panel", t.Surface.Interactive, t.Surface.Panel, minSurfaceInteractivePanelDelta},
+		{"text.primary", "text.muted", t.Text.Primary, t.Text.Muted, minTextPrimaryMutedDelta},
 		{"input.bg", "surface.canvas", t.Input.BG, t.Surface.Canvas, 0.03},
 		{"selection.bg", "surface.canvas", t.Selection.BG, t.Surface.Canvas, 0.05},
 		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
@@ -256,6 +261,27 @@ func validateTheme(t Theme) error {
 				"theme tokens %q and %q are too similar (luminance delta %.3f < %.3f) — increase contrast",
 				p.labelA, p.labelB, delta, p.minDelta,
 			)
+		}
+	}
+
+	if footerProvided == 3 {
+		footerPairs := []struct {
+			labelA, labelB string
+			a, b           string
+			minDelta       float64
+		}{
+			{"footer.anchoredFG", "footer.anchoredBG", t.Footer.AnchoredFG, t.Footer.AnchoredBG, minFooterFGToBGDelta},
+			{"footer.anchoredMuted", "footer.anchoredBG", t.Footer.AnchoredMuted, t.Footer.AnchoredBG, minFooterMutedToBGDelta},
+			{"footer.anchoredFG", "footer.anchoredMuted", t.Footer.AnchoredFG, t.Footer.AnchoredMuted, minFooterFGMutedDelta},
+		}
+		for _, p := range footerPairs {
+			delta := lumDelta(p.a, p.b)
+			if delta < p.minDelta {
+				return fmt.Errorf(
+					"theme tokens %q and %q are too similar (luminance delta %.3f < %.3f) — increase contrast",
+					p.labelA, p.labelB, delta, p.minDelta,
+				)
+			}
 		}
 	}
 

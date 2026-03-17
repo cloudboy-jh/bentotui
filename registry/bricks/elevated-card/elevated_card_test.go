@@ -48,3 +48,27 @@ func TestElevatedCardMetaAndFooterRender(t *testing.T) {
 		t.Fatalf("expected footer line in output")
 	}
 }
+
+func TestElevatedCardVariantsRenderExactWidth(t *testing.T) {
+	variants := []Variant{VariantDefault, VariantDense, VariantEmphasis}
+	for _, v := range variants {
+		c := New(
+			Title("Section"),
+			Meta("meta line"),
+			Footer("footer line"),
+			CardVariant(v),
+			Content(&mockContent{text: "line one\nline two\nline three"}),
+		)
+		c.SetSize(52, 9)
+		out := viewString(c.View())
+		lines := strings.Split(out, "\n")
+		if len(lines) != 9 {
+			t.Fatalf("variant %q expected 9 lines, got %d", v, len(lines))
+		}
+		for i, line := range lines {
+			if got := lipgloss.Width(line); got != 52 {
+				t.Fatalf("variant %q line %d width mismatch: got %d want 52", v, i, got)
+			}
+		}
+	}
+}

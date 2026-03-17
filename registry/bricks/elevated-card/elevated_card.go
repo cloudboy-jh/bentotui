@@ -23,11 +23,20 @@ type Model struct {
 	meta    string
 	footer  string
 	content tea.Model
+	variant Variant
 	focused bool
 	inset   int
 	width   int
 	height  int
 }
+
+type Variant string
+
+const (
+	VariantDefault  Variant = "default"
+	VariantDense    Variant = "dense"
+	VariantEmphasis Variant = "emphasis"
+)
 
 type Option func(*Model)
 
@@ -36,9 +45,19 @@ func Meta(v string) Option       { return func(m *Model) { m.meta = v } }
 func Footer(v string) Option     { return func(m *Model) { m.footer = v } }
 func Content(v tea.Model) Option { return func(m *Model) { m.content = v } }
 func Inset(n int) Option         { return func(m *Model) { m.inset = clamp(n, 0, 4) } }
+func CardVariant(v Variant) Option {
+	return func(m *Model) {
+		switch v {
+		case VariantDense, VariantEmphasis:
+			m.variant = v
+		default:
+			m.variant = VariantDefault
+		}
+	}
+}
 
 func New(opts ...Option) *Model {
-	m := &Model{inset: 1}
+	m := &Model{inset: 1, variant: VariantDefault}
 	for _, opt := range opts {
 		opt(m)
 	}
@@ -84,8 +103,24 @@ func (m *Model) View() tea.View {
 	footerFG := pick(t.Text.Muted, t.Text.Primary)
 	leftEdgeBG := cardColors.FocusBG
 
+	dense := m.variant == VariantDense
+	emphasis := m.variant == VariantEmphasis
+	if emphasis && !m.focused {
+		leftEdgeBG = pick(t.Card.FocusEdgeBG, leftEdgeBG)
+		headerBG = pick(t.Surface.Interactive, headerBG)
+	}
+	if dense {
+		shadowBG = borderBG
+	}
+
 	inset := clamp(m.inset, 0, min(max(0, (w-6)/2), max(0, (h-6)/2)))
+	if dense {
+		inset = clamp(m.inset, 0, min(1, min(max(0, (w-4)/2), max(0, (h-4)/2))))
+	}
 	shadow := w >= 10 && h >= 7
+	if dense {
+		shadow = false
+	}
 	cardW := w - (inset * 2)
 	cardH := h - (inset * 2)
 	if shadow {
@@ -116,6 +151,9 @@ func (m *Model) View() tea.View {
 	metaRow := strings.TrimSpace(m.meta) != ""
 	footerRows := strings.TrimSpace(m.footer) != ""
 	reserved := 4 // top + header + divider + bottom
+	if dense {
+		reserved = 3 // top + header + bottom
+	}
 	if metaRow {
 		reserved++
 	}
@@ -140,7 +178,9 @@ func (m *Model) View() tea.View {
 	if metaRow {
 		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, bodyBG, borderBG, metaFG, " "+ansi.Strip(m.meta)))
 	}
-	cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
+	if !dense {
+		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
+	}
 
 	for i := 0; i < contentRows; i++ {
 		line := ""
@@ -151,7 +191,9 @@ func (m *Model) View() tea.View {
 	}
 
 	if footerRows {
-		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
+		if !dense {
+			cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, borderBG, borderBG, metaFG, ""))
+		}
 		cardRows = append(cardRows, slabRow(cardW, leftEdgeBG, footerBG, borderBG, footerFG, " "+ansi.Strip(m.footer)))
 	}
 	for len(cardRows) < cardH-1 {
@@ -195,8 +237,15 @@ func (m *Model) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	if s, ok := m.content.(interface{ SetSize(int, int) }); ok {
+		dense := m.variant == VariantDense
 		inset := clamp(m.inset, 0, min(max(0, (width-6)/2), max(0, (height-6)/2)))
+		if dense {
+			inset = clamp(m.inset, 0, min(1, min(max(0, (width-4)/2), max(0, (height-4)/2))))
+		}
 		shadow := width >= 10 && height >= 7
+		if dense {
+			shadow = false
+		}
 		cardW := width - (inset * 2)
 		cardH := height - (inset * 2)
 		if shadow {
@@ -210,6 +259,9 @@ func (m *Model) SetSize(width, height int) {
 		}
 
 		reserved := 4
+		if dense {
+			reserved = 3
+		}
 		if strings.TrimSpace(m.meta) != "" {
 			reserved++
 		}
@@ -224,6 +276,14 @@ func (m *Model) SetSize(width, height int) {
 func (m *Model) SetTitle(v string)  { m.title = v }
 func (m *Model) SetMeta(v string)   { m.meta = v }
 func (m *Model) SetFooter(v string) { m.footer = v }
+func (m *Model) SetVariant(v Variant) {
+	switch v {
+	case VariantDense, VariantEmphasis:
+		m.variant = v
+	default:
+		m.variant = VariantDefault
+	}
+}
 
 func (m *Model) Focus()          { m.focused = true }
 func (m *Model) Blur()           { m.focused = false }

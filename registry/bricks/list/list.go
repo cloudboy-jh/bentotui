@@ -74,8 +74,16 @@ type Model struct {
 	rows      []Row
 	max       int
 	cursor    int
+	density   Density
 	formatter RowFormatter
 }
+
+type Density string
+
+const (
+	DensityComfortable Density = "comfortable"
+	DensityCompact     Density = "compact"
+)
 
 // New creates a list with an optional cap on stored items.
 // maxItems <= 0 defaults to 200.
@@ -83,7 +91,7 @@ func New(maxItems int) *Model {
 	if maxItems <= 0 {
 		maxItems = 200
 	}
-	return &Model{max: maxItems}
+	return &Model{max: maxItems, density: DensityComfortable}
 }
 
 // Append adds an item to the bottom of the list.
@@ -145,6 +153,16 @@ func (l *Model) Items() []string {
 
 // SetFormatter sets a custom row formatter.
 func (l *Model) SetFormatter(f RowFormatter) { l.formatter = f }
+
+// SetDensity controls row verbosity in default formatter.
+func (l *Model) SetDensity(v Density) {
+	switch v {
+	case DensityCompact:
+		l.density = DensityCompact
+	default:
+		l.density = DensityComfortable
+	}
+}
 
 // SetCursor sets the selected item index (item rows only).
 func (l *Model) SetCursor(i int) {
@@ -213,40 +231,41 @@ func (l *Model) renderRow(row Row, selected bool, width int) string {
 	if l.formatter != nil {
 		return l.formatter(row, selected, width)
 	}
-	return defaultFormatter(row, selected, width)
+	return defaultFormatter(row, selected, width, l.density)
 }
 
-func defaultFormatter(row Row, selected bool, width int) string {
+func defaultFormatter(row Row, selected bool, width int, density Density) string {
 	if row.Kind == RowSection {
 		title := strings.TrimSpace(row.Section)
 		if title == "" {
 			title = strings.TrimSpace(row.Label)
 		}
 		if width > 0 {
-			prefix := title
+			prefix := strings.ToUpper(title)
 			if prefix == "" {
 				prefix = "section"
 			}
-			line := "-- " + prefix + " "
+			line := "  " + prefix + " "
 			if lipgloss.Width(line) < width {
 				line += strings.Repeat("-", width-lipgloss.Width(line))
 			}
 			return line
 		}
 		if title == "" {
-			return "--"
+			return "  --"
 		}
-		return "-- " + title
+		return "  " + strings.ToUpper(title)
 	}
 
 	prefix := "  "
 	if selected {
 		if row.SelectedStyle == SelectedSubtle {
-			prefix = "· "
+			prefix = "* "
 		} else {
 			prefix = "> "
 		}
 	}
+
 	primary := strings.TrimSpace(row.Primary)
 	if primary == "" {
 		primary = strings.TrimSpace(row.Label)
@@ -256,12 +275,15 @@ func defaultFormatter(row Row, selected bool, width int) string {
 	if status == "" && row.Tone != "" && row.Tone != ToneNeutral {
 		status = string(row.Tone)
 	}
-	if secondary != "" {
-		primary = primary + " - " + secondary
+	if density == DensityCompact {
+		secondary = ""
 	}
 	leftParts := make([]string, 0, 2)
 	if status != "" {
-		leftParts = append(leftParts, status)
+		leftParts = append(leftParts, "["+status+"]")
+	}
+	if secondary != "" {
+		primary = primary + " - " + secondary
 	}
 	leftParts = append(leftParts, primary)
 	left := prefix + strings.TrimSpace(strings.Join(leftParts, " "))
@@ -270,10 +292,31 @@ func defaultFormatter(row Row, selected bool, width int) string {
 		stat = strings.TrimSpace(row.Stat)
 	}
 	if stat == "" || width <= 0 {
+		if width > 0 {
+			return ansi.Truncate(left, width, "")
+		}
 		return left
 	}
-	if lipgloss.Width(left)+1+lipgloss.Width(stat) > width {
+	return fitLeftRight(left, stat, width)
+}
+
+func fitLeftRight(left, right string, width int) string {
+	if width <= 0 {
 		return left
 	}
-	return left + strings.Repeat(" ", width-lipgloss.Width(left)-lipgloss.Width(stat)) + stat
+	rw := lipgloss.Width(right)
+	if rw >= width {
+		return ansi.Truncate(right, width, "")
+	}
+	gap := 1
+	maxLeft := width - rw - gap
+	if maxLeft < 1 {
+		maxLeft = 1
+	}
+	l := ansi.Truncate(left, maxLeft, "")
+	space := width - lipgloss.Width(l) - rw
+	if space < 1 {
+		space = 1
+	}
+	return l + strings.Repeat(" ", space) + right
 }

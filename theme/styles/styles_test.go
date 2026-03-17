@@ -47,3 +47,26 @@ func TestClipANSIAndRowClip(t *testing.T) {
 		t.Fatalf("expected row width 8, got %d", lipgloss.Width(row))
 	}
 }
+
+func TestFooterCardTypographyCommandBoldLabelRegular(t *testing.T) {
+	th := theme.Preset(theme.DefaultName)
+	s := New(th)
+
+	anchoredCmd := s.FooterCardCommandAnchored("normal", true)
+	anchoredLbl := s.FooterCardLabelAnchored("normal", true)
+	if !anchoredCmd.GetBold() {
+		t.Fatalf("expected anchored command to be bold")
+	}
+	if anchoredLbl.GetBold() {
+		t.Fatalf("expected anchored label to be regular weight")
+	}
+
+	normalCmd := s.FooterCardCommand("normal", true)
+	normalLbl := s.FooterCardLabel("normal", true)
+	if !normalCmd.GetBold() {
+		t.Fatalf("expected command chip to be bold")
+	}
+	if normalLbl.GetBold() {
+		t.Fatalf("expected label chip to be regular weight")
+	}
+}

@@ -78,8 +78,8 @@ func NewModel() *Model {
 	}
 
 	m.navPanel = panel.New(panel.Title("Scenarios"), panel.Content(navTxt), panel.Elevated())
-	m.canvasCard = elevatedcard.New(elevatedcard.Title("Validation Canvas"), elevatedcard.Content(deck), elevatedcard.Inset(1))
-	m.footerCard = elevatedcard.New(elevatedcard.Title("Session"), elevatedcard.Content(footerTxt), elevatedcard.Inset(1))
+	m.canvasCard = elevatedcard.New(elevatedcard.Title("UI Sandbox"), elevatedcard.Content(deck), elevatedcard.Inset(1))
+	m.footerCard = elevatedcard.New(elevatedcard.Title("Session"), elevatedcard.Content(footerTxt), elevatedcard.CardVariant(elevatedcard.VariantDense), elevatedcard.Inset(1))
 	m.navPanel.Focus()
 	m.footer = bar.New(
 		bar.FooterAnchored(),
@@ -145,26 +145,19 @@ func (m *Model) View() tea.View {
 		return v
 	}
 
-	bodyH := max(1, m.height-1)
 	m.syncNavText()
-
-	footerH := 1 + m.footerCardRows()
-	bodyH = max(1, m.height-footerH)
+	cardH := m.footerCardRows()
+	bodyH := max(1, m.height-1-cardH)
 	m.syncScenarioText(bodyH)
 	m.syncFooterLine()
 	m.syncFooterCard()
 
-	body := m.layoutBody(bodyH)
 	m.footer.SetSize(m.width, 1)
-
-	screen := ""
-	if cardH := m.footerCardRows(); cardH > 0 {
+	if cardH > 0 {
 		m.footerCard.SetSize(m.width, cardH)
-		footerStack := rooms.BigTopStrip(m.width, footerH, 1, m.footerCard, m.footer)
-		screen = rooms.BigTopStrip(m.width, m.height, footerH, rooms.Static(body), rooms.Static(footerStack))
-	} else {
-		screen = rooms.Focus(m.width, m.height, rooms.Static(body), m.footer)
 	}
+	navW := clamp(m.width/5, 24, 34)
+	screen := rooms.RailFooterStack(m.width, m.height, navW, cardH, m.navPanel, m.canvasCard, m.footerCard, m.footer)
 
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
@@ -174,11 +167,6 @@ func (m *Model) View() tea.View {
 	v.AltScreen = true
 	v.BackgroundColor = canvas
 	return v
-}
-
-func (m *Model) layoutBody(bodyH int) string {
-	navW := clamp(m.width/5, 24, 34)
-	return rooms.Rail(m.width, bodyH, navW, m.navPanel, m.canvasCard)
 }
 
 func (m *Model) syncScenarioText(bodyH int) {
@@ -202,7 +190,6 @@ func (m *Model) syncScenarioText(bodyH int) {
 
 	r := s.Run(ctx)
 	m.checks = append([]scenarios.Check{}, r.Checks...)
-	m.checks = append(m.checks, validateCanvasFrame(r.Canvas, ctx.Width, ctx.Height)...)
 
 	title := fmt.Sprintf("[%d/%d] %s", m.scenarioIdx+1, len(m.scenarios), s.Title)
 	m.canvasCard.SetTitle(title)
@@ -214,8 +201,7 @@ func (m *Model) syncScenarioText(bodyH int) {
 	}
 	m.centerDeck.SetOutput("Scenario Output", strings.Join(body, "\n"))
 
-	pass, warn, fail := summarizeChecks(m.checks)
-	m.centerDeck.SetChecks(fmt.Sprintf("pass: %d\nwarn: %d\nfail: %d", pass, warn, fail))
+	m.centerDeck.SetChecks(formatChecksForCard(m.checks))
 	m.centerDeck.SetMetrics(fmt.Sprintf("scenario=%s\nviewport=%s(%dx%d)\ntheme=%s\nstatus=%s",
 		s.ID,
 		preset.Name,
@@ -228,22 +214,26 @@ func (m *Model) syncScenarioText(bodyH int) {
 
 func (m *Model) inlineSummary() string {
 	p := viewportPresets[m.presetIdx]
-	pass, warn, fail := summarizeChecks(m.checks)
-	return fmt.Sprintf("summary: viewport=%s(%dx%d) theme=%s checks=p:%d w:%d f:%d status=%s",
-		p.Name, p.Width, p.Height, theme.CurrentThemeName(), pass, warn, fail, m.status)
+	return fmt.Sprintf("summary: %s | viewport=%s(%dx%d) | theme=%s | %s",
+		m.scenarios[m.scenarioIdx].ID,
+		p.Name,
+		p.Width,
+		p.Height,
+		theme.CurrentThemeName(),
+		m.status,
+	)
 }
 
 func (m *Model) syncFooterLine() {
 	p := viewportPresets[m.presetIdx]
-	pass, warn, fail := summarizeChecks(m.checks)
-	m.footer.SetLeft(fmt.Sprintf("%s | %s | p:%d w:%d f:%d", m.scenarios[m.scenarioIdx].ID, p.Name, pass, warn, fail))
+	m.footer.SetLeft(fmt.Sprintf("%s | %s", m.scenarios[m.scenarioIdx].ID, p.Name))
 	m.footer.SetRight(fmt.Sprintf("theme:%s snapshot:%t", theme.CurrentThemeName(), m.snapshot))
 }
 
 func (m *Model) syncFooterCard() {
 	p := viewportPresets[m.presetIdx]
 	pass, warn, fail := summarizeChecks(m.checks)
-	m.footerText.SetText(fmt.Sprintf("scenario=%s  status=%s\nviewport=%s(%dx%d)  theme=%s  p:%d w:%d f:%d",
+	m.footerText.SetText(fmt.Sprintf("scenario=%s  status=%s\nviewport=%s(%dx%d)  theme=%s\nchecks: pass=%d warn=%d fail=%d",
 		m.scenarios[m.scenarioIdx].ID,
 		m.status,
 		p.Name,
@@ -254,6 +244,29 @@ func (m *Model) syncFooterCard() {
 		warn,
 		fail,
 	))
+}
+
+func formatChecksForCard(checks []scenarios.Check) string {
+	if len(checks) == 0 {
+		return "No checks yet"
+	}
+	lines := make([]string, 0, len(checks))
+	for i := 0; i < len(checks) && i < 6; i++ {
+		c := checks[i]
+		prefix := "ok"
+		switch c.Level {
+		case scenarios.CheckWarn:
+			prefix = "warn"
+		case scenarios.CheckFail:
+			prefix = "fail"
+		}
+		detail := strings.TrimSpace(c.Detail)
+		if detail == "" {
+			detail = c.Name
+		}
+		lines = append(lines, fmt.Sprintf("%s %s", prefix, detail))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (m *Model) syncNavText() {
@@ -309,27 +322,6 @@ func summarizeChecks(checks []scenarios.Check) (pass, warn, fail int) {
 		}
 	}
 	return pass, warn, fail
-}
-
-func validateCanvasFrame(canvas string, width, height int) []scenarios.Check {
-	checks := []scenarios.Check{}
-	if width <= 0 || height <= 0 {
-		return append(checks, scenarios.Check{Name: "canvas-size", Level: scenarios.CheckFail, Detail: "invalid scenario canvas size"})
-	}
-	lines := strings.Split(canvas, "\n")
-	if len(lines) != height {
-		checks = append(checks, scenarios.Check{Name: "canvas-line-count", Level: scenarios.CheckWarn, Detail: fmt.Sprintf("expected %d lines, got %d", height, len(lines))})
-	}
-	for i, line := range lines {
-		if lipgloss.Width(line) != width {
-			checks = append(checks, scenarios.Check{Name: "canvas-row-width", Level: scenarios.CheckFail, Detail: fmt.Sprintf("line %d width mismatch: got %d want %d", i, lipgloss.Width(line), width)})
-			break
-		}
-	}
-	if len(checks) == 0 {
-		checks = append(checks, scenarios.Check{Name: "canvas-row-width", Level: scenarios.CheckPass, Detail: "all scenario rows are width-exact"})
-	}
-	return checks
 }
 
 func compactBodyLines(canvas string) []string {

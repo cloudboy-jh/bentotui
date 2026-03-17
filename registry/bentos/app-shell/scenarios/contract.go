@@ -69,5 +69,11 @@ func All() []Definition {
 			Description: "anchored command footer readability and truncation behavior",
 			Run:         runFooter,
 		},
+		{
+			ID:          "cards-theme-audit",
+			Title:       "Cards + Theme Audit",
+			Description: "stable vs experimental registry quality and card-readiness",
+			Run:         runThemeAudit,
+		},
 	}
 }

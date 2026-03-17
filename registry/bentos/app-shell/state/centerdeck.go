@@ -23,9 +23,9 @@ func newCenterDeck() *centerDeck {
 	c := &textBlock{}
 	m := &textBlock{}
 	return &centerDeck{
-		primary:  elevatedcard.New(elevatedcard.Title("Scenario Output"), elevatedcard.Content(p), elevatedcard.Inset(1)),
-		checks:   elevatedcard.New(elevatedcard.Title("Checks"), elevatedcard.Content(c), elevatedcard.Inset(1)),
-		metrics:  elevatedcard.New(elevatedcard.Title("Context"), elevatedcard.Content(m), elevatedcard.Inset(1)),
+		primary:  elevatedcard.New(elevatedcard.Title("Scenario Output"), elevatedcard.Content(p), elevatedcard.CardVariant(elevatedcard.VariantEmphasis), elevatedcard.Inset(1)),
+		checks:   elevatedcard.New(elevatedcard.Title("Checks"), elevatedcard.Content(c), elevatedcard.CardVariant(elevatedcard.VariantDense), elevatedcard.Inset(1)),
+		metrics:  elevatedcard.New(elevatedcard.Title("Context"), elevatedcard.Content(m), elevatedcard.CardVariant(elevatedcard.VariantDense), elevatedcard.Inset(1)),
 		primaryT: p,
 		checksT:  c,
 		metricsT: m,

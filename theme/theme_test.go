@@ -94,6 +94,7 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 		}{
 			{th.Surface.Panel, th.Surface.Canvas, "surface.panel", "surface.canvas", minSurfacePanelCanvasDelta},
 			{th.Surface.Interactive, th.Surface.Panel, "surface.interactive", "surface.panel", minSurfaceInteractivePanelDelta},
+			{th.Text.Primary, th.Text.Muted, "text.primary", "text.muted", minTextPrimaryMutedDelta},
 			{th.Input.BG, th.Surface.Canvas, "input.bg", "surface.canvas", 0.03},
 			{th.Selection.BG, th.Surface.Canvas, "selection.bg", "surface.canvas", 0.05},
 			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
@@ -103,6 +104,25 @@ func TestBuiltinsLayerContrast(t *testing.T) {
 			{th.Card.FrameBG, th.Card.BodyBG, "card.frameBG", "card.bodyBG", minCardFrameBodyDelta},
 			{th.Card.ShadowBG, th.Surface.Canvas, "card.shadowBG", "surface.canvas", minCardShadowCanvasDelta},
 			{th.Card.FocusEdgeBG, th.Card.FrameBG, "card.focusEdgeBG", "card.frameBG", minCardFocusEdgeFrameDelta},
+		}
+		if th.Footer.AnchoredBG != "" && th.Footer.AnchoredFG != "" && th.Footer.AnchoredMuted != "" {
+			pairs = append(pairs,
+				struct {
+					a, b     string
+					la, lb   string
+					minDelta float64
+				}{th.Footer.AnchoredFG, th.Footer.AnchoredBG, "footer.anchoredFG", "footer.anchoredBG", minFooterFGToBGDelta},
+				struct {
+					a, b     string
+					la, lb   string
+					minDelta float64
+				}{th.Footer.AnchoredMuted, th.Footer.AnchoredBG, "footer.anchoredMuted", "footer.anchoredBG", minFooterMutedToBGDelta},
+				struct {
+					a, b     string
+					la, lb   string
+					minDelta float64
+				}{th.Footer.AnchoredFG, th.Footer.AnchoredMuted, "footer.anchoredFG", "footer.anchoredMuted", minFooterFGMutedDelta},
+			)
 		}
 		for _, p := range pairs {
 			delta := lumDelta(p.a, p.b)

@@ -147,7 +147,17 @@ func (s System) FooterCardCommand(variant string, enabled bool) lipgloss.Style {
 // FooterCardCommandAnchored renders command emphasis with no background so
 // anchored footer rows remain a single solid strip.
 func (s System) FooterCardCommandAnchored(variant string, enabled bool) lipgloss.Style {
-	fg, _ := s.footerCardColors(variant, enabled, true)
+	// Command/key token is always visual-primary (bold).
+	fg := pick(s.Theme.Footer.AnchoredFG, s.Theme.Text.Primary)
+	switch variant {
+	case "danger":
+		fg = pick(s.Theme.State.Danger, fg)
+	case "muted":
+		fg = pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted)
+	}
+	if !enabled {
+		fg = pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted)
+	}
 	st := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(fg))
 	if !enabled {
 		return st.Faint(true)
@@ -165,7 +175,11 @@ func (s System) FooterCardLabel(variant string, enabled bool) lipgloss.Style {
 // FooterCardLabelAnchored renders labels with no background so anchored footer
 // rows remain visually continuous.
 func (s System) FooterCardLabelAnchored(variant string, enabled bool) lipgloss.Style {
-	fg, _ := s.footerCardColors(variant, enabled, false)
+	// Label is always secondary (regular weight, muted tone).
+	fg := pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted)
+	if variant == "danger" {
+		fg = pick(s.Theme.Footer.AnchoredMuted, s.Theme.Text.Muted)
+	}
 	st := lipgloss.NewStyle().Foreground(lipgloss.Color(fg))
 	if !enabled {
 		return st.Faint(true)

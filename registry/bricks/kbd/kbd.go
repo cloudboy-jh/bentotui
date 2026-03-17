@@ -40,10 +40,10 @@ func (m *Model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 func (m *Model) View() tea.View {
 	t := theme.CurrentTheme()
 	sys := styles.New(t)
-	cmd := sys.FooterCardCommand(m.variant, m.active).Render(m.command)
+	cmd := sys.FooterCardCommandAnchored(m.variant, m.active).Render(m.command)
 	if strings.TrimSpace(m.label) == "" {
 		return tea.NewView(cmd)
 	}
-	lbl := sys.FooterCardLabel(m.variant, m.active).Render(m.label)
+	lbl := sys.FooterCardLabelAnchored(m.variant, m.active).Render(m.label)
 	return tea.NewView(cmd + " " + lbl)
 }

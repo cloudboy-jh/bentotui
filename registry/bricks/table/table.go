@@ -16,6 +16,7 @@
 package table
 
 import (
+	"sort"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -35,6 +36,8 @@ const (
 type Column struct {
 	Header string
 	Width  int
+	Min    int
+	Pri    int
 	Align  Align
 }
 
@@ -52,7 +55,7 @@ type Model struct {
 func New(headers ...string) *Model {
 	cols := make([]Column, len(headers))
 	for i, h := range headers {
-		cols[i] = Column{Header: h, Align: AlignLeft}
+		cols[i] = Column{Header: h, Align: AlignLeft, Min: 4, Pri: 1}
 	}
 	return &Model{columns: cols}
 }
@@ -75,6 +78,12 @@ func (t *Model) SetColumn(index int, col Column) {
 	if col.Align == "" {
 		col.Align = AlignLeft
 	}
+	if col.Min <= 0 {
+		col.Min = 4
+	}
+	if col.Pri <= 0 {
+		col.Pri = 1
+	}
 	t.columns[index] = col
 }
 
@@ -90,6 +99,26 @@ func (t *Model) SetColumnAlign(index int, align Align) {
 		return
 	}
 	t.columns[index].Align = align
+}
+
+func (t *Model) SetColumnMinWidth(index, width int) {
+	if index < 0 || index >= len(t.columns) {
+		return
+	}
+	if width < 1 {
+		width = 1
+	}
+	t.columns[index].Min = width
+}
+
+func (t *Model) SetColumnPriority(index, priority int) {
+	if index < 0 || index >= len(t.columns) {
+		return
+	}
+	if priority < 1 {
+		priority = 1
+	}
+	t.columns[index].Pri = priority
 }
 
 func (t *Model) Init() tea.Cmd                           { return nil }
@@ -186,50 +215,92 @@ func (t *Model) computeColumnWidths(totalWidth, sepWidth int) []int {
 		return nil
 	}
 	widths := make([]int, count)
+	mins := make([]int, count)
 	seps := (count - 1) * sepWidth
 	available := totalWidth - seps
 	if available < count {
 		available = count
 	}
 
-	fixed := 0
+	base := 0
 	flexCount := 0
 	for i, col := range t.columns {
+		minW := col.Min
+		if minW < 1 {
+			minW = 1
+		}
+		mins[i] = minW
 		if col.Width > 0 {
-			widths[i] = col.Width
-			fixed += col.Width
+			w := col.Width
+			if w < minW {
+				w = minW
+			}
+			widths[i] = w
+			base += w
 			continue
 		}
+		headerMin := lipgloss.Width(col.Header) + 1
+		if headerMin < minW {
+			headerMin = minW
+		}
+		widths[i] = headerMin
+		base += headerMin
 		flexCount++
 	}
 
-	remaining := available - fixed
-	if remaining < flexCount {
-		remaining = flexCount
-	}
-	share := 1
-	if flexCount > 0 {
-		share = remaining / flexCount
-		if share < 1 {
-			share = 1
+	if base > available {
+		idxs := make([]int, len(t.columns))
+		for i := range t.columns {
+			idxs[i] = i
 		}
-	}
-	lastFlex := -1
-	for i, col := range t.columns {
-		if col.Width > 0 {
-			continue
+		sort.Slice(idxs, func(i, j int) bool {
+			a := t.columns[idxs[i]]
+			b := t.columns[idxs[j]]
+			if a.Pri != b.Pri {
+				return a.Pri > b.Pri
+			}
+			return idxs[i] > idxs[j]
+		})
+		over := base - available
+		for over > 0 {
+			changed := false
+			for _, idx := range idxs {
+				if widths[idx] > mins[idx] {
+					widths[idx]--
+					over--
+					changed = true
+					if over == 0 {
+						break
+					}
+				}
+			}
+			if !changed {
+				break
+			}
 		}
-		widths[i] = share
-		lastFlex = i
 	}
 
 	used := 0
 	for _, w := range widths {
 		used += w
 	}
-	if lastFlex >= 0 {
-		widths[lastFlex] += available - used
+
+	if flexCount > 0 && used < available {
+		extra := available - used
+		share := extra / flexCount
+		rem := extra % flexCount
+		for i, col := range t.columns {
+			if col.Width > 0 {
+				continue
+			}
+			widths[i] += share
+			if rem > 0 {
+				widths[i]++
+				rem--
+			}
+		}
 	}
+
 	for i := range widths {
 		if widths[i] < 1 {
 			widths[i] = 1

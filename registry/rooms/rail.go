@@ -16,22 +16,27 @@ func Rail(width, height, railWidth int, rail, main Sizable) string {
 	)
 }
 
-// HolyGrail:
-// +----------------------+
-// | header               |
+// RailFooterStack:
 // +--------+-------------+
-// |        |             |
 // |  rail  |    main     |
-// |        |             |
-// +--------+-------------+
-// | footer               |
 // +----------------------+
-// HolyGrail renders header, rail+main body, and footer.
-func HolyGrail(width, height, railWidth int, header, rail, main, footer Sizable) string {
-	bodyH := engine.Max(1, height-2)
+// |   footer card rows   |
+// +----------------------+
+// |      footer bar      |
+// +----------------------+
+// RailFooterStack renders rail+main body with optional footer-card rows and a
+// required final footer bar row.
+func RailFooterStack(width, height, railWidth, footerCardRows int, rail, main, footerCard, footerBar Sizable) string {
+	bodyH := engine.Max(1, height-1-footerCardRows)
 	body := Rail(width, bodyH, railWidth, rail, main)
+	if footerCardRows <= 0 || footerCard == nil {
+		return engine.RenderVertical(width, height,
+			[]engine.Spec{{Kind: engine.Fill}, {Kind: engine.Fixed, N: 1}},
+			[]Sizable{Static(body), footerBar},
+		)
+	}
 	return engine.RenderVertical(width, height,
-		[]engine.Spec{{Kind: engine.Fixed, N: 1}, {Kind: engine.Fill}, {Kind: engine.Fixed, N: 1}},
-		[]Sizable{header, Static(body), footer},
+		[]engine.Spec{{Kind: engine.Fill}, {Kind: engine.Fixed, N: footerCardRows}, {Kind: engine.Fixed, N: 1}},
+		[]Sizable{Static(body), footerCard, footerBar},
 	)
 }

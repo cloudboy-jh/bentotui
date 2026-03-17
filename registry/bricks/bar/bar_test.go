@@ -63,9 +63,9 @@ func TestAnchoredCardStyleModes(t *testing.T) {
 	tm := theme.CurrentTheme()
 	card := Card{Command: "k", Label: "save", Variant: CardPrimary, Enabled: true}
 
-	plain := renderCard(tm, card, true, true, true, AnchoredCardStylePlain)
-	chip := renderCard(tm, card, true, true, true, AnchoredCardStyleChip)
-	mixed := renderCard(tm, card, true, true, true, AnchoredCardStyleMixed)
+	plain := renderCard(tm, card, true, true, true)
+	chip := renderCard(tm, card, true, true, true)
+	mixed := renderCard(tm, card, true, true, true)
 
 	if ansi.Strip(plain) != "k save" {
 		t.Fatalf("expected plain style text, got %q", ansi.Strip(plain))
@@ -76,18 +76,15 @@ func TestAnchoredCardStyleModes(t *testing.T) {
 	if ansi.Strip(mixed) != "k save" {
 		t.Fatalf("expected mixed style text, got %q", ansi.Strip(mixed))
 	}
-	if plain == chip {
-		t.Fatalf("expected chip style to differ from plain rendering")
-	}
-	if mixed != chip {
-		t.Fatalf("expected mixed style to render primary cards as chip")
+	if plain == "k save" {
+		t.Fatalf("expected anchored card to be styled, got raw text")
 	}
 
 	muted := Card{Command: "q", Label: "quit", Variant: CardMuted, Enabled: true}
-	mixedMuted := renderCard(tm, muted, true, true, true, AnchoredCardStyleMixed)
-	plainMuted := renderCard(tm, muted, true, true, true, AnchoredCardStylePlain)
-	if mixedMuted != plainMuted {
-		t.Fatalf("expected mixed style to keep muted cards plain")
+	mixedMuted := renderCard(tm, muted, true, true, true)
+	plainMuted := renderCard(tm, muted, true, true, true)
+	if ansi.Strip(mixedMuted) != "q quit" || ansi.Strip(plainMuted) != "q quit" {
+		t.Fatalf("expected anchored muted card text pair, got mixed=%q plain=%q", ansi.Strip(mixedMuted), ansi.Strip(plainMuted))
 	}
 }
 

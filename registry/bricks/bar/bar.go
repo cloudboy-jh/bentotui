@@ -231,7 +231,7 @@ func (m *Model) renderLeftSegment(t theme.Theme) string {
 		parts = append(parts, styles.New(t).StatusPillMuted().Render(m.statusPill))
 	}
 	if m.leftCard != nil {
-		parts = append(parts, renderCard(t, *m.leftCard, true, m.compactMode(), m.anchoredMode(), m.anchoredCard))
+		parts = append(parts, renderCard(t, *m.leftCard, true, m.compactMode(), m.anchoredMode()))
 	}
 	if m.left != "" {
 		parts = append(parts, m.left)
@@ -245,7 +245,7 @@ func (m *Model) renderRightSegment(t theme.Theme) string {
 		parts = append(parts, m.right)
 	}
 	if m.rightCard != nil {
-		parts = append(parts, renderCard(t, *m.rightCard, true, m.compactMode(), m.anchoredMode(), m.anchoredCard))
+		parts = append(parts, renderCard(t, *m.rightCard, true, m.compactMode(), m.anchoredMode()))
 	}
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
@@ -267,10 +267,10 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 	}
 
 	if width < 0 {
-		return joinEntries(t, entries, m.compactMode(), m.anchoredMode(), m.anchoredCard)
+		return joinEntries(t, entries, m.compactMode(), m.anchoredMode())
 	}
 
-	rendered := joinEntries(t, entries, m.compactMode(), m.anchoredMode(), m.anchoredCard)
+	rendered := joinEntries(t, entries, m.compactMode(), m.anchoredMode())
 	if lipgloss.Width(rendered) <= width {
 		return rendered
 	}
@@ -278,7 +278,7 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 	order := truncateOrder(entries)
 	for _, idx := range order {
 		entries[idx].showLabel = false
-		rendered = joinEntries(t, entries, m.compactMode(), m.anchoredMode(), m.anchoredCard)
+		rendered = joinEntries(t, entries, m.compactMode(), m.anchoredMode())
 		if lipgloss.Width(rendered) <= width {
 			return rendered
 		}
@@ -290,7 +290,7 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 	}
 	for _, idx := range order {
 		keep[idx] = false
-		rendered = joinKeptEntries(t, entries, keep, m.compactMode(), m.anchoredMode(), m.anchoredCard)
+		rendered = joinKeptEntries(t, entries, keep, m.compactMode(), m.anchoredMode())
 		if lipgloss.Width(rendered) <= width {
 			return rendered
 		}
@@ -308,21 +308,15 @@ func (m *Model) anchoredMode() bool {
 }
 
 // renderCard renders a command/label card pair for the bar.
-func renderCard(t theme.Theme, c Card, showLabel bool, compact bool, anchored bool, anchoredStyle AnchoredCardStyle) string {
+func renderCard(t theme.Theme, c Card, showLabel bool, compact bool, anchored bool) string {
 	if anchored {
 		sys := styles.New(t)
-		commandPart := c.Command
-		if anchoredStyle == AnchoredCardStyleChip || (anchoredStyle == AnchoredCardStyleMixed && (c.Variant == CardPrimary || c.Variant == CardDanger)) {
-			commandPart = sys.FooterCardCommandAnchored(string(c.Variant), c.Enabled).Render(c.Command)
-		}
+		commandPart := sys.FooterCardCommandAnchored(string(c.Variant), c.Enabled).Render(c.Command)
 		label := strings.TrimSpace(c.Label)
 		if !showLabel || label == "" {
 			return commandPart
 		}
-		labelPart := label
-		if anchoredStyle == AnchoredCardStyleChip || (anchoredStyle == AnchoredCardStyleMixed && (c.Variant == CardPrimary || c.Variant == CardDanger)) {
-			labelPart = sys.FooterCardLabelAnchored(string(c.Variant), c.Enabled).Render(label)
-		}
+		labelPart := sys.FooterCardLabelAnchored(string(c.Variant), c.Enabled).Render(label)
 		if compact {
 			if strings.EqualFold(label, c.Command) || strings.HasPrefix(strings.ToLower(label), strings.ToLower(c.Command)+" ") {
 				return labelPart
@@ -354,21 +348,21 @@ type cardEntry struct {
 	showLabel bool
 }
 
-func joinEntries(t theme.Theme, entries []cardEntry, compact bool, anchored bool, anchoredStyle AnchoredCardStyle) string {
+func joinEntries(t theme.Theme, entries []cardEntry, compact bool, anchored bool) string {
 	parts := make([]string, len(entries))
 	for i, e := range entries {
-		parts[i] = renderCard(t, e.card, e.showLabel, compact, anchored, anchoredStyle)
+		parts[i] = renderCard(t, e.card, e.showLabel, compact, anchored)
 	}
 	return strings.Join(parts, " ")
 }
 
-func joinKeptEntries(t theme.Theme, entries []cardEntry, keep []bool, compact bool, anchored bool, anchoredStyle AnchoredCardStyle) string {
+func joinKeptEntries(t theme.Theme, entries []cardEntry, keep []bool, compact bool, anchored bool) string {
 	parts := make([]string, 0, len(entries))
 	for i, e := range entries {
 		if !keep[i] {
 			continue
 		}
-		parts = append(parts, renderCard(t, e.card, e.showLabel, compact, anchored, anchoredStyle))
+		parts = append(parts, renderCard(t, e.card, e.showLabel, compact, anchored))
 	}
 	return strings.Join(parts, " ")
 }

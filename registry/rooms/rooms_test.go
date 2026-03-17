@@ -84,6 +84,7 @@ func TestAllLayoutsExactDimensions(t *testing.T) {
 	st := Static("strip")
 	bg := Static("background")
 	md := Static("modal")
+	fc := Static("footer-card")
 
 	outputs := []string{
 		Frame(w, h, tb, hd, b, f),
@@ -93,6 +94,7 @@ func TestAllLayoutsExactDimensions(t *testing.T) {
 		Pancake(w, h, hd, b, f),
 		TopbarPancake(w, h, tb, hd, b, f),
 		Rail(w, h, 9, sb, mn),
+		RailFooterStack(w, h, 9, 2, sb, mn, fc, f),
 		HolyGrail(w, h, 9, hd, sb, mn, f),
 		HSplit(w, h, l, r),
 		VSplit(w, h, hd, b),

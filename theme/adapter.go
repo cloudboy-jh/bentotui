@@ -51,6 +51,7 @@ func fromTint(t *tint.Tint, name string) Theme {
 	overlay := ensureDelta(pick(bbk, blk), canvas, 0.03)
 	interactive := pick(bbk, bacc)
 	panel, interactive = normalizeSurfaces(canvas, panel, interactive)
+	muted := ensureDelta(pick(wht, bwht), fg, minTextPrimaryMutedDelta)
 
 	// Input BG must contrast against canvas but remain a dark surface color —
 	// prefer BrightBlack (raised surface), fall back to Black if BrightBlack
@@ -66,8 +67,12 @@ func fromTint(t *tint.Tint, name string) Theme {
 	selectionFG := blk // dark text on bright selection
 	barBG := ensureDistinctMin(panel, canvas, 0.02, interactive, blk)
 	footerBG := ensureDelta(pick(selectionBG, barBG), panel, 0.03)
-	footerFG := pick(selectionFG, fg)
-	footerMuted := ensureDelta(pick(wht, bwht), footerBG, 0.12)
+	footerFG := ensureDelta(pick(fg, bwht), footerBG, minFooterFGToBGDelta)
+	footerMuted := ensureDelta(muted, footerBG, minFooterMutedToBGDelta)
+	if lumDelta(footerFG, footerMuted) < minFooterFGMutedDelta {
+		footerMuted = ensureDelta(blendHex(footerMuted, footerBG, 0.35), footerFG, minFooterFGMutedDelta)
+		footerMuted = ensureDelta(footerMuted, footerBG, minFooterMutedToBGDelta)
+	}
 
 	cardBody := ensureDelta(pick(blk, panel), panel, 0.04)
 	cardHeader := ensureDelta(pick(interactive, panel), cardBody, minCardHeaderBodyDelta)
@@ -88,7 +93,7 @@ func fromTint(t *tint.Tint, name string) Theme {
 		},
 		Text: TextTokens{
 			Primary: fg,
-			Muted:   pick(wht, bwht),
+			Muted:   muted,
 			Inverse: pick(blk, canvas),
 			Accent:  pick(bacc, bcya),
 		},
@@ -110,7 +115,7 @@ func fromTint(t *tint.Tint, name string) Theme {
 		Input: InputTokens{
 			BG:          inputBG,
 			FG:          fg,
-			Placeholder: pick(wht, bwht),
+			Placeholder: muted,
 			Cursor:      cur,
 			Border:      pick(bacc, bpur),
 		},

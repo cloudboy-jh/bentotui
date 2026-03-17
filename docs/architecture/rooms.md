@@ -48,6 +48,7 @@ Compatibility rooms:
 - `Pancake(header, content, footer)`
 - `TopbarPancake(topbar, header, content, footer)`
 - `Rail(railWidth, rail, main)`
+- `RailFooterStack(railWidth, footerCardRows, rail, main, footerCard, footerBar)`
 - `HolyGrail(railWidth, header, rail, main, footer)`
 - `HSplit(left, right)`
 - `VSplit(top, bottom)`

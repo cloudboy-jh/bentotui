@@ -169,6 +169,15 @@ Selection.BG        ← always brightest accent (contrasts everything)
 
 Components use semantic tokens — never raw palette slots or hardcoded hex.
 
+Theme registry policy:
+
+- Built-ins are classified as `stable` or `experimental`.
+- `stable` themes are shown first and are the default set for reference bentos.
+- Graduation from `experimental` to `stable` requires:
+  - quality score >= 82 from `themeQualityScore`
+  - pass on card hierarchy checks (`card.headerBG/bodyBG/frameBG/shadowBG/focusEdgeBG`)
+  - manual visual spot-check in app-shell theme-audit scenario
+
 ---
 
 ## Package Responsibilities
