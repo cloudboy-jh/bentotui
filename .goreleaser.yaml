@@ -53,3 +53,7 @@ release:
     name: bentotui
   draft: false
   prerelease: auto
+  # Allow CI to overwrite assets if they already exist.
+  # This handles the case where a local goreleaser run uploaded assets
+  # before CI triggered on the same tag push.
+  replace_existing_artifacts: true
