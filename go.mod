@@ -8,7 +8,6 @@ require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106192539-4b304240aab7
 	github.com/charmbracelet/ultraviolet v0.0.0-20251116181749-377898bcce38
 	github.com/charmbracelet/x/ansi v0.11.1
-	github.com/lrstanley/bubbletint/v2 v2.0.1
 )
 
 require (

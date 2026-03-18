@@ -66,6 +66,35 @@ type Theme interface {
 	DialogBorder() color.Color
 	DialogScrim() color.Color
 
+	// Diff — used by bento-diffs and any diff rendering surface.
+	// Line backgrounds: applied to the full width of each line.
+	DiffAddedBG() color.Color   // added line full-row background
+	DiffRemovedBG() color.Color // removed line full-row background
+	DiffContextBG() color.Color // unchanged context line background
+	// Line number column backgrounds for changed lines.
+	DiffAddedLineNumBG() color.Color
+	DiffRemovedLineNumBG() color.Color
+	// Foreground markers and line number text.
+	DiffAdded() color.Color   // "+" marker + line number fg on added lines
+	DiffRemoved() color.Color // "-" marker + line number fg on removed lines
+	DiffLineNum() color.Color // line number fg on context lines
+	// Intraline (word/char) highlight backgrounds — the bright inner highlight
+	// applied to the specific characters that changed within a line.
+	DiffHighlightAdded() color.Color
+	DiffHighlightRemoved() color.Color
+
+	// Syntax — token colors fed to chroma for syntax highlighting inside diffs.
+	// bento-diffs builds a dynamic chroma XML style from these.
+	SyntaxKeyword() color.Color
+	SyntaxType() color.Color
+	SyntaxFunction() color.Color
+	SyntaxVariable() color.Color
+	SyntaxString() color.Color
+	SyntaxNumber() color.Color
+	SyntaxComment() color.Color
+	SyntaxOperator() color.Color
+	SyntaxPunctuation() color.Color
+
 	// Name
 	Name() string
 }
@@ -119,6 +148,29 @@ type BaseTheme struct {
 	DialogFGColor     color.Color
 	DialogBorderColor color.Color
 	DialogScrimColor  color.Color
+
+	// Diff colors
+	DiffAddedBGColor          color.Color
+	DiffRemovedBGColor        color.Color
+	DiffContextBGColor        color.Color
+	DiffAddedLineNumBGColor   color.Color
+	DiffRemovedLineNumBGColor color.Color
+	DiffAddedColor            color.Color
+	DiffRemovedColor          color.Color
+	DiffLineNumColor          color.Color
+	DiffHighlightAddedColor   color.Color
+	DiffHighlightRemovedColor color.Color
+
+	// Syntax highlight colors
+	SyntaxKeywordColor     color.Color
+	SyntaxTypeColor        color.Color
+	SyntaxFunctionColor    color.Color
+	SyntaxVariableColor    color.Color
+	SyntaxStringColor      color.Color
+	SyntaxNumberColor      color.Color
+	SyntaxCommentColor     color.Color
+	SyntaxOperatorColor    color.Color
+	SyntaxPunctuationColor color.Color
 }
 
 func (t *BaseTheme) Name() string { return t.ThemeName }
@@ -167,6 +219,124 @@ func (t *BaseTheme) DialogBG() color.Color     { return t.DialogBGColor }
 func (t *BaseTheme) DialogFG() color.Color     { return t.DialogFGColor }
 func (t *BaseTheme) DialogBorder() color.Color { return t.DialogBorderColor }
 func (t *BaseTheme) DialogScrim() color.Color  { return t.DialogScrimColor }
+
+// Diff methods — fall back to computed defaults if the color field is nil.
+func (t *BaseTheme) DiffAddedBG() color.Color {
+	if t.DiffAddedBGColor != nil {
+		return t.DiffAddedBGColor
+	}
+	return h("#1a2e1a") // dark green slab default
+}
+func (t *BaseTheme) DiffRemovedBG() color.Color {
+	if t.DiffRemovedBGColor != nil {
+		return t.DiffRemovedBGColor
+	}
+	return h("#2e1a1a") // dark red slab default
+}
+func (t *BaseTheme) DiffContextBG() color.Color {
+	if t.DiffContextBGColor != nil {
+		return t.DiffContextBGColor
+	}
+	return t.BackgroundColor // same as canvas
+}
+func (t *BaseTheme) DiffAddedLineNumBG() color.Color {
+	if t.DiffAddedLineNumBGColor != nil {
+		return t.DiffAddedLineNumBGColor
+	}
+	return h("#162616")
+}
+func (t *BaseTheme) DiffRemovedLineNumBG() color.Color {
+	if t.DiffRemovedLineNumBGColor != nil {
+		return t.DiffRemovedLineNumBGColor
+	}
+	return h("#2a1616")
+}
+func (t *BaseTheme) DiffAdded() color.Color {
+	if t.DiffAddedColor != nil {
+		return t.DiffAddedColor
+	}
+	return t.SuccessColor
+}
+func (t *BaseTheme) DiffRemoved() color.Color {
+	if t.DiffRemovedColor != nil {
+		return t.DiffRemovedColor
+	}
+	return t.ErrorColor
+}
+func (t *BaseTheme) DiffLineNum() color.Color {
+	if t.DiffLineNumColor != nil {
+		return t.DiffLineNumColor
+	}
+	return t.TextMutedColor
+}
+func (t *BaseTheme) DiffHighlightAdded() color.Color {
+	if t.DiffHighlightAddedColor != nil {
+		return t.DiffHighlightAddedColor
+	}
+	return h("#2a5c2a") // brighter inner highlight on + lines
+}
+func (t *BaseTheme) DiffHighlightRemoved() color.Color {
+	if t.DiffHighlightRemovedColor != nil {
+		return t.DiffHighlightRemovedColor
+	}
+	return h("#5c2a2a") // brighter inner highlight on - lines
+}
+
+// Syntax methods — fall back to reasonable token-mapped defaults.
+func (t *BaseTheme) SyntaxKeyword() color.Color {
+	if t.SyntaxKeywordColor != nil {
+		return t.SyntaxKeywordColor
+	}
+	return t.TextAccentColor
+}
+func (t *BaseTheme) SyntaxType() color.Color {
+	if t.SyntaxTypeColor != nil {
+		return t.SyntaxTypeColor
+	}
+	return t.InfoColor
+}
+func (t *BaseTheme) SyntaxFunction() color.Color {
+	if t.SyntaxFunctionColor != nil {
+		return t.SyntaxFunctionColor
+	}
+	return t.TextAccentColor
+}
+func (t *BaseTheme) SyntaxVariable() color.Color {
+	if t.SyntaxVariableColor != nil {
+		return t.SyntaxVariableColor
+	}
+	return t.TextColor
+}
+func (t *BaseTheme) SyntaxString() color.Color {
+	if t.SyntaxStringColor != nil {
+		return t.SyntaxStringColor
+	}
+	return t.SuccessColor
+}
+func (t *BaseTheme) SyntaxNumber() color.Color {
+	if t.SyntaxNumberColor != nil {
+		return t.SyntaxNumberColor
+	}
+	return t.WarningColor
+}
+func (t *BaseTheme) SyntaxComment() color.Color {
+	if t.SyntaxCommentColor != nil {
+		return t.SyntaxCommentColor
+	}
+	return t.TextMutedColor
+}
+func (t *BaseTheme) SyntaxOperator() color.Color {
+	if t.SyntaxOperatorColor != nil {
+		return t.SyntaxOperatorColor
+	}
+	return t.TextColor
+}
+func (t *BaseTheme) SyntaxPunctuation() color.Color {
+	if t.SyntaxPunctuationColor != nil {
+		return t.SyntaxPunctuationColor
+	}
+	return t.TextMutedColor
+}
 
 // h converts a hex string to a color.Color via lipgloss.Color.
 func h(hex string) color.Color {

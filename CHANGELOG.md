@@ -6,6 +6,23 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-03-18
+
+### Added
+
+- **Diff and Syntax tokens on `Theme` interface.** Added 10 diff color methods and
+  9 syntax highlight methods to support `bento-diffs` and any diff rendering surface.
+  All methods have nil-guarded defaults in `BaseTheme` derived from existing tokens
+  (`SuccessColor`, `ErrorColor`, `TextMutedColor`, etc.) — no preset changes required.
+
+  Diff methods: `DiffAddedBG`, `DiffRemovedBG`, `DiffContextBG`, `DiffAddedLineNumBG`,
+  `DiffRemovedLineNumBG`, `DiffAdded`, `DiffRemoved`, `DiffLineNum`,
+  `DiffHighlightAdded`, `DiffHighlightRemoved`
+
+  Syntax methods (for chroma integration): `SyntaxKeyword`, `SyntaxType`,
+  `SyntaxFunction`, `SyntaxVariable`, `SyntaxString`, `SyntaxNumber`,
+  `SyntaxComment`, `SyntaxOperator`, `SyntaxPunctuation`
+
 ## [0.4.0] - 2026-03-18
 
 ### Breaking
