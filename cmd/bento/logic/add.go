@@ -20,8 +20,7 @@ type ComponentInfo struct {
 func Registry() []ComponentInfo {
 	return []ComponentInfo{
 		{Name: "surface", Desc: "Full-terminal paint surface with UV cell buffer", Files: []string{"surface.go"}},
-		{Name: "panel", Desc: "Titled, focusable content container", Files: []string{"panel.go"}},
-		{Name: "elevated-card", Desc: "Raised section container with title + content", Files: []string{"elevated_card.go"}},
+		{Name: "card", Desc: "Content container — raised (default) or flat via Flat() option", Files: []string{"card.go"}},
 		{Name: "bar", Desc: "Header/footer row with keybind cards", Files: []string{"bar.go"}},
 		{Name: "dialog", Desc: "Modal manager, Confirm, Custom, ThemePicker, CommandPalette", Files: []string{"dialog.go", "theme_picker.go", "command_palette.go"}},
 		{Name: "filepicker", Desc: "File and directory picker wrapping bubbles/filepicker", Files: []string{"filepicker.go"}},

@@ -1,29 +1,145 @@
-# Untouchable Theme Engine
+# BentoTUI Theme System
 
-Official rule: BentoTUI ships a theme-first workflow. You should not hand-wire
-per-component color systems for normal usage.
+v0.4.0 — `Theme` is an interface. Bricks accept themes as inputs. No mandatory global store.
 
-## What it means
+---
 
-- Choose a preset with `theme.SetTheme(name)`.
-- Compose layout with `registry/rooms`.
-- Render components from `registry/bricks`.
-- Let `theme/styles` map semantic tokens to concrete `lipgloss.Style` values.
+## The model
 
-## Why this exists
+`Theme` is a Go interface. Every preset and custom theme implements it.
+Components call methods on it — `t.Background()`, `t.SelectionBG()`, `t.Text()`.
 
-- Prevent color drift between screens and apps.
-- Keep hierarchy consistent (`canvas -> panel -> elevated -> interactive`).
-- Make theme switching global and deterministic.
-- Avoid app-level CSS/Tailwind-like color glue in terminal UIs.
+```go
+// Any of these work
+t := theme.Preset("dracula")           // named preset, no global
+t := theme.CurrentTheme()              // global active theme
+t := &MyCustomTheme{...}               // custom implementation of Theme interface
+```
 
-## User paths
+Pass it to a brick:
 
-1. Copy a prebuilt bento (`registry/bentos/home-screen`, `dashboard`) and change behavior/content.
-2. Start from `registry/bentos/app-shell` to validate UX composition, layering, and theme switching in a single-screen app.
-3. Build custom app from `rooms + bricks` and rely on theme tokens for visual system defaults.
+```go
+// At construction
+c := card.New(card.Title("file.go"), card.WithTheme(t))
 
-## Non-goals right now
+// After construction (live update)
+c.SetTheme(newTheme)
+```
 
-- Per-example custom color overrides.
-- Multiple competing style systems inside one app.
+The brick uses whatever theme it was given. If none was given, it falls back
+to `theme.CurrentTheme()`.
+
+---
+
+## Presets
+
+16 built-in presets, no external dependencies:
+
+| Name | Style |
+|---|---|
+| `catppuccin-mocha` | Default — soft dark purple |
+| `catppuccin-macchiato` | Slightly cooler Catppuccin |
+| `catppuccin-frappe` | Lighter Catppuccin |
+| `dracula` | Classic dark purple |
+| `tokyo-night` | Deep blue-grey |
+| `tokyo-night-storm` | Tokyo Night, lighter base |
+| `nord` | Arctic grey-blue |
+| `bento-rose` | Warm rose-dark |
+| `gruvbox-dark` | Earth tones |
+| `monokai-pro` | Vibrant warm dark |
+| `kanagawa` | Soft Japanese ink |
+| `rose-pine` | Pastel dark |
+| `ayu-mirage` | Blue-grey mirage |
+| `one-dark` | Atom One Dark |
+| `material-ocean` | Deep ocean blue |
+| `github-dark` | GitHub dark mode |
+
+```go
+t := theme.Preset("tokyo-night")
+names := theme.Names()           // all names, default first
+```
+
+---
+
+## Custom themes
+
+Embed `BaseTheme`, fill the color fields:
+
+```go
+type MyTheme struct {
+    theme.BaseTheme
+}
+
+func NewMyTheme() *MyTheme {
+    m := &MyTheme{}
+    m.ThemeName = "my-theme"
+    m.BackgroundColor = lipgloss.Color("#1a1a2e")
+    m.TextColor = lipgloss.Color("#e0e0e0")
+    m.SelectionBGColor = lipgloss.Color("#7c4dff")
+    m.SelectionFGColor = lipgloss.Color("#ffffff")
+    // ... fill all fields
+    return m
+}
+
+// Register for use with theme picker
+theme.RegisterTheme("my-theme", NewMyTheme())
+```
+
+All `color.Color` fields — use `lipgloss.Color("hex")` to create them.
+
+---
+
+## Global manager
+
+The global manager is optional app-level infrastructure. Bricks do not require it.
+
+```go
+theme.SetTheme("dracula")              // set global + returns (Theme, error)
+theme.PreviewTheme("nord")             // live preview, no persist
+theme.CurrentTheme() Theme             // read global (fallback used by bricks)
+theme.CurrentThemeName() string
+theme.AvailableThemes() []string       // registered names, default first
+theme.RegisterTheme("x", t)           // add to global registry
+```
+
+---
+
+## Live theme switching
+
+The theme picker dispatches `theme.ThemeChangedMsg` on every cursor move
+(preview) and on enter (confirm). ESC reverts to the theme active when the
+picker opened.
+
+Your app handles it:
+
+```go
+case theme.ThemeChangedMsg:
+    m.theme = msg.Theme
+    m.footer.SetTheme(m.theme)
+    m.card.SetTheme(m.theme)
+    m.input.SetTheme(m.theme)
+    // any other stateful bricks
+```
+
+No framework magic. You decide which bricks get the new theme. This is the
+entire mechanism — it's just a message and a setter.
+
+---
+
+## Using themes without the global
+
+For CLI tools, tests, or any context where you don't want the global manager:
+
+```go
+t := theme.Preset("dracula")
+
+// Render a card with no global state
+c := card.New(
+    card.Title("Results"),
+    card.WithTheme(t),
+)
+c.SetSize(80, 10)
+// use c.View() to render
+```
+
+No `init()`, no mutex, no global store touched.

@@ -1,4 +1,4 @@
-// Brick: Command Palette:
+// Brick: Command Palette
 // +-----------------------------------+
 // | search row                        |
 // +-----------------------------------+
@@ -8,6 +8,7 @@
 package dialog
 
 import (
+	"image/color"
 	"fmt"
 	"strings"
 
@@ -16,7 +17,6 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/cloudboy-jh/bentotui/theme"
-	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
 // Command is a single entry in the command palette.
@@ -100,19 +100,29 @@ func (p *CommandPalette) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (p *CommandPalette) View() tea.View {
 	t := theme.CurrentTheme()
-	sys := styles.New(t)
 	contentWidth := maxv(24, p.width)
+
+	dbg := t.DialogBG()
+	dfg := t.DialogFG()
+	muted := t.TextMuted()
+
+	baseRow := func(fg color.Color, content string) string {
+		return lipgloss.NewStyle().
+			Background(dbg).
+			Foreground(fg).
+			Width(contentWidth).
+			Render(content)
+	}
 
 	rows := make([]string, 0, 16)
 
-	// Search input
-	inputColors := styles.New(t).InputColors()
-	inputContent := fitWidth(p.search.View(), maxv(1, contentWidth-2))
-	rows = append(rows, renderRow(contentWidth, inputColors.BG, inputColors.FG, " "+inputContent))
-	rows = append(rows, renderRow(contentWidth, "", "", ""))
+	// Search input row
+	inputContent := paletteClip(p.search.View(), maxv(1, contentWidth-2))
+	rows = append(rows, baseRow(dfg, " "+inputContent))
+	rows = append(rows, baseRow(muted, ""))
 
 	if len(p.filtered) == 0 {
-		rows = append(rows, renderRow(contentWidth, "", t.Text.Muted, "No matching commands"))
+		rows = append(rows, baseRow(muted, "  No matching commands"))
 	} else {
 		maxVisible := maxv(1, p.height-4)
 
@@ -149,18 +159,23 @@ func (p *CommandPalette) View() tea.View {
 		for i := start; i < end; i++ {
 			e := entries[i]
 			if e.isGroup {
-				rows = append(rows, renderStyledRow(sys.PaletteGroupHeader(), contentWidth, " "+e.label))
+				groupStyle := lipgloss.NewStyle().
+					Background(dbg).
+					Foreground(muted).
+					Bold(true).
+					Width(contentWidth)
+				rows = append(rows, groupStyle.Render(" "+e.label))
 				continue
 			}
 			selected := e.idx == p.selected
-			rows = append(rows, renderCommandRow(e.label, e.keybind, contentWidth, sys, selected))
+			rows = append(rows, renderPaletteCommandRow(t, e.label, e.keybind, contentWidth, selected))
 		}
 	}
 
 	// Navigation hint
 	rows = append(rows,
-		renderRow(contentWidth, "", "", ""),
-		renderRow(contentWidth, "", t.Text.Muted, "↑↓ navigate  enter run  esc close"),
+		baseRow(muted, ""),
+		baseRow(muted, "  ↑↓ navigate  enter run  esc close"),
 	)
 
 	return tea.NewView(strings.Join(rows, "\n"))
@@ -178,11 +193,11 @@ func (p *CommandPalette) Title() string       { return "Commands" }
 func (p *CommandPalette) syncStyles() {
 	t := theme.CurrentTheme()
 	s := textinput.DefaultStyles(true)
-	s.Focused.Prompt = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
-	s.Focused.Text = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
-	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(lipgloss.Color(t.Input.Placeholder))
+	s.Focused.Prompt = lipgloss.NewStyle().Foreground(t.TextMuted())
+	s.Focused.Text = lipgloss.NewStyle().Foreground(t.DialogFG())
+	s.Focused.Placeholder = lipgloss.NewStyle().Foreground(t.InputPlaceholder())
 	s.Blurred = s.Focused
-	s.Cursor.Color = lipgloss.Color(t.Input.Cursor)
+	s.Cursor.Color = t.InputCursor()
 	p.search.SetStyles(s)
 	p.search.SetWidth(maxv(10, p.width-2))
 }
@@ -219,34 +234,39 @@ func (p *CommandPalette) refilter() {
 	}
 }
 
-// renderCommandRow renders a single command with label left, keybind right.
-func renderCommandRow(label, keybind string, width int, sys styles.System, selected bool) string {
-	itemStyle := sys.PaletteItem(selected)
-	keybindStyle := sys.PaletteKeybind()
+func renderPaletteCommandRow(t theme.Theme, label, keybind string, width int, selected bool) string {
+	var itemBG, itemFG, keybindFG color.Color
 	if selected {
-		keybindStyle = keybindStyle.Foreground(lipgloss.Color(sys.Theme.Selection.FG))
+		itemBG = t.SelectionBG()
+		itemFG = t.SelectionFG()
+		keybindFG = t.SelectionFG()
+	} else {
+		itemBG = t.DialogBG()
+		itemFG = t.DialogFG()
+		keybindFG = t.TextMuted()
 	}
 
+	itemStyle := lipgloss.NewStyle().Background(itemBG).Foreground(itemFG)
+	keybindStyle := lipgloss.NewStyle().Background(itemBG).Foreground(keybindFG)
+
 	if keybind == "" {
-		content := " " + fitWidth(label, maxv(1, width-1))
-		return renderStyledRow(itemStyle, width, content)
+		content := " " + paletteClip(label, maxv(1, width-1))
+		return itemStyle.Width(width).Render(content)
 	}
 
 	keybindRendered := keybindStyle.Render(keybind)
 	keybindWidth := lipgloss.Width(keybindRendered)
 	sep := 2
 	labelWidth := maxv(1, width-keybindWidth-sep-1)
-	labelRendered := fitWidth(label, labelWidth)
+	labelRendered := paletteClip(label, labelWidth)
 	gap := maxv(0, width-1-lipgloss.Width(labelRendered)-keybindWidth-sep)
 	line := fmt.Sprintf(" %s%s  %s", labelRendered, strings.Repeat(" ", gap), keybindRendered)
-	return renderStyledRow(itemStyle, width, line)
+	return itemStyle.Width(width).Render(line)
 }
 
-// renderStyledRow renders content over a full-width styled background using
-// a single lipgloss Width().Render() call — no canvas layers.
-func renderStyledRow(style lipgloss.Style, width int, content string) string {
+func paletteClip(s string, width int) string {
 	if width <= 0 {
 		return ""
 	}
-	return style.Width(width).Render(content)
+	return lipgloss.NewStyle().MaxWidth(width).Width(width).Render(s)
 }

@@ -69,7 +69,7 @@ func (m *Model) GetSize() (int, int) {
 
 func (m *Model) View() tea.View {
 	t := theme.CurrentTheme()
-	style := lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Border.Subtle, t.Border.Normal)))
+	style := lipgloss.NewStyle().Foreground(t.BorderSubtle())
 	if m.orientation == Vertical {
 		parts := make([]string, 0, m.length)
 		for i := 0; i < m.length; i++ {

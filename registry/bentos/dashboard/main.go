@@ -1,6 +1,6 @@
 package main
 
-// Dashboard room stack:
+// Dashboard bento:
 // +----------------------+---------------------------+
 // | metric A             | metric B                  |
 // +----------------------+---------------------------+
@@ -17,7 +17,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/badge"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
-	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/card"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/table"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
@@ -51,17 +51,17 @@ type model struct {
 
 	botBar *bar.Model
 
-	metricA *elevatedcard.Model
-	metricB *elevatedcard.Model
-	metricC *elevatedcard.Model
-	tableP  *elevatedcard.Model
+	metricA *card.Model
+	metricB *card.Model
+	metricC *card.Model
+	tableP  *card.Model
 
 	metricATxt *textBlock
 	metricBTxt *textBlock
 	metricCTxt *textBlock
 	tableTxt   *textBlock
 
-	table  *table.Model
+	tbl    *table.Model
 	badgeA *badge.Model
 	badgeB *badge.Model
 	badgeC *badge.Model
@@ -112,7 +112,7 @@ func newModel() *model {
 		metricBTxt:   mBTxt,
 		metricCTxt:   mCTxt,
 		tableTxt:     tTxt,
-		table:        t,
+		tbl:          t,
 		badgeA:       b1,
 		badgeB:       b2,
 		badgeC:       b3,
@@ -121,10 +121,10 @@ func newModel() *model {
 		metricCValue: "Last deploy: 23m ago",
 	}
 
-	m.metricA = elevatedcard.New(elevatedcard.Title("Requests"), elevatedcard.Content(mATxt))
-	m.metricB = elevatedcard.New(elevatedcard.Title("Errors"), elevatedcard.Content(mBTxt))
-	m.metricC = elevatedcard.New(elevatedcard.Title("Deploy"), elevatedcard.Content(mCTxt))
-	m.tableP = elevatedcard.New(elevatedcard.Title("Service Health"), elevatedcard.Content(tTxt))
+	m.metricA = card.New(card.Title("Requests"), card.Content(mATxt))
+	m.metricB = card.New(card.Title("Errors"), card.Content(mBTxt))
+	m.metricC = card.New(card.Title("Deploy"), card.Content(mCTxt))
+	m.tableP = card.New(card.Title("Service Health"), card.Content(tTxt))
 
 	return m
 }
@@ -143,7 +143,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "r":
-			seedTable(m.table, true)
+			seedTable(m.tbl, true)
 			m.metricAValue = "1.91M total"
 			m.metricBValue = "0.31%"
 			m.metricCValue = "Last deploy: 24m ago"
@@ -154,7 +154,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	t := theme.CurrentTheme()
-	canvas := lipgloss.Color(t.Surface.Canvas)
+	canvas := t.Background()
 
 	if m.width == 0 {
 		v := tea.NewView("")
@@ -167,9 +167,9 @@ func (m *model) View() tea.View {
 	m.metricATxt.SetText(m.metricAValue + "\n" + viewString(m.badgeA.View()))
 	m.metricBTxt.SetText(m.metricBValue + "\n" + viewString(m.badgeB.View()))
 	m.metricCTxt.SetText(m.metricCValue + "\n" + viewString(m.badgeC.View()))
-	m.tableTxt.SetText(viewString(m.table.View()))
+	m.tableTxt.SetText(viewString(m.tbl.View()))
 
-	body := ""
+	var body string
 	if m.width >= 96 {
 		body = rooms.Dashboard2x2(m.width, bodyH, m.metricA, m.metricB, m.metricC, m.tableP)
 	} else {
@@ -222,3 +222,6 @@ func max(a, b int) int {
 	}
 	return b
 }
+
+// lipgloss.Color is used for BackgroundColor which expects color.Color
+var _ = lipgloss.Color

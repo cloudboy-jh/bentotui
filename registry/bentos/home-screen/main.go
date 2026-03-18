@@ -1,13 +1,12 @@
 package main
 
-// Home-screen room stack:
+// Home-screen bento:
 // +--------------------------------------------------+
 // |                  centered body                   |
 // |   wordmark + input block + hints + tip rows      |
 // +--------------------------------------------------+
 // | anchored footer command row                      |
 // +--------------------------------------------------+
-// Optional: centered dialog overlay is drawn last.
 
 import (
 	"fmt"
@@ -23,7 +22,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.5"
+const version = "v0.4.0"
 
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
@@ -41,6 +40,7 @@ func main() {
 }
 
 type model struct {
+	theme     theme.Theme
 	inputBox  *input.Model
 	footerBar *bar.Model
 	dialogs   *dialog.Manager
@@ -50,8 +50,10 @@ type model struct {
 }
 
 func newModel() *model {
+	t := theme.CurrentTheme()
 	inp := input.New()
 	inp.SetPlaceholder(`Ask anything… /theme  /dialog`)
+	inp.SetTheme(t)
 	foot := bar.New(
 		bar.FooterAnchored(),
 		bar.Left("~ registry/bentos/home-screen"),
@@ -60,8 +62,14 @@ func newModel() *model {
 			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 		),
 		bar.CompactCards(),
+		bar.WithTheme(t),
 	)
-	return &model{inputBox: inp, footerBar: foot, dialogs: dialog.New()}
+	return &model{
+		theme:     t,
+		inputBox:  inp,
+		footerBar: foot,
+		dialogs:   dialog.New(),
+	}
 }
 
 func (m *model) Init() tea.Cmd {
@@ -127,8 +135,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() tea.View {
-	t := theme.CurrentTheme()
-	canvasColor := lipgloss.Color(t.Surface.Canvas)
+	t := m.theme
+	canvasColor := t.Background()
 
 	if m.width == 0 {
 		v := tea.NewView("")
@@ -137,13 +145,14 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
-	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
+	dim := lipgloss.NewStyle().Foreground(t.TextMuted())
+	bright := lipgloss.NewStyle().Foreground(t.Text())
 
 	wm := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(t.Text.Accent)).
+		Foreground(t.TextAccent()).
 		Bold(true).
 		Render(wordmark)
+
 	inputBlockW := m.inputW
 	if inputBlockW == 0 {
 		inputBlockW = clamp(m.width*6/10, 50, 90)
@@ -151,35 +160,44 @@ func (m *model) View() tea.View {
 	contentW := max(1, inputBlockW-5)
 	inputStr := viewString(m.inputBox.View())
 
-	mkRow := func(fg, content string) string {
+	mkRow := func(content string) string {
 		return lipgloss.NewStyle().
-			Background(lipgloss.Color(t.Input.BG)).
-			Foreground(lipgloss.Color(fg)).
+			Background(t.InputBG()).
+			Foreground(t.InputFG()).
+			PaddingLeft(2).PaddingRight(2).
+			Width(contentW).
+			Render(content)
+	}
+	mkMuted := func(content string) string {
+		return lipgloss.NewStyle().
+			Background(t.InputBG()).
+			Foreground(t.TextMuted()).
 			PaddingLeft(2).PaddingRight(2).
 			Width(contentW).
 			Render(content)
 	}
 
-	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(t.Input.BG)).Width(contentW + 4).Render(" ")
+	blankRow := lipgloss.NewStyle().Background(t.InputBG()).Width(contentW + 4).Render(" ")
 	inner := lipgloss.JoinVertical(lipgloss.Left,
 		blankRow,
-		mkRow(t.Input.FG, inputStr),
-		mkRow(t.Text.Muted, "add   panel   list   input   table   dialog"),
+		mkRow(inputStr),
+		mkMuted("add   card   list   input   table   dialog"),
 		blankRow,
 	)
 
 	block := lipgloss.NewStyle().
-		Background(lipgloss.Color(t.Input.BG)).
+		Background(t.InputBG()).
 		Border(lipgloss.Border{Left: "┃"}, false, false, false, true).
-		BorderForeground(lipgloss.Color(t.Border.Focus)).
+		BorderForeground(t.BorderFocus()).
 		Width(inputBlockW - 1).
 		Render(inner)
 
 	kbdStr := dim.Render("tab ") + bright.Render("components") +
 		dim.Render("   ⌘K ") + bright.Render("commands")
 
-	dot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("● Tip")
+	dot := lipgloss.NewStyle().Foreground(t.Info()).Render("● Tip")
 	tipStr := dot + dim.Render("  Run bento init to scaffold a new TUI app")
+
 	body := rooms.RenderFunc(func(width, height int) string {
 		center := func(s string) string {
 			return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
@@ -218,7 +236,12 @@ func (m *model) View() tea.View {
 }
 
 func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
-	_ = msg
+	if msg.Theme == nil {
+		return
+	}
+	m.theme = msg.Theme
+	m.inputBox.SetTheme(m.theme)
+	m.footerBar.SetTheme(m.theme)
 }
 
 func openThemePicker() tea.Cmd {

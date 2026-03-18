@@ -107,20 +107,20 @@ func (m *Model) Status() string           { return m.status }
 func (m *Model) syncStyles() {
 	t := theme.CurrentTheme()
 	s := m.picker.Styles
-	s.Cursor = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Border.Focus))).Bold(true)
-	s.DisabledCursor = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Border.Subtle)))
-	s.Directory = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Text.Primary)))
-	s.File = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Primary, t.Text.Primary)))
-	s.DisabledFile = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Muted)))
-	s.Permission = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Border.Normal)))
-	s.FileSize = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Muted))).Align(lipgloss.Right)
-	s.Symlink = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Text.Primary)))
+	s.Cursor = lipgloss.NewStyle().Foreground(t.TextAccent()).Bold(true)
+	s.DisabledCursor = lipgloss.NewStyle().Foreground(t.TextMuted())
+	s.Directory = lipgloss.NewStyle().Foreground(t.TextAccent())
+	s.File = lipgloss.NewStyle().Foreground(t.Text())
+	s.DisabledFile = lipgloss.NewStyle().Foreground(t.TextMuted())
+	s.Permission = lipgloss.NewStyle().Foreground(t.TextMuted())
+	s.FileSize = lipgloss.NewStyle().Foreground(t.TextMuted()).Align(lipgloss.Right)
+	s.Symlink = lipgloss.NewStyle().Foreground(t.TextAccent())
 	s.Selected = lipgloss.NewStyle().
-		Background(lipgloss.Color(pick(t.Selection.BG, t.Border.Focus))).
-		Foreground(lipgloss.Color(pick(t.Selection.FG, t.Text.Inverse))).
+		Background(t.SelectionBG()).
+		Foreground(t.SelectionFG()).
 		Bold(true)
-	s.DisabledSelected = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Border.Subtle, t.Text.Muted)))
-	s.EmptyDirectory = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Muted))).SetString("No files")
+	s.DisabledSelected = lipgloss.NewStyle().Foreground(t.TextMuted())
+	s.EmptyDirectory = lipgloss.NewStyle().Foreground(t.TextMuted()).SetString("No files")
 	m.picker.Styles = s
 }
 

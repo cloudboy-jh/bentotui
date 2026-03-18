@@ -1,168 +1,116 @@
-package theme
+package theme_test
 
-import "testing"
+import (
+	"testing"
 
-func TestAvailableThemesStableOrder(t *testing.T) {
-	got := AvailableThemes()
+	"github.com/cloudboy-jh/bentotui/theme"
+)
 
-	if len(got) != len(builtinThemes) {
-		t.Fatalf("expected %d themes, got %d", len(builtinThemes), len(got))
-	}
-
-	if len(got) == 0 || got[0] != DefaultName {
-		t.Fatalf("expected first theme to be %q, got %q", DefaultName, got[0])
-	}
-
-	prevTier := ThemeTierStable
-	for i := 1; i < len(got); i++ {
-		meta, ok := ThemeMetadata(got[i])
-		if !ok {
-			t.Fatalf("missing theme metadata for %q", got[i])
+func TestPresetReturnsTheme(t *testing.T) {
+	for _, name := range theme.Names() {
+		th := theme.Preset(name)
+		if th == nil {
+			t.Errorf("Preset(%q) returned nil", name)
+			continue
 		}
-		if prevTier == ThemeTierExperimental && meta.Tier == ThemeTierStable {
-			t.Fatalf("stable theme %q appears after experimental themes", got[i])
+		if th.Name() != name {
+			t.Errorf("Preset(%q).Name() = %q, want %q", name, th.Name(), name)
 		}
-		if i < len(got)-1 {
-			nextMeta, _ := ThemeMetadata(got[i+1])
-			if meta.Tier == nextMeta.Tier && got[i] > got[i+1] {
-				t.Fatalf("themes not sorted within tier at %d/%d: %q > %q", i, i+1, got[i], got[i+1])
-			}
-		}
-		prevTier = meta.Tier
 	}
 }
 
-func TestAvailableStableThemesOnlyReturnsStable(t *testing.T) {
-	names := AvailableStableThemes()
+func TestPresetFallback(t *testing.T) {
+	th := theme.Preset("nonexistent-theme-xyz")
+	if th == nil {
+		t.Fatal("Preset fallback returned nil")
+	}
+	if th.Name() != theme.DefaultName {
+		t.Errorf("Preset fallback Name() = %q, want %q", th.Name(), theme.DefaultName)
+	}
+}
+
+func TestNamesContainsDefault(t *testing.T) {
+	names := theme.Names()
 	if len(names) == 0 {
-		t.Fatal("expected at least one stable theme")
+		t.Fatal("Names() returned empty slice")
 	}
-	for _, name := range names {
-		meta, ok := ThemeMetadata(name)
-		if !ok {
-			t.Fatalf("missing metadata for stable theme %q", name)
-		}
-		if meta.Tier != ThemeTierStable {
-			t.Fatalf("expected stable tier for %q, got %q", name, meta.Tier)
-		}
+	if names[0] != theme.DefaultName {
+		t.Errorf("Names()[0] = %q, want default %q", names[0], theme.DefaultName)
 	}
 }
 
-func TestPresetFallbackUsesDefault(t *testing.T) {
-	got := Preset("not-a-theme")
-	want := Preset(DefaultName)
-	if got != want {
-		t.Fatalf("expected unknown preset to fall back to %q", DefaultName)
-	}
-}
-
-func TestSetThemeRejectsUnknownName(t *testing.T) {
-	if _, err := SetTheme("does-not-exist"); err == nil {
-		t.Fatal("expected error for unknown theme name")
-	}
-}
-
-func TestPresetsDefineAllRequiredTokens(t *testing.T) {
-	for _, name := range AvailableThemes() {
-		th := Preset(name)
-		if err := validateTheme(th); err != nil {
-			t.Fatalf("theme %q invalid: %v", name, err)
-		}
-	}
-}
-
-func TestRegisterThemeRejectsMissingRequiredToken(t *testing.T) {
-	th := Preset(DefaultName)
-	th.Input.Border = ""
-	if err := RegisterTheme("bad-theme", th); err == nil {
-		t.Fatal("expected register to fail when required token is missing")
-	}
-}
-
-// TestBuiltinsLayerContrast verifies that key token pairs in every built-in
-// theme meet the minimum luminance-delta thresholds defined in validateTheme.
-// This replaces the old string-equality check — two tokens can share a hex
-// value only if the adapter deliberately maps them to the same palette slot,
-// which validateTheme will catch via lumDelta.
-func TestBuiltinsLayerContrast(t *testing.T) {
-	for _, name := range AvailableThemes() {
-		th := Preset(name)
-		pairs := []struct {
-			a, b     string
-			la, lb   string
-			minDelta float64
+func TestAllPresetsHaveNonNilColors(t *testing.T) {
+	for _, name := range theme.Names() {
+		th := theme.Preset(name)
+		checks := []struct {
+			method string
+			val    interface {
+				RGBA() (uint32, uint32, uint32, uint32)
+			}
 		}{
-			{th.Surface.Panel, th.Surface.Canvas, "surface.panel", "surface.canvas", minSurfacePanelCanvasDelta},
-			{th.Surface.Interactive, th.Surface.Panel, "surface.interactive", "surface.panel", minSurfaceInteractivePanelDelta},
-			{th.Text.Primary, th.Text.Muted, "text.primary", "text.muted", minTextPrimaryMutedDelta},
-			{th.Input.BG, th.Surface.Canvas, "input.bg", "surface.canvas", 0.03},
-			{th.Selection.BG, th.Surface.Canvas, "selection.bg", "surface.canvas", 0.05},
-			{th.Selection.BG, th.Input.BG, "selection.bg", "input.bg", 0.05},
-			{th.Dialog.BG, th.Surface.Canvas, "dialog.bg", "surface.canvas", 0.03},
-			{th.Bar.BG, th.Surface.Canvas, "bar.bg", "surface.canvas", 0.02},
-			{th.Card.ChromeBG, th.Card.BodyBG, "card.chromeBG", "card.bodyBG", minCardChromeBodyDelta},
-			{th.Card.FocusEdgeBG, th.Card.ChromeBG, "card.focusEdgeBG", "card.chromeBG", minCardFocusEdgeChromeDelta},
+			{"Background", th.Background()},
+			{"BackgroundPanel", th.BackgroundPanel()},
+			{"Text", th.Text()},
+			{"TextMuted", th.TextMuted()},
+			{"BorderFocus", th.BorderFocus()},
+			{"SelectionBG", th.SelectionBG()},
+			{"InputBG", th.InputBG()},
+			{"DialogBG", th.DialogBG()},
 		}
-		if th.Footer.AnchoredBG != "" && th.Footer.AnchoredFG != "" && th.Footer.AnchoredMuted != "" {
-			pairs = append(pairs,
-				struct {
-					a, b     string
-					la, lb   string
-					minDelta float64
-				}{th.Footer.AnchoredFG, th.Footer.AnchoredBG, "footer.anchoredFG", "footer.anchoredBG", minFooterFGToBGDelta},
-				struct {
-					a, b     string
-					la, lb   string
-					minDelta float64
-				}{th.Footer.AnchoredMuted, th.Footer.AnchoredBG, "footer.anchoredMuted", "footer.anchoredBG", minFooterMutedToBGDelta},
-				struct {
-					a, b     string
-					la, lb   string
-					minDelta float64
-				}{th.Footer.AnchoredFG, th.Footer.AnchoredMuted, "footer.anchoredFG", "footer.anchoredMuted", minFooterFGMutedDelta},
-			)
-		}
-		for _, p := range pairs {
-			delta := lumDelta(p.a, p.b)
-			if delta < p.minDelta {
-				t.Errorf("theme %q: %s vs %s luminance delta %.3f < %.3f",
-					name, p.la, p.lb, delta, p.minDelta)
+		for _, c := range checks {
+			if c.val == nil {
+				t.Errorf("Preset(%q).%s() returned nil", name, c.method)
 			}
 		}
 	}
 }
 
-func TestValidateThemeRejectsPartialFooterTokens(t *testing.T) {
-	th := Preset(DefaultName)
-	th.Footer = FooterTokens{}
-	th.Footer.AnchoredBG = th.Selection.BG
-	if err := validateTheme(th); err == nil {
-		t.Fatal("expected validation to fail when footer anchored tokens are partially defined")
+func TestManagerCurrentTheme(t *testing.T) {
+	th := theme.CurrentTheme()
+	if th == nil {
+		t.Fatal("CurrentTheme() returned nil")
 	}
 }
 
-func TestValidateThemeAllowsFooterTokensUnset(t *testing.T) {
-	th := Preset(DefaultName)
-	th.Footer = FooterTokens{}
-	if err := validateTheme(th); err != nil {
-		t.Fatalf("expected validation to allow missing footer tokens, got: %v", err)
+func TestManagerSetTheme(t *testing.T) {
+	original := theme.CurrentThemeName()
+
+	_, err := theme.SetTheme("dracula")
+	if err != nil {
+		t.Fatalf("SetTheme(dracula) error: %v", err)
+	}
+	if theme.CurrentThemeName() != "dracula" {
+		t.Errorf("after SetTheme(dracula), CurrentThemeName() = %q", theme.CurrentThemeName())
+	}
+
+	_, _ = theme.SetTheme(original)
+}
+
+func TestManagerSetThemeUnknown(t *testing.T) {
+	_, err := theme.SetTheme("this-theme-does-not-exist")
+	if err == nil {
+		t.Error("SetTheme with unknown name should return an error")
 	}
 }
 
-func TestCurrentThemeConcurrentAccess(t *testing.T) {
-	// Smoke test: concurrent reads and one write must not race.
-	done := make(chan struct{})
-	for i := 0; i < 10; i++ {
-		go func() {
-			_ = CurrentTheme()
-			done <- struct{}{}
-		}()
+func TestAvailableThemes(t *testing.T) {
+	names := theme.AvailableThemes()
+	if len(names) == 0 {
+		t.Fatal("AvailableThemes() returned empty slice")
 	}
-	go func() {
-		_, _ = PreviewTheme(DefaultName)
-		done <- struct{}{}
-	}()
-	for i := 0; i < 11; i++ {
-		<-done
+	if names[0] != theme.DefaultName {
+		t.Errorf("AvailableThemes()[0] = %q, want %q", names[0], theme.DefaultName)
+	}
+}
+
+func TestRegisterCustomTheme(t *testing.T) {
+	custom := theme.Preset(theme.DefaultName)
+	err := theme.RegisterTheme("test-custom", custom)
+	if err != nil {
+		t.Fatalf("RegisterTheme error: %v", err)
+	}
+	got := theme.Preset("test-custom")
+	if got == nil {
+		t.Fatal("Preset(test-custom) returned nil after registration")
 	}
 }

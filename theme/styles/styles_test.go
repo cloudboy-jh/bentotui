@@ -8,31 +8,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-func TestStatusRowColorsAnchoredUsesFooterTokens(t *testing.T) {
-	th := theme.Preset(theme.DefaultName)
-	th.Footer = theme.FooterTokens{
-		AnchoredBG:    "#112233",
-		AnchoredFG:    "#ddeeff",
-		AnchoredMuted: "#99aabb",
-	}
-
-	got := New(th).StatusRowColors("footer", true)
-	if got.BG != th.Footer.AnchoredBG || got.FG != th.Footer.AnchoredFG {
-		t.Fatalf("expected anchored footer colors from footer tokens, got bg=%s fg=%s", got.BG, got.FG)
-	}
-}
-
-func TestStatusRowColorsAnchoredFallsBackToSelection(t *testing.T) {
-	th := theme.Preset(theme.DefaultName)
-	th.Footer = theme.FooterTokens{}
-
-	got := New(th).StatusRowColors("footer", true)
-	if got.BG != th.Selection.BG || got.FG != th.Selection.FG {
-		t.Fatalf("expected anchored fallback to selection colors, got bg=%s fg=%s", got.BG, got.FG)
-	}
-}
-
-func TestClipANSIAndRowClip(t *testing.T) {
+func TestClipANSIWidth(t *testing.T) {
 	styled := lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Render("ABCDEFGHIJKLMN")
 	clipped := ClipANSI(styled, 10)
 	if lipgloss.Width(clipped) != 10 {
@@ -41,32 +17,21 @@ func TestClipANSIAndRowClip(t *testing.T) {
 	if ansi.Strip(clipped) != "ABCDEFGHIJ" {
 		t.Fatalf("expected ansi-safe clip to ABCDEFGHIJ, got %q", ansi.Strip(clipped))
 	}
+}
 
-	row := RowClip("#000000", "#ffffff", 8, styled)
+func TestRowClipWidth(t *testing.T) {
+	th := theme.Preset(theme.DefaultName)
+	styled := lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Render("ABCDEFGHIJKLMN")
+	row := RowClip(th.Background(), th.Text(), 8, styled)
 	if lipgloss.Width(row) != 8 {
 		t.Fatalf("expected row width 8, got %d", lipgloss.Width(row))
 	}
 }
 
-func TestFooterCardTypographyCommandBoldLabelRegular(t *testing.T) {
+func TestRowWidth(t *testing.T) {
 	th := theme.Preset(theme.DefaultName)
-	s := New(th)
-
-	anchoredCmd := s.FooterCardCommandAnchored("normal", true)
-	anchoredLbl := s.FooterCardLabelAnchored("normal", true)
-	if !anchoredCmd.GetBold() {
-		t.Fatalf("expected anchored command to be bold")
-	}
-	if anchoredLbl.GetBold() {
-		t.Fatalf("expected anchored label to be regular weight")
-	}
-
-	normalCmd := s.FooterCardCommand("normal", true)
-	normalLbl := s.FooterCardLabel("normal", true)
-	if !normalCmd.GetBold() {
-		t.Fatalf("expected command chip to be bold")
-	}
-	if normalLbl.GetBold() {
-		t.Fatalf("expected label chip to be regular weight")
+	row := Row(th.BackgroundPanel(), th.Text(), 20, "hello")
+	if lipgloss.Width(row) != 20 {
+		t.Fatalf("expected row width 20, got %d", lipgloss.Width(row))
 	}
 }

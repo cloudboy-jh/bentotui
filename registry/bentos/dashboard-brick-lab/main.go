@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
-	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/card"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/filepicker"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/list"
 	packagemanager "github.com/cloudboy-jh/bentotui/registry/bricks/package-manager"
@@ -32,10 +31,10 @@ type model struct {
 	filepicker *filepicker.Model
 	pkg        *packagemanager.Model
 
-	listCard *elevatedcard.Model
-	tblCard  *elevatedcard.Model
-	fpCard   *elevatedcard.Model
-	pkgCard  *elevatedcard.Model
+	listCard *card.Model
+	tblCard  *card.Model
+	fpCard   *card.Model
+	pkgCard  *card.Model
 }
 
 func main() {
@@ -105,10 +104,10 @@ func newModel() *model {
 		),
 	}
 
-	m.listCard = elevatedcard.New(elevatedcard.Title("List"), elevatedcard.Content(m.list))
-	m.tblCard = elevatedcard.New(elevatedcard.Title("Table"), elevatedcard.Content(m.table))
-	m.fpCard = elevatedcard.New(elevatedcard.Title("File Picker"), elevatedcard.Content(m.filepicker))
-	m.pkgCard = elevatedcard.New(elevatedcard.Title("Package Manager"), elevatedcard.Content(m.pkg))
+	m.listCard = card.New(card.Title("List"), card.Content(m.list))
+	m.tblCard = card.New(card.Title("Table"), card.Content(m.table))
+	m.fpCard = card.New(card.Title("File Picker"), card.Content(m.filepicker))
+	m.pkgCard = card.New(card.Title("Package Manager"), card.Content(m.pkg))
 	m.syncFocus()
 	return m
 }
@@ -182,7 +181,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	t := theme.CurrentTheme()
-	canvas := lipgloss.Color(t.Surface.Canvas)
+	canvas := t.Background()
 
 	if m.width <= 0 || m.height <= 0 {
 		v := tea.NewView("")
@@ -236,10 +235,6 @@ func (m *model) layout() {
 }
 
 func (m *model) syncFocus() {
-	m.listCard.SetVariant(elevatedcard.VariantDefault)
-	m.tblCard.SetVariant(elevatedcard.VariantDefault)
-	m.fpCard.SetVariant(elevatedcard.VariantDefault)
-	m.pkgCard.SetVariant(elevatedcard.VariantDefault)
 
 	m.list.Blur()
 	m.table.Blur()
@@ -248,15 +243,15 @@ func (m *model) syncFocus() {
 	switch m.active {
 	case 0:
 		m.list.Focus()
-		m.listCard.SetVariant(elevatedcard.VariantEmphasis)
+
 	case 1:
 		m.table.Focus()
-		m.tblCard.SetVariant(elevatedcard.VariantEmphasis)
+
 	case 2:
 		m.filepicker.Focus()
-		m.fpCard.SetVariant(elevatedcard.VariantEmphasis)
+
 	case 3:
-		m.pkgCard.SetVariant(elevatedcard.VariantEmphasis)
+
 	}
 }
 

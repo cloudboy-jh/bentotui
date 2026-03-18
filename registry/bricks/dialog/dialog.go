@@ -1,29 +1,21 @@
-// Brick: Dialog Manager:
+// Brick: Dialog Manager
 // +-------------------------------+
-// |            scrim              |
 // |      +---------------+        |
 // |      | dialog frame  |        |
 // |      +---------------+        |
 // +-------------------------------+
 // Centers and routes modal dialogs.
-// Package dialog provides modal dialog management for bentotui apps.
 // Copy this directory into your project: bento add dialog
-//
-// Dependencies (real Go module imports, not copied):
-//   - charm.land/bubbletea/v2
-//   - charm.land/lipgloss/v2
-//   - github.com/cloudboy-jh/bentotui/theme
-//   - github.com/cloudboy-jh/bentotui/theme/styles
 package dialog
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/theme"
-	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
 // Dialog is implemented by any modal that the Manager can host.
@@ -42,15 +34,25 @@ type CloseMsg struct{}
 func Open(dialog Dialog) tea.Msg { return OpenMsg{Dialog: dialog} }
 func Close() tea.Msg             { return CloseMsg{} }
 
-// Manager hosts zero or one active Dialog. Place it in your root model and
-// render it as a canvas overlay above the rest of your app.
+// Manager hosts zero or one active Dialog.
 type Manager struct {
 	active Dialog
 	width  int
 	height int
+	theme  theme.Theme // nil = use theme.CurrentTheme()
 }
 
 func New() *Manager { return &Manager{} }
+
+// SetTheme updates the theme. Call on ThemeChangedMsg.
+func (m *Manager) SetTheme(t theme.Theme) { m.theme = t }
+
+func (m *Manager) activeTheme() theme.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return theme.CurrentTheme()
+}
 
 func (m *Manager) Init() tea.Cmd { return nil }
 
@@ -70,7 +72,6 @@ func (m *Manager) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Auto-handle Confirm dialogs for esc/enter.
 	if m.active != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			switch keyMsg.String() {
@@ -128,7 +129,6 @@ func (m *Manager) IsOpen() bool { return m.active != nil }
 
 // ── Confirm ───────────────────────────────────────────────────────────────────
 
-// Confirm is a simple yes/no dialog. The Manager handles enter/esc automatically.
 type Confirm struct {
 	DialogTitle string
 	Message     string
@@ -150,16 +150,11 @@ func (c Confirm) View() tea.View {
 	return tea.NewView(view)
 }
 
-func (c Confirm) SetSize(width, height int) {
-	c.width = width
-	c.height = height
-}
-
-func (c Confirm) Title() string { return c.DialogTitle }
+func (c Confirm) SetSize(width, height int) { c.width = width; c.height = height }
+func (c Confirm) Title() string             { return c.DialogTitle }
 
 // ── Custom ────────────────────────────────────────────────────────────────────
 
-// Custom wraps any tea.Model as a dialog with a title frame.
 type Custom struct {
 	DialogTitle string
 	Content     tea.Model
@@ -192,11 +187,8 @@ func (c Custom) View() tea.View {
 	return tea.NewView(view)
 }
 
-func (c Custom) SetSize(width, height int) {
-	applyCustomSize(&c, width, height)
-}
-
-func (c Custom) Title() string { return c.DialogTitle }
+func (c Custom) SetSize(width, height int) { applyCustomSize(&c, width, height) }
+func (c Custom) Title() string             { return c.DialogTitle }
 
 func resizeDialog(d Dialog, width, height int) Dialog {
 	switch v := d.(type) {
@@ -248,9 +240,10 @@ func applyCustomSize(c *Custom, width, height int) {
 // ── rendering ─────────────────────────────────────────────────────────────────
 
 func renderDialogFrame(title, content string, width, height int, t theme.Theme) string {
-	sys := styles.New(t)
-	bg := t.Dialog.BG
-	fg := t.Dialog.FG
+	bg := t.DialogBG()
+	fg := t.DialogFG()
+	mutedFG := t.TextMuted()
+	accentFG := t.TextAccent()
 
 	if strings.TrimSpace(title) == "" {
 		title = "Dialog"
@@ -262,55 +255,31 @@ func renderDialogFrame(title, content string, width, height int, t theme.Theme) 
 		height = 14
 	}
 
-	// Layout: every row is exactly `width` cells wide and carries Dialog.BG explicitly.
-	// No lipgloss Padding() — padding rows are rendered as explicit blank rows so the
-	// UV overlay never sees Bg=nil cells (which would inherit canvas color).
-	//
-	// Horizontal structure:
-	//   width = 2(pad-left) + innerWidth + 2(pad-right)
-	//   innerWidth = width - 4
-	//
-	// Vertical structure (rows counted top→bottom):
-	//   row 0:          blank top-padding row
-	//   row 1:          header  (title left + "esc" right)
-	//   row 2:          blank separator
-	//   rows 3..h-2:    body lines
-	//   row h-1:        blank bottom-padding row
 	innerWidth := max(1, width-4)
 
-	// mkRow renders a single full-width row (total = width cells) with 2-cell
-	// left/right padding baked in. Content area = innerWidth cells. Every cell
-	// carries Dialog.BG explicitly — no lipgloss Padding() on the frame itself.
-	// In lipgloss, Width() sets the content area; padding is added outside.
-	// So: Width(innerWidth) + PaddingLeft(2) + PaddingRight(2) = width total.
-	mkRow := func(rowFG, rowContent string) string {
-		return lipgloss.NewStyle().
-			Background(lipgloss.Color(bg)).
-			Foreground(lipgloss.Color(rowFG)).
+	base := lipgloss.NewStyle().Background(bg)
+	mkRow := func(rowFG color.Color, rowContent string) string {
+		return base.
+			Foreground(rowFG).
 			PaddingLeft(2).PaddingRight(2).
 			Width(innerWidth).
 			Render(rowContent)
 	}
-	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(bg)).Width(width).Render("")
+	blankRow := base.Width(width).Render("")
 
-	// Header: title left-aligned + "esc" right-aligned, both cells have Dialog.BG.
-	// They must sum to innerWidth so no gap between them.
+	// Header: title left, "esc" right
 	rightWidth := 3
 	leftWidth := max(1, innerWidth-rightWidth)
-	titleCell := sys.DialogHeader().Width(leftWidth).Render(title)
-	escCell := sys.DialogEscHint().Width(rightWidth).Render("esc")
-	// Wrap the already-sized cells in a full outer row to add the 2+2 padding cells.
+	titleCell := base.Foreground(accentFG).Bold(true).Width(leftWidth).Render(title)
+	escCell := base.Foreground(mutedFG).Width(rightWidth).Render("esc")
 	header := mkRow(fg, titleCell+escCell)
 
-	// Body lines — each clipped/padded to innerWidth, then wrapped in mkRow to
-	// add the 2+2 padding cells.
 	body := strings.TrimRight(content, "\n")
 	if strings.TrimSpace(body) == "" {
 		body = " "
 	}
 	rawBodyLines := clipLines(body, innerWidth, bg, fg)
 
-	// Max body rows = height - 4 (top-blank + header + separator + bottom-blank).
 	bodyMax := max(1, height-4)
 	if len(rawBodyLines) > bodyMax {
 		rawBodyLines = rawBodyLines[:bodyMax]
@@ -320,31 +289,26 @@ func renderDialogFrame(title, content string, width, height int, t theme.Theme) 
 		bodyRows[i] = mkRow(fg, line)
 	}
 
-	// Assemble all rows: top-blank, header, separator, body..., bottom-blank.
-	// Any remaining height beyond the content rows is filled with blank rows.
 	allRows := make([]string, 0, height)
-	allRows = append(allRows, blankRow)    // top padding
-	allRows = append(allRows, header)      // header
-	allRows = append(allRows, blankRow)    // separator
-	allRows = append(allRows, bodyRows...) // body
-	allRows = append(allRows, blankRow)    // bottom padding
-	// Pad to full height if content is shorter.
+	allRows = append(allRows, blankRow)
+	allRows = append(allRows, header)
+	allRows = append(allRows, blankRow)
+	allRows = append(allRows, bodyRows...)
+	allRows = append(allRows, blankRow)
 	for len(allRows) < height {
 		allRows = append(allRows, blankRow)
 	}
 
-	// Wrap everything in a single Width(width) container that carries Dialog.BG,
-	// so the block itself is one cohesive painted region on the UV surface.
-	return sys.DialogFrame().Width(width).Render(strings.Join(allRows, "\n"))
+	return base.Width(width).Render(strings.Join(allRows, "\n"))
 }
 
-func clipLines(content string, width int, bg, fg string) []string {
+func clipLines(content string, width int, bg, fg color.Color) []string {
 	lines := strings.Split(content, "\n")
 	clipped := make([]string, 0, len(lines))
 	for _, line := range lines {
 		clipped = append(clipped, lipgloss.NewStyle().
-			Background(lipgloss.Color(bg)).
-			Foreground(lipgloss.Color(fg)).
+			Background(bg).
+			Foreground(fg).
 			Width(width).
 			MaxWidth(width).
 			Render(line))
@@ -352,18 +316,6 @@ func clipLines(content string, width int, bg, fg string) []string {
 	return clipped
 }
 
-// fitWidth clips s to width and pads to exact width using explicit bg-aware style.
-func fitWidth(s string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-	return lipgloss.NewStyle().
-		MaxWidth(width).
-		Width(width).
-		Render(s)
-}
-
-// viewString extracts a plain string from a tea.View.
 func viewString(v tea.View) string {
 	if v.Content == nil {
 		return ""
@@ -375,17 +327,6 @@ func viewString(v tea.View) string {
 		return s.String()
 	}
 	return fmt.Sprint(v.Content)
-}
-
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-func pick(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
 
 func max(a, b int) int {

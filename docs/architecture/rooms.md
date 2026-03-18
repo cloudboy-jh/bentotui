@@ -1,26 +1,21 @@
 # BentoTUI Rooms
 
-`registry/rooms` provides named room functions. Each function takes
+`registry/rooms` provides named layout functions. Each function takes
 `(width, height, ...cells)` and returns a rendered `string`.
 
-Contract:
+Rules:
 
-- Rooms define screen grammar + geometry (allocation + constrain)
-- Rooms are theme-agnostic
-- Use `surface` as the final compositor in app `View()`
-- Prefer `Focus` for body + anchored-footer screens; use `Frame` when you explicitly need top/subheader rows.
-- Bar roles for `Frame` rows: top (`RoleTopBar`), subheader (`RoleSubBar`), footer (`RoleFooterBar` / `FooterAnchored`).
-- Reference bento (`registry/bentos/app-shell`) is the canonical way to validate room composition in a real app screen.
+- Rooms define geometry only — allocation, constrain, join
+- Rooms are completely theme-agnostic and do not import `theme` or `surface`
+- Composite room output through `surface` in your app `View()`
+- `Frame` and its variants have been removed — use `Pancake`, `TopbarPancake`,
+  or `Focus` instead
 
-## API Basics
+---
 
-```go
-import "github.com/cloudboy-jh/bentotui/registry/rooms"
+## Sizable interface
 
-screen := rooms.Focus(w, h, content, footer)
-```
-
-Cells must satisfy:
+All room cells must satisfy:
 
 ```go
 type Sizable interface {
@@ -29,62 +24,92 @@ type Sizable interface {
 }
 ```
 
-Helpers:
+Helpers for ad-hoc content:
 
-- `rooms.Static("...")`
-- `rooms.RenderFunc(func(width, height int) string { ... })`
+```go
+rooms.Static("static string")
+rooms.RenderFunc(func(width, height int) string { ... })
+```
+
+---
 
 ## Named Rooms
 
-Frame grammar:
+### Focus layouts
 
-- `Frame(top, subheader, body, subfooter)`
-- `FrameMainDrawer(drawerW, top, subheader, main, drawer, subfooter)`
-- `FrameTriple(navW, listW, top, subheader, nav, list, detail, subfooter)`
+- `Focus(w, h, content, footer)` — body + anchored footer, no top rows
+- `Pancake(w, h, header, content, footer)` — header + body + footer
+- `TopbarPancake(w, h, topbar, header, content, footer)` — topbar + header + body + footer
 
-Compatibility rooms:
+### Rail layouts
 
-- `Focus(content, footer)`
-- `Pancake(header, content, footer)`
-- `TopbarPancake(topbar, header, content, footer)`
-- `Rail(railWidth, rail, main)`
-- `RailFooterStack(railWidth, footerCardRows, rail, main, footerCard, footerBar)`
-- `HolyGrail(railWidth, header, rail, main, footer)`
-- `HSplit(left, right)`
-- `VSplit(top, bottom)`
-- `HSplitFooter(left, right, footer)`
-- `TripleCol(navW, listW, nav, list, detail)`
-- `Dashboard2x2(tl, tr, bl, br)`
-- `Dashboard2x2Footer(tl, tr, bl, br, footer)`
-- `DrawerRight(drawerW, main, drawer)`
-- `DrawerChrome(drawerW, header, main, drawer, footer)`
-- `Modal(modalW, modalH, background, modal)`
-- `BigTopStrip(stripH, primary, strip)`
+- `Rail(w, h, railWidth, rail, main)`
+- `RailFooterStack(w, h, railWidth, footerCardRows, rail, main, footerCard, footer)`
 
-Room separation options:
+### Split layouts
 
-- `rooms.WithGutter(1)` adds explicit spacing between adjacent panes
-- `rooms.WithDivider("subtle")` or `rooms.WithDivider("normal")` paints the gutter lane
+- `HSplit(w, h, left, right)` — equal horizontal halves
+- `VSplit(w, h, top, bottom)` — equal vertical halves
+- `HSplitFooter(w, h, left, right, footer)`
 
-Examples:
+### Multi-pane layouts
+
+- `HolyGrail(w, h, railWidth, header, rail, main, footer)`
+- `TripleCol(w, h, navW, listW, nav, list, detail)`
+- `DrawerRight(w, h, drawerWidth, main, drawer)`
+- `DrawerChrome(w, h, drawerWidth, header, main, drawer, footer)`
+
+### Dashboard layouts
+
+- `Dashboard2x2(w, h, topLeft, topRight, bottomLeft, bottomRight)`
+- `Dashboard2x2Footer(w, h, topLeft, topRight, bottomLeft, bottomRight, footer)`
+
+### Overlay layout
+
+- `Modal(w, h, modalWidth, modalHeight, background, modal)`
+
+### Strip layout
+
+- `BigTopStrip(w, h, stripHeight, primary, strip)`
+
+---
+
+## Separation options
 
 ```go
-rooms.HSplit(w, h, left, right, rooms.WithGutter(1), rooms.WithDivider("subtle"))
-rooms.DrawerRight(w, h, 28, main, drawer, rooms.WithGutter(1), rooms.WithDivider("normal"))
+rooms.HSplit(w, h, left, right, rooms.WithGutter(1))
+rooms.DrawerRight(w, h, 28, main, drawer, rooms.WithGutter(1), rooms.WithDivider("subtle"))
 ```
 
-## Recommended Render Flow
+`rooms.WithGutter(n)` adds an explicit spacer column/row between panes.
+`rooms.WithDivider("subtle")` fills the gutter with `.` characters;
+`rooms.WithDivider("normal")` fills it with `|` characters.
+
+Rooms are theme-agnostic — dividers are plain ASCII, no ANSI color applied.
+If you want a styled divider, pass a `Static(styledString)` or use a `separator`
+brick as a gutter cell.
+
+---
+
+## Render flow
 
 ```go
-screen := rooms.Focus(w, h, content, footer)
+func (m *model) View() tea.View {
+    t := m.theme
 
-surf := surface.New(w, h)
-surf.Fill(lipgloss.Color(theme.CurrentTheme().Surface.Canvas))
-surf.Draw(0, 0, screen)
+    screen := rooms.Focus(m.w, m.h, m.body, m.footer)
 
-if dialogs.IsOpen() {
-    surf.DrawCenter(viewString(dialogs.View()))
+    surf := surface.New(m.w, m.h)
+    surf.Fill(t.Background())
+    surf.Draw(0, 0, screen)
+
+    if m.dialogs.IsOpen() {
+        surf.DrawCenter(viewString(m.dialogs.View()))
+    }
+
+    v := tea.NewView(surf.Render())
+    v.AltScreen = true
+    v.BackgroundColor = t.Background()
+    return v
 }
-
-return tea.NewView(surf.Render())
 ```

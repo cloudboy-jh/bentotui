@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -17,7 +18,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.5"
+const version = "v0.4.0"
 
 // wordmark is large ASCII art rendered centered in the upper body.
 const wordmark = "" +
@@ -129,7 +130,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	t := theme.CurrentTheme()
-	canvasColor := lipgloss.Color(t.Surface.Canvas)
+	canvasColor := t.Background()
 
 	// Always enter alt screen from frame 1 — before WindowSizeMsg arrives.
 	if m.width == 0 {
@@ -139,11 +140,11 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
-	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
+	dim := lipgloss.NewStyle().Foreground(t.TextMuted())
+	bright := lipgloss.NewStyle().Foreground(t.Text())
 
 	wm := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(t.Text.Accent)).
+		Foreground(t.TextAccent()).
 		Bold(true).
 		Render(wordmark)
 
@@ -154,32 +155,32 @@ func (m *model) View() tea.View {
 	contentW := max(1, inputBlockW-5)
 	inputStr := viewString(m.inputBox.View())
 
-	mkRow := func(fg, content string) string {
+	mkRow := func(fg color.Color, content string) string {
 		return lipgloss.NewStyle().
-			Background(lipgloss.Color(t.Input.BG)).
-			Foreground(lipgloss.Color(fg)).
+			Background(t.InputBG()).
+			Foreground(fg).
 			PaddingLeft(2).PaddingRight(2).
 			Width(contentW).
 			Render(content)
 	}
-	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(t.Input.BG)).Width(contentW + 4).Render(" ")
+	blankRow := lipgloss.NewStyle().Background(t.InputBG()).Width(contentW + 4).Render(" ")
 	inner := lipgloss.JoinVertical(lipgloss.Left,
 		blankRow,
-		mkRow(t.Input.FG, inputStr),
-		mkRow(t.Text.Muted, "add   panel   list   input   table   dialog"),
+		mkRow(t.InputFG(), inputStr),
+		mkRow(t.TextMuted(), "add   panel   list   input   table   dialog"),
 		blankRow,
 	)
 	block := lipgloss.NewStyle().
-		Background(lipgloss.Color(t.Input.BG)).
+		Background(t.InputBG()).
 		Border(lipgloss.Border{Left: "┃"}, false, false, false, true).
-		BorderForeground(lipgloss.Color(t.Border.Focus)).
+		BorderForeground(t.BorderFocus()).
 		Width(inputBlockW - 1).
 		Render(inner)
 
 	kbdStr := dim.Render("tab ") + bright.Render("components") +
 		dim.Render("   ⌘K ") + bright.Render("commands")
 
-	dot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("● Tip")
+	dot := lipgloss.NewStyle().Foreground(t.Info()).Render("● Tip")
 	tipStr := dot + dim.Render("  Run bento init to scaffold a new TUI app")
 
 	body := rooms.RenderFunc(func(width, height int) string {

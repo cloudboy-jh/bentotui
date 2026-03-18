@@ -33,6 +33,6 @@ func (m *Model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 
 func (m *Model) View() tea.View {
 	t := theme.CurrentTheme()
-	style := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Accent)).Bold(m.bold)
+	style := lipgloss.NewStyle().Foreground(t.TextAccent()).Bold(m.bold)
 	return tea.NewView(style.Render(m.text))
 }

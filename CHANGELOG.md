@@ -6,19 +6,83 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-18
+
+### Breaking
+
+- **`Theme` is now a Go interface.** The old struct-based token accessor pattern
+  (`t.Surface.Canvas`, `t.Text.Primary`, `t.Selection.BG`, etc.) is removed.
+  Components now call interface methods: `t.Background()`, `t.Text()`, `t.SelectionBG()`.
+  Any copied brick using the old dot-accessor syntax must be updated.
+
+- **`panel` and `elevated-card` merged into `card`.** The `panel` brick is deleted.
+  `elevated-card` is deleted. Both are replaced by a single `card` brick with a
+  `Flat()` option for the former panel behavior. `bento add panel` and
+  `bento add elevated-card` no longer exist — use `bento add card`.
+
+- **`Frame`, `FrameMainDrawer`, `FrameTriple` rooms removed.** These were thin wrappers
+  around `JoinVertical` with named slots. Use `Pancake`, `TopbarPancake`, or `Focus` instead.
+
+- **`theme/styles/System` struct deleted.** `styles.New(t)` and all methods on it
+  (`DialogFrame`, `InputColors`, `PaletteItem`, `FooterCardCommand`, etc.) are removed.
+  The `styles` package now exports only `Row`, `RowClip`, and `ClipANSI` as package-level
+  functions. Any copied brick using `styles.New(t).X()` must be updated.
+
 ### Changed
 
-- Reworked `registry/bricks/list` to keep delegate-driven rendering without lossy `View()` flattening, added explicit focus routing, and made keyboard navigation + `tea.WindowSizeMsg` behavior predictable.
-- Reworked `registry/bricks/table` to use true multi-column/multi-row `bubbles/table` behavior with cleaner focus/blur semantics and resize handling.
-- Added table visual preset support with `VisualClean` (default) and `VisualGrid` (painted row/column structure) for stronger scanability when desired.
-- Reworked `registry/bricks/filepicker` to align with upstream `DidSelectFile` / `DidSelectDisabledFile` flow, improve status behavior, and harden path handling for cross-platform usage.
-- Added focused interaction guards and resize handling improvements in `panel` and `elevated-card`; added focus query + resize handling in `input`.
-- Fixed dialog sizing persistence for value-backed `Confirm`/`Custom` dialogs in manager resize/open paths.
+- **Colors-in architecture.** Every brick now accepts `WithTheme(t theme.Theme)` at
+  construction and `SetTheme(t theme.Theme)` for live updates. Bricks fall back to
+  `theme.CurrentTheme()` only when no explicit theme was provided. No brick calls
+  `CurrentTheme()` unconditionally in `View()`.
+
+- **Theme presets are plain Go structs.** The `bubbletint` runtime adapter and all
+  contrast validation/quality scoring logic is removed. 16 presets live as hardcoded
+  `BaseTheme` structs in `theme/presets.go`. `theme.Preset("name")` returns a value
+  with zero global side effects — safe to use in CLI tools, tests, and non-TUI contexts.
+
+- **Global theme manager is now opt-in.** `theme.SetTheme`, `theme.CurrentTheme`,
+  `theme.PreviewTheme`, `theme.RegisterTheme`, and `theme.AvailableThemes` all remain
+  for apps that want a single active theme. Bricks no longer require it.
+
+- **Bentos hold theme as app state.** `m.theme theme.Theme` is a field on the app model.
+  `ThemeChangedMsg` is handled by calling `SetTheme` on each brick. No framework magic —
+  the app decides which bricks get the new theme and when.
+
+- **Theme picker UX matches opencode.** Navigate up/down to live-preview themes.
+  Enter to confirm. Esc reverts to the theme active when the picker was opened.
+
+- **`docs/astro-content-update.md` deleted.** Stale, no longer relevant.
+
+- Reworked `registry/bricks/list` delegate-driven rendering, explicit focus routing,
+  predictable keyboard navigation and `tea.WindowSizeMsg` handling.
+- Reworked `registry/bricks/table` with cleaner focus/blur semantics, `VisualClean`
+  and `VisualGrid` presets, column priority shrinking.
+- Reworked `registry/bricks/filepicker` to align with upstream `DidSelectFile` flow.
+- All docs updated to reflect v0.4.0 architecture.
+- Root README updated — "shadcn of TUIs" framing, colors-in model, v0.4.0 API examples.
 
 ### Added
 
-- Added `registry/bricks/package-manager`, a spinner + progress install-flow brick modeled on Bubble Tea `examples/package-manager`.
-- Added `registry/bentos/dashboard-brick-lab`, a dashboard-room validation bento with one elevated card each for `list`, `table`, `filepicker`, and `package-manager`.
+- `theme.BaseTheme` — embeddable struct for custom theme implementations.
+- `theme.Preset(name) Theme` and `theme.Names() []string` — preset access with no global state.
+- `card.Flat()` option — flat titled container (former `panel` behavior).
+- `card.WithTheme(t)` + `card.SetTheme(t)` on every brick.
+- `registry/bricks/package-manager` — spinner + progress sequential install flow.
+- `registry/bentos/dashboard-brick-lab` — component showcase bento.
+
+### Removed
+
+- `theme/adapter.go` — bubbletint adapter deleted; presets are hardcoded structs.
+- `theme/quality.go` — contrast validation and quality scoring deleted.
+- `theme/storage.go` — disk persistence deleted (app concern).
+- `theme/bento_rose.go` — merged into `theme/presets.go`.
+- `theme/messages.go` (old) — `OpenThemePickerMsg` removed; `ThemeChangedMsg` kept.
+- `registry/bricks/panel/` — merged into `registry/bricks/card/`.
+- `registry/bricks/elevated-card/` — merged into `registry/bricks/card/`.
+- `registry/rooms/frame.go` — `Frame`, `FrameMainDrawer`, `FrameTriple` removed.
+- `theme/styles/System` struct and all methods on it.
+- `docs/theme-escape-hatch.md` — superseded by the v0.4.0 architecture.
+- `docs/astro-content-update.md` — stale.
 
 ## [0.3.5] - 2026-03-17
 

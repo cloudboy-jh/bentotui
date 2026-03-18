@@ -2,45 +2,84 @@
 
 `registry/bentos/` contains full runnable apps.
 
-In BentoTUI terms, a **bento** is not a widget and not a layout helper. A bento
-is the full app composition layer:
+A **bento** is the full app composition layer:
 
-- state machine
-- focus ownership
+- state machine and focus ownership
 - keymap and interaction flow
-- draw/layer order
+- draw/layer order and dialog routing
 - product-facing UX composition
+
+---
 
 ## Contract
 
-- Bentos compose with `registry/rooms`.
-- Bentos render with `registry/bricks`.
-- Bentos read `theme.CurrentTheme()` at render time.
-- Bentos own final frame composition (`surface.Fill` + `surface.Draw`).
+- Bentos compose layout with `registry/rooms`
+- Bentos render UI with `registry/bricks`
+- Bentos hold `m.theme theme.Theme` as app state
+- Bentos call `SetTheme()` on bricks when `theme.ThemeChangedMsg` arrives
+- Bentos own final frame composition (`surface.Fill` + `surface.Draw`)
+
+---
+
+## Theme wiring
+
+```go
+type model struct {
+    theme   theme.Theme  // app owns this — not a global call in View()
+    footer  *bar.Model
+    content *card.Model
+    ...
+}
+
+func newModel() *model {
+    t := theme.CurrentTheme()
+    return &model{
+        theme:   t,
+        footer:  bar.New(bar.FooterAnchored(), bar.WithTheme(t), ...),
+        content: card.New(card.Title("Main"), card.WithTheme(t), ...),
+    }
+}
+
+case theme.ThemeChangedMsg:
+    m.theme = msg.Theme
+    m.footer.SetTheme(m.theme)
+    m.content.SetTheme(m.theme)
+```
+
+---
 
 ## Layering model
 
 Recommended frame stack:
 
-1. canvas fill (z0)
-2. body frame card (z1)
-3. anchored footer row (z2)
-4. overlays/dialogs last (z3)
+1. `surf.Fill(t.Background())` — canvas (z0)
+2. `surf.Draw(0, 0, rooms.Focus(...))` — body + footer (z1)
+3. `surf.DrawCenter(dm.View())` — dialogs last (z2)
 
-## Current shipped bentos
+---
 
-- `home-screen` — starter-style entry screen
-- `dashboard` — dense elevated-card/table composition
-- `app-shell` — single-screen composition bento (rail + table + list + progress + palette)
+## Shipped bentos
+
+| Bento | Description |
+|---|---|
+| `home-screen` | Starter-style entry screen with theme picker and command hint |
+| `dashboard` | Dense card/table composition — 2×2 grid of metric cards |
+| `app-shell` | Single-screen composition bento: rail + table + list + progress + command palette |
+| `detail-view` | List + detail pane split view |
+| `dashboard-brick-lab` | Component showcase and layout test surface |
+
+---
 
 ## app-shell role
 
 `registry/bentos/app-shell` is the canonical UX proving ground.
 
-It demonstrates the Bento contract directly:
+It demonstrates the full Bento contract:
 
-- rooms provide grammar (`RailFooterStack`)
-- bricks provide UI primitives (table/list/progress/dialog/footer)
-- theme switching is global (footer + command palette)
+- rooms provide geometry (`RailFooterStack`)
+- bricks provide primitives (card/table/list/progress/dialog/bar)
+- theme switching is explicit: `ThemeChangedMsg` → `SetTheme` on bricks
+- command palette is wired to the footer keybind
 
-It is intentionally a minimal app surface, not a scenario harness.
+Use app-shell to validate that a new brick or room layout composes correctly
+before shipping it.

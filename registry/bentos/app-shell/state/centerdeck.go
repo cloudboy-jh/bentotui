@@ -6,7 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
-	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/card"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/list"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/progress"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/table"
@@ -17,9 +17,9 @@ type centerDeck struct {
 	width  int
 	height int
 
-	tableCard    *elevatedcard.Model
-	queueCard    *elevatedcard.Model
-	progressCard *elevatedcard.Model
+	tableCard    *card.Model
+	queueCard    *card.Model
+	progressCard *card.Model
 
 	services *table.Model
 	queue    *list.Model
@@ -55,9 +55,9 @@ func newCenterDeck() *centerDeck {
 	p := newProgressPane()
 
 	return &centerDeck{
-		tableCard:    elevatedcard.New(elevatedcard.Title("Services"), elevatedcard.Meta("stable view of key metrics"), elevatedcard.Content(t), elevatedcard.CardVariant(elevatedcard.VariantEmphasis), elevatedcard.Inset(1)),
-		queueCard:    elevatedcard.New(elevatedcard.Title("Queue"), elevatedcard.Meta("lightweight task lane"), elevatedcard.Content(q), elevatedcard.Inset(1)),
-		progressCard: elevatedcard.New(elevatedcard.Title("Progress"), elevatedcard.Meta("simple throughput snapshot"), elevatedcard.Content(p), elevatedcard.Inset(1)),
+		tableCard:    card.New(card.Title("Services"), card.Meta("stable view of key metrics"), card.Content(t), card.Inset(1)),
+		queueCard:    card.New(card.Title("Queue"), card.Meta("lightweight task lane"), card.Content(q), card.Inset(1)),
+		progressCard: card.New(card.Title("Progress"), card.Meta("simple throughput snapshot"), card.Content(p), card.Inset(1)),
 		services:     t,
 		queue:        q,
 		progress:     p,
@@ -108,19 +108,16 @@ func (d *centerDeck) SetSize(width, height int) {
 }
 
 func (d *centerDeck) SetActiveSection(section string) {
-	d.tableCard.SetVariant(elevatedcard.VariantDefault)
-	d.queueCard.SetVariant(elevatedcard.VariantDefault)
-	d.progressCard.SetVariant(elevatedcard.VariantDefault)
 
 	switch section {
 	case "Services":
-		d.tableCard.SetVariant(elevatedcard.VariantEmphasis)
+		
 	case "Queue":
-		d.queueCard.SetVariant(elevatedcard.VariantEmphasis)
+		
 	case "Progress":
-		d.progressCard.SetVariant(elevatedcard.VariantEmphasis)
+		
 	default:
-		d.tableCard.SetVariant(elevatedcard.VariantEmphasis)
+		
 	}
 }
 

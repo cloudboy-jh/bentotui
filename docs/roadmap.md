@@ -1,22 +1,26 @@
 # BentoTUI Roadmap
 
-## Current State (v0.3.5)
+## Current state (v0.4.0)
 
-The repository completed a full structural refactor in v0.2 and has a working
-baseline CLI + starter flow:
+### What shipped in v0.4.0
 
-- Deleted the monolithic `bentotui.New()` framework API
-- Deleted `app/`, `core/`, `ui/`, `bentotui.go`
-- Moved `core/theme/` → `theme/`, `ui/styles/` → `theme/styles/`
-- Added `registry/rooms/` with named room patterns
-- Created `registry/` with clean rewrites of every component
-- Every component reads `theme.CurrentTheme()` in `View()` — no stored theme state
-- Every row uses a single `lipgloss.NewStyle().Background().Width().Render()` call
-- Starter app rewritten as a full component showcase with live theme switching
-- `registry/embed.go` now embeds registry component files for installer logic
-- `bento add`, `bento init`, `bento list`, and `bento doctor` are implemented
+- **Theme interface model** — `Theme` is a Go interface (opencode-style). 16 presets
+  as plain Go structs. No bubbletint runtime dependency. No contrast validation engine.
+  No global store required by bricks.
+- **Colors-in architecture** — every brick accepts `WithTheme(t)` at construction and
+  `SetTheme(t)` for live updates. Bricks fall back to `theme.CurrentTheme()` only when
+  no theme was explicitly provided. No brick calls `CurrentTheme()` unconditionally.
+- **`panel` + `elevated-card` merged into `card`** — one content-container brick.
+  `card.New(...)` = raised (chrome band). `card.New(card.Flat(), ...)` = flat titled
+  container. The old naming ambiguity is gone.
+- **`Frame` / `FrameMainDrawer` / `FrameTriple` removed** — they were `JoinVertical`
+  with named slots. Apps use `Pancake`, `TopbarPancake`, `Focus`, or `JoinVertical` directly.
+- **`theme/styles/System` deleted** — `styles.Row`, `RowClip`, `ClipANSI` remain as
+  pure package-level functions. No more `styles.New(t)` wiring in bricks.
+- **CLI TUI and diff viewer unlocked** — bricks work without any global initialization.
+  Use `theme.Preset("name")` + `WithTheme(t)` and render in any context.
 
-See [next-steps.md](./next-steps.md) for the current priorities.
+---
 
 ## Backlog
 
@@ -24,74 +28,54 @@ See [next-steps.md](./next-steps.md) for the current priorities.
 
 - [x] `bento add` — copy component files from embedded registry
 - [x] `bento init` — generate a runnable starter project
-- [x] `bento list` — show available components with one-line descriptions
-- [ ] `bento upgrade <component>` — diff registry version against copied version
-- [ ] `bento wrap` command group — deterministic scaffold pipeline
+- [x] `bento list` — show available components with descriptions
+- [ ] `bento upgrade <component>` — diff local copy vs registry version
+- [ ] `bento add --force` — overwrite existing copied component
 
-### Wrap + AI Scaffold
+### New bentos
 
-- [ ] Deterministic manifest spec — define and validate a stable wrap manifest format used by scaffold generation
-- [ ] `bento wrap --manifest-only` — parse interface data and emit deterministic manifest JSON
-- [ ] `bento wrap --scaffold` — generate owned Go scaffold files from a manifest
-- [ ] Optional enhance pass — `bento wrap --enhance` applies an LLM refinement pass after deterministic scaffold
-- [ ] MCP server tools — expose `bento_wrap`, `bento_scaffold`, `bento_enhance`
-- [ ] `bento.Enhance()` API — first-class API for post-scaffold enhancement workflows
-- [ ] `llms.txt` — ship model context for enhancement and scaffold tooling
+- [x] `home-screen` — starter-style entry screen
+- [x] `dashboard` — card/table composition
+- [x] `app-shell` — rail + workspace + command palette
+- [x] `detail-view` — list + detail split
+- [ ] `form` — labeled inputs + validation flow
+- [ ] `log-viewer` — filter + scrollable output
+- [ ] `settings` — left nav + content pane
 
-### New Components
+### New bricks
 
-- [x] `tabs` — keyboard-navigable tab row (bubbles key + paginator)
-- [x] `select` — single-choice picker wrapping bubbles/list
-- [x] `progress` — horizontal progress bar wrapping bubbles/progress
-- [x] `checkbox` — boolean toggle using bubbles key bindings
-- [x] `filepicker` — file/directory picker wrapping bubbles/filepicker
-- [x] `badge` — inline colored label (useful inside panel titles)
-- [x] `kbd` — keyboard shortcut display pair
-- [x] `wordmark` — large title/header display helper
-- [x] `toast` — ephemeral stacked notifications
-- [x] `separator` — horizontal/vertical divider
+- Current catalog covers all common needs. New bricks only when the same gap
+  appears in at least 2 bentos and can't be composed from existing bricks.
+- No `spinner` brick — use `charm.land/bubbles/v2/spinner` directly.
 
-Already shipped in registry: `surface`, `panel`, `bar`, `dialog`, `list`, `table`, `text`, `input`.
+### Rooms
 
-Charm-first policy is now active: `list`, `table`, `progress`, `select`, `checkbox`,
-`tabs`, and `filepicker` are Charm-backed wrappers, not custom reimplementations.
+- [ ] `rooms.Grid` — fixed-column grid helper for dense dashboards
+- [ ] Scrollable region helper — independent body scroll within named layouts
 
-Primitive policy: Bento does not plan a `spinner` registry component; use
-`charm.land/bubbles/v2/spinner` directly.
+### Testing
 
-### Bento Examples
+- [ ] Snapshot tests for every brick's rendered output
+- [ ] Smoke tests for `bento add` and `bento init` CLI paths
 
-- [x] `registry/bentos/home-screen` — canonical copy-and-own starter screen (starter-app pattern)
-- [x] `registry/bentos/app-shell` — single-screen composition bento + command palette
-- [x] `registry/bentos/dashboard` — cards + table composition pattern
-- [ ] `registry/bentos/form` — form controls and validation flow pattern
+### Wrap + scaffold
 
-### Layout Enhancements
-
-- [ ] `rooms.Grid` — fixed-column grid helper for dashboard-style screens
-- [ ] Scrollable region helper — allow body regions to scroll independently within named layouts
-
-### Developer Experience
-
-- [ ] Layout debugger mode — render allocation boundaries as colored overlays
-- [ ] `go test ./registry/...` — snapshot tests for every component's rendered output
-- [ ] More starter-app variants — e.g. file browser, log viewer
-- [ ] `bento add --force` or guided overwrite mode for existing copied components
-
-### Theme
-
-- [ ] Light theme support — adapter needs a `fromLightTint` variant with inverted surface mapping
-- [ ] Theme validation CLI — `bento validate-theme mytheme.json`
-
-## Non-Goals
-
-- **Mobile / small screens** — BentoTUI assumes a reasonably large terminal.
-  Components have minimum widths but no responsive breakpoint system.
-- **Mouse support** — Bubble Tea v2 has mouse events; none of the current
-  components handle them. Not planned unless a component clearly needs it (e.g. scrollbars).
-- **Accessibility** — Terminal screen reader support depends on the terminal
-  emulator, not the TUI library. No plans here.
+- [ ] `bento wrap --manifest-only` — parse interface, emit deterministic manifest JSON
+- [ ] `bento wrap --scaffold` — generate owned Go scaffold from manifest
+- [ ] `bento wrap --enhance` — optional LLM pass after deterministic scaffold
+- [ ] `llms.txt` — ship model context for scaffold tooling
 
 ---
 
-Last updated: 2026-03-13
+## Non-goals
+
+- **Mobile / small screens** — assumes a reasonably large terminal
+- **Mouse support** — no plans unless a specific component clearly needs it
+- **Accessibility** — depends on the terminal emulator, not the TUI library
+- **Web renderer** — terminal output only
+- **Built-in router** — bentos own their own state machines
+- **Data-fetching** — bring your own
+
+---
+
+Last updated: 2026-03-18

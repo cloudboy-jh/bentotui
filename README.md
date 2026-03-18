@@ -10,222 +10,253 @@
 [![Status](https://img.shields.io/badge/status-main%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
-A registry of copy-and-own terminal UI components built on
+The **shadcn of TUIs** — a registry of copy-and-own terminal UI components built on
 [Bubble Tea v2](https://github.com/charmbracelet/bubbletea) and
 [Lip Gloss v2](https://github.com/charmbracelet/lipgloss).
 
-Official architecture: **Untouchable Theme Engine + Registry**.
-You should not hand-color components by default. Pick a theme, compose with
-`rooms`, and ship with `bricks`.
-
-Run `bento add input` and the source lands in your project. You own it — read it,
-modify it, delete what you don't need. No framework lock-in, no lifecycle hooks,
-no "extend" API to learn.
-
-Room composition is handled by `registry/rooms`. Home/starter screens use
-`Focus(...)` (body + anchored footer), while multi-row app shells can use
-`Frame(...)` (top row, subheader row, body, subfooter). Split layouts now also
-support explicit separation with `WithGutter(...)` + `WithDivider(...)`.
-Final frame painting and overlays are handled by `surface`.
-
-Bar rows support role-aware rendering (`top`, `subheader`, `footer`) with
-anchored footer card styles (`plain`, `chip`, `mixed`) for command focus.
-
-Charm-first brick policy is active: if Charm already ships a mature primitive,
-Bento wraps it and layers Bento theme/composition behavior on top.
-
-## Docs
-
-- `docs/architecture/architecture.md`
-- `docs/architecture/bentos.md`
-- `docs/architecture/bricks.md`
-- `docs/architecture/rooms.md`
-- `docs/theme-engine.md`
+Run `bento add card` and the source lands in your project. You own it — read it,
+modify it, delete what you don't need. No framework, no lifecycle, no theming
+engine you must satisfy.
 
 ## How it works
 
-Three building blocks ship in this repo:
+Three building blocks:
 
 | Thing | What it is |
-|-------|-----------|
-| **bricks** | UI pieces copied into your project via `bento add`. |
-| **bentos** | Full runnable apps (state machine + orchestration). |
-| **rooms** | Importable layout grammar under `registry/rooms` (not copied). |
+|---|---|
+| **bricks** | UI components — copied into your project via `bento add`. You own them. |
+| **rooms** | Layout geometry functions — imported, not copied. Zero color, zero theme. |
+| **bentos** | Complete runnable apps demonstrating real composition patterns. |
 
 ```
-registry/bricks/       ← copied into your project by `bento add`
-registry/bentos/       ← complete runnable screen patterns
-registry/rooms/        ← imported room primitives (not copied)
+registry/bricks/    ← copy-and-own via `bento add`
+registry/rooms/     ← import directly from the module
+registry/bentos/    ← runnable full-screen app patterns
 ```
 
 ## Install
 
 ```bash
-# Core deps — these you import, not copy
 go get github.com/cloudboy-jh/bentotui
 
-# CLI to copy components into your project
 go install github.com/cloudboy-jh/bentotui/cmd/bento@latest
 ```
 
-## Quick Start
+## Quick start
 
 ```bash
-# See the home screen
-go run ./cmd/starter-app
-
-# Run bento examples
+# Run the home screen
 go run ./registry/bentos/home-screen
-go run ./registry/bentos/app-shell
-go run ./registry/bentos/dashboard
-go run ./registry/bentos/dashboard-brick-lab
 
-# Copy components into your project
-bento add input bar surface
+# Other bentos
+go run ./registry/bentos/dashboard
+go run ./registry/bentos/app-shell
+
+# Copy bricks into your project
+bento add card bar input dialog list table surface
 ```
 
 Home-screen demo:
 
 ![BentoTUI home-screen demo](./demo.gif)
 
-## Components
+## Bricks
 
-All bricks live in `registry/bricks/` and are copied into your project by `bento add`.
+All bricks live in `registry/bricks/` and are copied by `bento add`.
 Once copied they live at `yourmodule/bricks/<name>` — you own the source.
 
-### Available now
+Every brick accepts a theme at construction and supports live updates:
 
-| Component | Description |
-|-----------|-------------|
-| `surface` | Full-screen cell buffer backed by Ultraviolet. Deterministic background paint — no ANSI whitespace bleed. Used by every full-screen room. |
-| `bar` | Role-aware status/nav row with `StatusPill`, compact cards, anchored footer modes (`plain/chip/mixed`), and priority-aware overflow. |
-| `input` | Single-line text input with left-border accent. Wraps `bubbles/textinput`. |
-| `elevated-card` | Raised section container with title + content for dashboard/app regions. |
-| `panel` | Titled, focusable content container. |
+```go
+// Pass a theme at construction (optional — falls back to global if omitted)
+c := card.New(card.Title("file.go"), card.WithTheme(theme.Preset("dracula")))
+
+// Update on theme change
+c.SetTheme(newTheme)
+```
+
+| Brick | Description |
+|---|---|
+| `surface` | Full-screen Ultraviolet cell buffer. Deterministic background paint. |
+| `card` | Content container — raised (chrome band) or flat (titled pane) via `Flat()`. Replaces `panel` + `elevated-card`. |
+| `bar` | Header/footer row with keybind cards, status pill, priority-aware overflow. |
+| `input` | Single-line text field wrapping `bubbles/textinput`. |
 | `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`, `CommandPalette`. |
-| `filepicker` | File and directory picker wrapping `bubbles/filepicker`. |
 | `list` | Scrollable list with sections and structured rows, backed by `bubbles/list`. |
-| `table` | Header + data rows with compact/borderless and per-column width/align, backed by `bubbles/table`. |
-| `text` | Static styled label. |
-| `badge` | Inline themed label. |
-| `kbd` | Keyboard shortcut command + label pair. |
-| `wordmark` | Themed heading/title block. |
+| `table` | Header + data rows with compact/borderless/grid modes, backed by `bubbles/table`. |
+| `badge` | Inline status label — neutral, info, success, warning, danger, accent. |
+| `tabs` | Keyboard-navigable tab row. |
+| `kbd` | Keyboard shortcut pair (`command label`). |
 | `select` | Single-choice inline picker backed by `bubbles/list`. |
-| `checkbox` | Boolean toggle input using `bubbles/key` bindings. |
+| `checkbox` | Boolean toggle with `bubbles/key` bindings. |
 | `progress` | Horizontal progress bar backed by `bubbles/progress`. |
-| `package-manager` | Sequential install flow with spinner + progress (Bubble Tea package-manager style). |
-| `tabs` | Keyboard-navigable tab row using `bubbles/key` + `bubbles/paginator`. |
-| `toast` | Stacked notification rows. |
+| `filepicker` | File/directory picker wrapping `bubbles/filepicker`. |
+| `toast` | Stacked transient notifications. |
 | `separator` | Horizontal or vertical divider. |
+| `text` | Static themed label. |
+| `wordmark` | Themed heading/title block. |
+| `kbd` | Keyboard shortcut command + label pair. |
+| `package-manager` | Sequential install flow with spinner + progress. |
 
-`bento add` currently supports: `surface`, `panel`, `elevated-card`, `bar`, `dialog`, `filepicker`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `package-manager`, `tabs`, `toast`, `separator`.
-
-Primitive policy: Bento does not ship a `spinner` registry component. Use
-`charm.land/bubbles/v2/spinner` directly.
+Primitive policy: Bento does not ship a `spinner` brick. Use `charm.land/bubbles/v2/spinner` directly.
 
 ## Bentos
 
-Bentos are complete runnable screen patterns you copy wholesale. Each bento in
-`registry/bentos/` is a self-contained `main.go` demonstrating real component usage.
+Complete runnable screen patterns in `registry/bentos/`. Copy and own wholesale.
 
-```
-registry/bentos/
-  home-screen/
-  app-shell/
-  dashboard/
-```
+| Bento | Description |
+|---|---|
+| `home-screen` | Starter-style entry screen — wordmark, input, theme picker |
+| `dashboard` | Dense card/table composition — 2×2 metric grid |
+| `app-shell` | Rail + workspace + command palette + theme switching |
+| `detail-view` | List + detail split pane |
+| `dashboard-brick-lab` | Component showcase — list/table/filepicker/progress in cards |
 
-### Current bentos
+## Stable imports
 
-| Bento | Components used |
-|-------|----------------|
-| `home-screen` | `wordmark`, `input`, `kbd`, `badge`, `bar`, `surface` |
-| `app-shell` | single-screen UX bento (`rail + table + list + progress + command palette + anchored footer`) |
-| `dashboard` | `elevated-card`, `badge`, `table`, `bar`, `surface` |
-| `dashboard-brick-lab` | dashboard room interaction harness (`list`, `table`, `filepicker`, `package-manager` in one elevated card each) |
-
-## Core packages (real imports, not copied)
-
-These are stable module deps your project imports directly:
-
-| Package | Import path | What it is |
-|---------|-------------|------------|
-| `theme` | `github.com/cloudboy-jh/bentotui/theme` | Untouchable Theme Engine runtime store + presets |
-| `theme/styles` | `github.com/cloudboy-jh/bentotui/theme/styles` | Theme token → Lip Gloss style mapping |
-| `rooms` | `github.com/cloudboy-jh/bentotui/registry/rooms` | Named visual room grammar (`Focus`, `Frame`, splits, dashboard, modal, and more) |
-
-`surface` remains a copy-and-own registry component (`bento add surface`) and is
-the recommended final compositor for full-frame paint (`Fill`) and overlays (`DrawCenter`).
-
-## Untouchable Theme Engine
-
-BentoTUI runs on a theme engine + registry model:
-
-- pick a theme (`theme.SetTheme(...)`)
-- compose with `rooms`
-- render with `bricks`
-
-No custom per-example color forks. Theme tokens drive all shipped bentos.
-
-## Theme System
-
-16 built-in presets:
+Three packages you import directly (not copied):
 
 ```go
-// Set once at startup
-theme.SetTheme("tokyo-night")
+// Theme interface + 16 presets + optional global manager
+import "github.com/cloudboy-jh/bentotui/theme"
 
-// Components always call this in View() — never cache it
+// Row/RowClip/ClipANSI rendering utilities
+import "github.com/cloudboy-jh/bentotui/theme/styles"
+
+// Layout geometry — Focus, Rail, HolyGrail, HSplit, VSplit, ...
+import "github.com/cloudboy-jh/bentotui/registry/rooms"
+```
+
+Everything else is copy-and-own.
+
+## Theme system
+
+`Theme` is a Go interface. 16 built-in presets. No mandatory global store.
+Pass themes as inputs to bricks — or use the global manager if you prefer:
+
+```go
+// Named preset — no global state
+t := theme.Preset("tokyo-night")
+card := card.New(card.Title("file.go"), card.WithTheme(t))
+
+// Global manager (optional)
+theme.SetTheme("dracula")
 t := theme.CurrentTheme()
 ```
 
-Available themes: `catppuccin-mocha` (default), `catppuccin-macchiato`,
+Available presets: `catppuccin-mocha` (default), `catppuccin-macchiato`,
 `catppuccin-frappe`, `dracula`, `tokyo-night`, `tokyo-night-storm`, `nord`,
-`bento-rose`, `gruvbox-dark`, `monokai-pro`, `kanagawa`, `rose-pine`, `ayu-mirage`,
-`one-dark`, `material-ocean`, `github-dark`.
+`bento-rose`, `gruvbox-dark`, `monokai-pro`, `kanagawa`, `rose-pine`,
+`ayu-mirage`, `one-dark`, `material-ocean`, `github-dark`.
 
-Switch themes at runtime via the `/theme` command in the starter app.
+Custom themes: embed `theme.BaseTheme`, fill the color fields, implement
+`theme.Theme`. Register with `theme.RegisterTheme("name", t)`.
+
+## Minimal app example
+
+```go
+package main
+
+import (
+    tea "charm.land/bubbletea/v2"
+    "github.com/cloudboy-jh/bentotui/registry/bricks/surface"
+    "github.com/cloudboy-jh/bentotui/registry/rooms"
+    "github.com/cloudboy-jh/bentotui/theme"
+    "yourmodule/bricks/bar"
+    "yourmodule/bricks/card"
+    "yourmodule/bricks/list"
+)
+
+type model struct {
+    theme   theme.Theme
+    footer  *bar.Model
+    content *card.Model
+    log     *list.Model
+    w, h    int
+}
+
+func newModel() *model {
+    t := theme.CurrentTheme()
+    l := list.New(100)
+    l.Append("ready")
+    return &model{
+        theme:   t,
+        log:     l,
+        content: card.New(card.Title("Output"), card.Content(l), card.WithTheme(t)),
+        footer:  bar.New(
+            bar.FooterAnchored(),
+            bar.Left("my-app"),
+            bar.Cards(bar.Card{Command: "ctrl+c", Label: "quit", Enabled: true}),
+            bar.WithTheme(t),
+        ),
+    }
+}
+
+func (m *model) Init() tea.Cmd { return nil }
+
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        m.w, m.h = msg.Width, msg.Height
+    case theme.ThemeChangedMsg:
+        m.theme = msg.Theme
+        m.content.SetTheme(m.theme)
+        m.footer.SetTheme(m.theme)
+    case tea.KeyMsg:
+        if msg.String() == "ctrl+c" {
+            return m, tea.Quit
+        }
+    }
+    return m, nil
+}
+
+func (m *model) View() tea.View {
+    t := m.theme
+    surf := surface.New(m.w, m.h)
+    surf.Fill(t.Background())
+    surf.Draw(0, 0, rooms.Focus(m.w, m.h, m.content, m.footer))
+    v := tea.NewView(surf.Render())
+    v.AltScreen = true
+    v.BackgroundColor = t.Background()
+    return v
+}
+```
+
+## CLI
+
+- `bento init` — scaffold a runnable starter project
+- `bento add <brick...>` — copy brick source into `bricks/<name>/`
+- `bento list` — list available bricks with descriptions
+- `bento doctor` — environment and project checks
 
 ## Architecture
 
 ```
-your app code
-     │
+theme/ (interface + 16 preset structs)
+     │  Preset("name"), CurrentTheme(), SetTheme(), RegisterTheme()
      ▼
-┌─────────────────────────────────────────────────────┐
-│  registry/bentos/   full apps                       │
-│  registry/rooms/    layout geometry                 │
-│  registry/bricks/   ui components                    │
-└─────────────────┬───────────────────────────────────┘
-                  │ imports
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  bentotui module deps                                │
-│  theme   theme/styles   registry/rooms               │
-└─────────────────────────────────────────────────────┘
-                  │ built on
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  Charm stack                                         │
-│  Bubble Tea v2   Lip Gloss v2   Ultraviolet          │
-└─────────────────────────────────────────────────────┘
+theme/styles/ (Row / RowClip / ClipANSI)
+     ▼
+registry/bricks/ (copy-and-own)
+     │  card  bar  dialog  input  list  table  surface  + more
+     │  Each brick: WithTheme(t) + SetTheme(t)
+     ▼
+registry/rooms/ (named geometry — Focus, Rail, HolyGrail, ...)
+     ▼
+surface (Ultraviolet cell buffer — Fill → Draw → DrawCenter → Render)
+     ▼
+Bubble Tea v2 (tea.NewView, AltScreen, BackgroundColor)
 ```
 
-Render contract:
+## Docs
 
-1. Build structure with `registry/rooms` (typically `Focus` for home/starter screens).
-2. Paint the full frame with `surface.Fill(theme.CurrentTheme().Surface.Canvas)`.
-3. Draw layout output with `surface.Draw(0, 0, screen)`.
-4. Draw overlays/dialogs with `surface.DrawCenter(...)`.
-
-This avoids ANSI whitespace gaps and keeps theme canvas rendering deterministic.
-
-## CLI status
-
-- `bento init` scaffolds a runnable project
-- `bento add <component...>` copies registry brick source into `bricks/<name>/`
-- `bento list` shows available components
-- `bento doctor` runs environment/project checks
+- [docs/README.md](./docs/README.md) — index
+- [docs/architecture/architecture.md](./docs/architecture/architecture.md) — rendering contract, theme model, component rules
+- [docs/architecture/bricks.md](./docs/architecture/bricks.md) — brick API reference
+- [docs/architecture/rooms.md](./docs/architecture/rooms.md) — room layout API
+- [docs/architecture/bentos.md](./docs/architecture/bentos.md) — full app composition
+- [docs/theme-engine.md](./docs/theme-engine.md) — theme interface, presets, custom themes
+- [docs/coloring-rules.md](./docs/coloring-rules.md) — rules for correct color usage in bricks
 
 ## License
 

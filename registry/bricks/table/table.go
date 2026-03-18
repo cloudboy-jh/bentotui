@@ -1,11 +1,10 @@
-// Brick: Table:
+// Brick: Table
 // +-----------------------------------+
 // | col A | col B | col C            |
 // +-----------------------------------+
 // | row data                          |
 // +-----------------------------------+
 // Header + row data renderer.
-// Package table provides a table widget backed by bubbles/table.
 // Copy this file into your project: bento add table
 package table
 
@@ -53,6 +52,7 @@ type Model struct {
 	visual     VisualStyle
 	focused    bool
 	inner      bubblestable.Model
+	theme      theme.Theme // nil = use theme.CurrentTheme()
 }
 
 // New creates a table with the given column headers.
@@ -73,33 +73,15 @@ func New(headers ...string) *Model {
 	return t
 }
 
-// AddRow appends a data row. Extra cells are ignored; missing cells are blank.
-func (t *Model) AddRow(cells ...string) {
-	t.rows = append(t.rows, cells)
-	t.syncData()
-}
+func (t *Model) AddRow(cells ...string) { t.rows = append(t.rows, cells); t.syncData() }
+func (t *Model) Clear()                 { t.rows = nil; t.syncData() }
 
-// Clear removes all data rows (keeps headers).
-func (t *Model) Clear() {
-	t.rows = nil
-	t.syncData()
-}
-
-func (t *Model) SetBorderless(v bool) {
-	t.borderless = v
-	t.syncData()
-}
-
-func (t *Model) SetCompact(v bool) {
-	t.compact = v
-	t.syncData()
-}
-
+func (t *Model) SetBorderless(v bool) { t.borderless = v; t.syncData() }
+func (t *Model) SetCompact(v bool)    { t.compact = v; t.syncData() }
 func (t *Model) SetVisualStyle(v VisualStyle) {
-	switch v {
-	case VisualGrid:
+	if v == VisualGrid {
 		t.visual = VisualGrid
-	default:
+	} else {
 		t.visual = VisualClean
 	}
 }
@@ -159,6 +141,16 @@ func (t *Model) SetColumnPriority(index, priority int) {
 	t.syncData()
 }
 
+// SetTheme updates the theme. Call on ThemeChangedMsg.
+func (t *Model) SetTheme(th theme.Theme) { t.theme = th }
+
+func (t *Model) activeTheme() theme.Theme {
+	if t.theme != nil {
+		return t.theme
+	}
+	return theme.CurrentTheme()
+}
+
 func (t *Model) Init() tea.Cmd { return nil }
 
 func (t *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -181,7 +173,6 @@ func (t *Model) View() tea.View {
 	if t.width <= 0 || t.height <= 0 || len(t.columns) == 0 {
 		return tea.NewView("")
 	}
-	// Theme is applied here — at render time — never during data mutations.
 	t.applyTheme()
 	return tea.NewView(t.inner.View())
 }
@@ -206,83 +197,75 @@ func (t *Model) Blur() {
 
 func (t *Model) IsFocused() bool { return t.focused }
 
-// applyTheme sets Lip Gloss styles on the inner bubbles table at render time.
+// applyTheme sets lipgloss styles on the inner bubbles table at render time.
 //
 // KEY RULE — Cell must NOT carry Background:
-// The upstream bubbles/table renderRow() calls Cell.Render() on each cell
-// individually, then joins the cells into a row string, then calls
-// Selected.Render() on the joined string for the selected row.
-// If Cell.Background is set, those ANSI escape codes are already embedded
-// in the joined string before Selected re-paints — the result is color bleed
-// on the internal padding chars of each cell (they carry the Cell BG color,
-// not the Selected BG color). Leave Background unpainted on Cell; Selected
-// owns the whole-row background, and the parent surface paints normal rows.
+// bubbles/table renderRow() calls Cell.Render() on each cell individually,
+// then joins cells, then calls Selected.Render() on the joined string.
+// If Cell.Background is set, those escape codes are already embedded before
+// Selected re-paints — causing color bleed on padding chars. Leave Background
+// unpainted on Cell; Selected owns the whole-row background.
 func (t *Model) applyTheme() {
-	th := theme.CurrentTheme()
-	styles := bubblestable.DefaultStyles()
+	th := t.activeTheme()
+	s := bubblestable.DefaultStyles()
 
-	headerBG := pick(th.Surface.Panel, th.Surface.Canvas)
-	selectedBG := pick(th.Selection.BG, th.Border.Focus)
-	selectedFG := pick(th.Selection.FG, th.Text.Inverse)
-	textFG := pick(th.Text.Primary, th.Bar.FG)
+	headerBG := th.BackgroundPanel()
+	selectedBG := th.SelectionBG()
+	selectedFG := th.SelectionFG()
+	textFG := th.Text()
 
 	pad := 1
 	if t.compact || t.borderless {
 		pad = 0
 	}
 
-	// Header: background is safe — never re-wrapped by Selected.
-	styles.Header = lipgloss.NewStyle().
+	s.Header = lipgloss.NewStyle().
 		Bold(true).
 		Padding(0, pad).
-		Foreground(lipgloss.Color(textFG)).
-		Background(lipgloss.Color(headerBG))
+		Foreground(textFG).
+		Background(headerBG)
 
-	// Cell: NO Background — see doc above.
-	styles.Cell = lipgloss.NewStyle().
+	// NO Background on Cell — see doc above.
+	s.Cell = lipgloss.NewStyle().
 		Padding(0, pad).
-		Foreground(lipgloss.Color(textFG))
+		Foreground(textFG)
 
-	// Selected: owns full-row background — no conflict.
 	if t.focused {
-		styles.Selected = lipgloss.NewStyle().
+		s.Selected = lipgloss.NewStyle().
 			Bold(true).
 			Padding(0, pad).
-			Foreground(lipgloss.Color(selectedFG)).
-			Background(lipgloss.Color(selectedBG))
+			Foreground(selectedFG).
+			Background(selectedBG)
 	} else {
-		// Blurred: show position without high-contrast selection.
-		styles.Selected = lipgloss.NewStyle().
+		s.Selected = lipgloss.NewStyle().
 			Padding(0, pad).
-			Foreground(lipgloss.Color(pick(th.Text.Accent, th.Text.Primary)))
+			Foreground(th.TextAccent())
 	}
 
 	if t.visual == VisualGrid && !t.borderless {
 		gridBorder := lipgloss.NormalBorder()
-		headerBorderFG := lipgloss.Color(pick(th.Border.Focus, th.Border.Normal))
-		cellBorderFG := lipgloss.Color(pick(th.Border.Subtle, th.Border.Normal))
-		styles.Header = styles.Header.
+		headerBorderFG := th.BorderFocus()
+		cellBorderFG := th.BorderSubtle()
+		s.Header = s.Header.
 			BorderStyle(gridBorder).
 			BorderBottom(true).
 			BorderRight(true).
 			BorderForeground(headerBorderFG)
-		styles.Cell = styles.Cell.
+		s.Cell = s.Cell.
 			BorderStyle(gridBorder).
 			BorderBottom(true).
 			BorderRight(true).
 			BorderForeground(cellBorderFG)
-		styles.Selected = styles.Selected.
+		s.Selected = s.Selected.
 			BorderStyle(gridBorder).
 			BorderBottom(true).
 			BorderRight(true).
 			BorderForeground(headerBorderFG)
 	}
 
-	t.inner.SetStyles(styles)
+	t.inner.SetStyles(s)
 }
 
-// syncData pushes column definitions, row data, and dimensions into the
-// inner bubbles table. No theme/style work happens here — see applyTheme().
 func (t *Model) syncData() {
 	colWidths := t.computeColumnWidths(max(1, t.width))
 	cols := make([]bubblestable.Column, 0, len(t.columns))
@@ -429,13 +412,6 @@ func alignText(s string, width int, align Align) string {
 	default:
 		return cell.Align(lipgloss.Left).Render(s)
 	}
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }
 
 func min(a, b int) int {

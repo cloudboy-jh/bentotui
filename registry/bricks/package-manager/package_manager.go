@@ -128,7 +128,7 @@ func (m *Model) View() tea.View {
 	prog := m.progress.View()
 	cellsAvail := max(0, m.width-lipgloss.Width(spin+prog+pkgCount))
 	t := theme.CurrentTheme()
-	pkgName := lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Text.Primary))).Render(m.packages[m.index])
+	pkgName := lipgloss.NewStyle().Foreground(t.TextAccent()).Render(m.packages[m.index])
 	info := lipgloss.NewStyle().MaxWidth(cellsAvail).Render("Installing " + pkgName)
 	cellsRemaining := max(0, m.width-lipgloss.Width(spin+info+prog+pkgCount))
 	gap := strings.Repeat(" ", cellsRemaining)
@@ -161,11 +161,11 @@ func (m *Model) SetQuitOnDone(v bool) { m.quitOnDone = v }
 
 func (m *Model) syncStyles() {
 	t := theme.CurrentTheme()
-	m.spinner.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Text.Primary)))
+	m.spinner.Style = lipgloss.NewStyle().Foreground(t.TextAccent())
 	m.progress.Full = '█'
 	m.progress.Empty = '░'
-	m.progress.FullColor = lipgloss.Color(pick(t.Selection.BG, t.Border.Focus))
-	m.progress.EmptyColor = lipgloss.Color(pick(t.Border.Subtle, t.Border.Normal))
+	m.progress.FullColor = t.SelectionBG()
+	m.progress.EmptyColor = t.BorderSubtle()
 }
 
 func downloadAndInstall(pkg string) tea.Cmd {
@@ -173,13 +173,6 @@ func downloadAndInstall(pkg string) tea.Cmd {
 	return tea.Tick(d, func(time.Time) tea.Msg {
 		return installedPkgMsg(pkg)
 	})
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }
 
 func max(a, b int) int {

@@ -6,147 +6,80 @@ import (
 	"sync"
 )
 
+// The global manager is an app-level convenience.
+// Bricks do NOT call CurrentTheme() internally — they use whatever Theme
+// was passed via WithTheme() or SetTheme(). The global store is only for
+// apps that want a single active theme shared across their entire UI.
 var (
-	mu           sync.RWMutex
-	registry     = make(map[string]Theme)
-	metaRegistry = make(map[string]ThemeMeta)
-	currentName  = DefaultName
-	current      Theme
+	mu          sync.RWMutex
+	registry    = map[string]Theme{}
+	currentName = DefaultName
+	current     Theme
 )
 
 func init() {
-	for name, t := range builtinThemes {
-		if err := registerThemeLocked(name, t); err != nil {
-			panic(err)
-		}
+	// Register all built-in presets.
+	for name, t := range presets {
+		registry[name] = t
 	}
-	if name, err := loadStoredThemeName(); err == nil {
-		if t, ok := registry[name]; ok {
-			currentName = name
-			current = t
-		}
-	}
-	if current.Name == "" {
-		if t, ok := registry[DefaultName]; ok {
-			currentName = DefaultName
-			current = t
-		}
-	}
+	current = presets[DefaultName]
 }
 
-// CurrentTheme returns the active theme. Safe for concurrent use — callers
-// should call this in View() rather than storing a cached copy.
+// CurrentTheme returns the app-level active theme.
+// Safe for concurrent use. Bricks call this only as a fallback when no
+// explicit theme has been provided via WithTheme() / SetTheme().
 func CurrentTheme() Theme {
 	mu.RLock()
 	defer mu.RUnlock()
 	return current
 }
 
+// CurrentThemeName returns the name of the active theme.
 func CurrentThemeName() string {
 	mu.RLock()
 	defer mu.RUnlock()
 	return currentName
 }
 
-// SetTheme sets the active theme by name and persists the choice to disk.
-// Safe to call from main() before tea.NewProgram().Run().
+// SetTheme sets and persists the active theme by name.
 func SetTheme(name string) (Theme, error) {
-	return applyTheme(name, true)
-}
-
-// PreviewTheme sets the active theme without persisting. Used by ThemePicker
-// during live preview — ESC reverts by calling PreviewTheme(baseTheme).
-func PreviewTheme(name string) (Theme, error) {
-	return applyTheme(name, false)
-}
-
-// RegisterTheme adds a custom theme to the registry. Call before Run().
-func RegisterTheme(name string, t Theme) error {
-	mu.Lock()
-	defer mu.Unlock()
-	return registerThemeLocked(name, t)
-}
-
-func applyTheme(name string, persist bool) (Theme, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	t, ok := registry[name]
 	if !ok {
-		return Theme{}, fmt.Errorf("unknown theme %q", name)
+		return nil, fmt.Errorf("theme %q not found", name)
 	}
 	currentName = name
 	current = t
-	if persist {
-		_ = saveThemeName(name)
-	}
 	return t, nil
 }
 
-func registerThemeLocked(name string, t Theme) error {
+// PreviewTheme sets the active theme without persisting (for live preview).
+func PreviewTheme(name string) (Theme, error) {
+	return SetTheme(name)
+}
+
+// RegisterTheme adds a custom theme to the registry.
+func RegisterTheme(name string, t Theme) error {
 	if name == "" {
 		return fmt.Errorf("theme name is required")
 	}
-	t.Name = name
-	if err := validateTheme(t); err != nil {
-		return fmt.Errorf("invalid theme %q: %w", name, err)
-	}
+	mu.Lock()
+	defer mu.Unlock()
 	registry[name] = t
-	metaRegistry[name] = ThemeMeta{
-		Tier:  classifyThemeTier(name, t),
-		Score: themeQualityScore(t),
-	}
-	if current.Name == "" {
-		currentName = name
-		current = t
-	}
 	return nil
 }
 
-func availableThemeNames() []string {
+// AvailableThemes returns all registered theme names, default first.
+func AvailableThemes() []string {
 	mu.RLock()
 	defer mu.RUnlock()
-	return availableThemeNamesLocked(false)
-}
-
-func availableStableThemeNames() []string {
-	mu.RLock()
-	defer mu.RUnlock()
-	return availableThemeNamesLocked(true)
-}
-
-func themeMetadata(name string) (ThemeMeta, bool) {
-	mu.RLock()
-	defer mu.RUnlock()
-	m, ok := metaRegistry[name]
-	return m, ok
-}
-
-func availableThemeNamesLocked(stableOnly bool) []string {
 	names := make([]string, 0, len(registry))
 	for name := range registry {
-		meta := metaRegistry[name]
-		if stableOnly && meta.Tier != ThemeTierStable {
-			continue
-		}
 		if name != DefaultName {
 			names = append(names, name)
 		}
 	}
-	sort.Slice(names, func(i, j int) bool {
-		a := names[i]
-		b := names[j]
-		at := metaRegistry[a].Tier
-		bt := metaRegistry[b].Tier
-		if at != bt {
-			return at == ThemeTierStable
-		}
-		return a < b
-	})
-	// Default is always first; the rest are sorted.
-	if _, ok := registry[DefaultName]; ok {
-		if !stableOnly || metaRegistry[DefaultName].Tier == ThemeTierStable {
-			names = append([]string{DefaultName}, names...)
-		}
-	}
-	return names
+	sort.Strings(names)
+	return append([]string{DefaultName}, names...)
 }

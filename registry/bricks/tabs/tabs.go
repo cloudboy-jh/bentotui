@@ -1,9 +1,8 @@
-// Brick: Tabs:
+// Brick: Tabs
 // +-----------------------------------+
 // | [Tab A] [Tab B] [Tab C]          |
 // +-----------------------------------+
 // Keyboard-navigable tab row.
-// Package tabs provides a keyboard-navigable tab row using bubbles key/paginator.
 // Copy this file into your project: bento add tabs
 package tabs
 
@@ -41,6 +40,7 @@ type Model struct {
 	width   int
 	keys    KeyMap
 	pager   paginator.Model
+	theme   theme.Theme // nil = use theme.CurrentTheme()
 }
 
 func New(tabs ...Tab) *Model {
@@ -71,15 +71,23 @@ func (m *Model) SetActive(i int) {
 	}
 }
 
-func (m *Model) Active() int     { return m.active }
-func (m *Model) Focus()          { m.focused = true }
-func (m *Model) Blur()           { m.focused = false }
-func (m *Model) IsFocused() bool { return m.focused }
-func (m *Model) Init() tea.Cmd   { return nil }
-func (m *Model) SetSize(width, _ int) {
-	m.width = width
+func (m *Model) Active() int          { return m.active }
+func (m *Model) Focus()               { m.focused = true }
+func (m *Model) Blur()                { m.focused = false }
+func (m *Model) IsFocused() bool      { return m.focused }
+func (m *Model) Init() tea.Cmd        { return nil }
+func (m *Model) SetSize(width, _ int) { m.width = width }
+func (m *Model) GetSize() (int, int)  { return m.width, 1 }
+
+// SetTheme updates the theme. Call on ThemeChangedMsg.
+func (m *Model) SetTheme(t theme.Theme) { m.theme = t }
+
+func (m *Model) activeTheme() theme.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return theme.CurrentTheme()
 }
-func (m *Model) GetSize() (int, int) { return m.width, 1 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.focused || len(m.tabs) == 0 {
@@ -105,7 +113,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.activeTheme()
 	if len(m.tabs) == 0 {
 		return tea.NewView("")
 	}
@@ -117,16 +125,16 @@ func (m *Model) View() tea.View {
 		}
 		if i == m.active {
 			parts = append(parts, "["+label+"]")
-			continue
+		} else {
+			parts = append(parts, " "+label+" ")
 		}
-		parts = append(parts, " "+label+" ")
 	}
 	line := strings.Join(parts, " ")
 	if m.width > 0 {
-		bg := pick(t.Surface.Panel, t.Surface.Canvas)
-		fg := pick(t.Text.Primary, t.Text.Primary)
+		bg := t.BackgroundPanel()
+		fg := t.Text()
 		if m.focused {
-			bg = pick(t.Surface.Interactive, t.Surface.Panel)
+			bg = t.BackgroundInteractive()
 		}
 		if strings.TrimSpace(line) == "" {
 			line = m.pager.View()
@@ -134,13 +142,6 @@ func (m *Model) View() tea.View {
 		return tea.NewView(styles.Row(bg, fg, m.width, line))
 	}
 	return tea.NewView(line)
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }
 
 func max(a, b int) int {

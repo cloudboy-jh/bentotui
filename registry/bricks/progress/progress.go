@@ -65,9 +65,9 @@ func (m *Model) GetSize() (int, int) { return m.width, 1 }
 
 func (m *Model) View() tea.View {
 	t := theme.CurrentTheme()
-	m.bar.FullColor = lipgloss.Color(pick(t.Selection.BG, t.Text.Accent))
-	m.bar.EmptyColor = lipgloss.Color(pick(t.Border.Subtle, t.Text.Muted))
-	m.bar.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Muted, t.Text.Primary)))
+	m.bar.FullColor = t.SelectionBG()
+	m.bar.EmptyColor = t.BorderSubtle()
+	m.bar.PercentageStyle = lipgloss.NewStyle().Foreground(t.TextMuted())
 	m.bar.ShowPercentage = m.showPercent
 	if m.width > 0 {
 		m.bar.SetWidth(m.width)

@@ -1,311 +1,197 @@
 package theme
 
-// Semantic surface ladder:
-// +-------------------------------+
-// | surface.canvas                |
-// +-------------------------------+
-// | surface.panel                 |
-// +-------------------------------+
-// | surface.interactive           |
-// +-------------------------------+
-//
-// Elevated card slab model:
-// +-------------------------------+
-// | card.chromeBG                 |
-// | card.bodyBG                   |
-// +-------------------------------+
-// `card.focusEdgeBG` is the accent stripe used for focused cards.
-// Footer anchored colors remain separate semantic tokens so command rows do not
-// need to reuse selection-highlight intensity.
-
 import (
-	"fmt"
+	"image/color"
 
-	tint "github.com/lrstanley/bubbletint/v2"
+	"charm.land/lipgloss/v2"
 )
 
-type SurfaceTokens struct {
-	Canvas      string
-	Panel       string
-	Overlay     string
-	Interactive string
+// Theme is the interface every theme implements.
+// Components call methods on Theme — they never touch hex strings directly.
+// Pass a Theme to any brick via WithTheme(t) or SetTheme(t).
+// Use theme.CurrentTheme() when you want the app-level active theme.
+type Theme interface {
+	// Surface
+	Background() color.Color            // root canvas / terminal bg
+	BackgroundPanel() color.Color       // raised component surface
+	BackgroundOverlay() color.Color     // modal / dialog body
+	BackgroundInteractive() color.Color // hover / focus tinted
+
+	// Card chrome
+	CardChrome() color.Color    // card header band
+	CardBody() color.Color      // card content slab
+	CardFrameFG() color.Color   // card title / frame text
+	CardFocusEdge() color.Color // accent stripe on focused card
+
+	// Text
+	Text() color.Color        // primary body text
+	TextMuted() color.Color   // secondary / dim text
+	TextInverse() color.Color // text on accent / selection bg
+	TextAccent() color.Color  // highlight / accent text
+
+	// Border
+	BorderNormal() color.Color
+	BorderSubtle() color.Color
+	BorderFocus() color.Color
+
+	// State
+	Success() color.Color
+	Warning() color.Color
+	Error() color.Color
+	Info() color.Color
+
+	// Selection
+	SelectionBG() color.Color
+	SelectionFG() color.Color
+
+	// Input
+	InputBG() color.Color
+	InputFG() color.Color
+	InputPlaceholder() color.Color
+	InputCursor() color.Color
+	InputBorder() color.Color
+
+	// Bar
+	BarBG() color.Color
+	BarFG() color.Color
+
+	// Footer (anchored)
+	FooterBG() color.Color
+	FooterFG() color.Color
+	FooterMuted() color.Color
+
+	// Dialog
+	DialogBG() color.Color
+	DialogFG() color.Color
+	DialogBorder() color.Color
+	DialogScrim() color.Color
+
+	// Name
+	Name() string
 }
 
-type TextTokens struct {
-	Primary string
-	Muted   string
-	Inverse string
-	Accent  string
+// BaseTheme provides a default implementation of Theme.
+// Embed in concrete theme structs and fill the exported color fields.
+type BaseTheme struct {
+	ThemeName string
+
+	BackgroundColor            color.Color
+	BackgroundPanelColor       color.Color
+	BackgroundOverlayColor     color.Color
+	BackgroundInteractiveColor color.Color
+
+	CardChromeColor    color.Color
+	CardBodyColor      color.Color
+	CardFrameFGColor   color.Color
+	CardFocusEdgeColor color.Color
+
+	TextColor        color.Color
+	TextMutedColor   color.Color
+	TextInverseColor color.Color
+	TextAccentColor  color.Color
+
+	BorderNormalColor color.Color
+	BorderSubtleColor color.Color
+	BorderFocusColor  color.Color
+
+	SuccessColor color.Color
+	WarningColor color.Color
+	ErrorColor   color.Color
+	InfoColor    color.Color
+
+	SelectionBGColor color.Color
+	SelectionFGColor color.Color
+
+	InputBGColor          color.Color
+	InputFGColor          color.Color
+	InputPlaceholderColor color.Color
+	InputCursorColor      color.Color
+	InputBorderColor      color.Color
+
+	BarBGColor color.Color
+	BarFGColor color.Color
+
+	FooterBGColor    color.Color
+	FooterFGColor    color.Color
+	FooterMutedColor color.Color
+
+	DialogBGColor     color.Color
+	DialogFGColor     color.Color
+	DialogBorderColor color.Color
+	DialogScrimColor  color.Color
 }
 
-type BorderTokens struct {
-	Normal string
-	Subtle string
-	Focus  string
+func (t *BaseTheme) Name() string { return t.ThemeName }
+
+func (t *BaseTheme) Background() color.Color            { return t.BackgroundColor }
+func (t *BaseTheme) BackgroundPanel() color.Color       { return t.BackgroundPanelColor }
+func (t *BaseTheme) BackgroundOverlay() color.Color     { return t.BackgroundOverlayColor }
+func (t *BaseTheme) BackgroundInteractive() color.Color { return t.BackgroundInteractiveColor }
+
+func (t *BaseTheme) CardChrome() color.Color    { return t.CardChromeColor }
+func (t *BaseTheme) CardBody() color.Color      { return t.CardBodyColor }
+func (t *BaseTheme) CardFrameFG() color.Color   { return t.CardFrameFGColor }
+func (t *BaseTheme) CardFocusEdge() color.Color { return t.CardFocusEdgeColor }
+
+func (t *BaseTheme) Text() color.Color        { return t.TextColor }
+func (t *BaseTheme) TextMuted() color.Color   { return t.TextMutedColor }
+func (t *BaseTheme) TextInverse() color.Color { return t.TextInverseColor }
+func (t *BaseTheme) TextAccent() color.Color  { return t.TextAccentColor }
+
+func (t *BaseTheme) BorderNormal() color.Color { return t.BorderNormalColor }
+func (t *BaseTheme) BorderSubtle() color.Color { return t.BorderSubtleColor }
+func (t *BaseTheme) BorderFocus() color.Color  { return t.BorderFocusColor }
+
+func (t *BaseTheme) Success() color.Color { return t.SuccessColor }
+func (t *BaseTheme) Warning() color.Color { return t.WarningColor }
+func (t *BaseTheme) Error() color.Color   { return t.ErrorColor }
+func (t *BaseTheme) Info() color.Color    { return t.InfoColor }
+
+func (t *BaseTheme) SelectionBG() color.Color { return t.SelectionBGColor }
+func (t *BaseTheme) SelectionFG() color.Color { return t.SelectionFGColor }
+
+func (t *BaseTheme) InputBG() color.Color          { return t.InputBGColor }
+func (t *BaseTheme) InputFG() color.Color          { return t.InputFGColor }
+func (t *BaseTheme) InputPlaceholder() color.Color { return t.InputPlaceholderColor }
+func (t *BaseTheme) InputCursor() color.Color      { return t.InputCursorColor }
+func (t *BaseTheme) InputBorder() color.Color      { return t.InputBorderColor }
+
+func (t *BaseTheme) BarBG() color.Color { return t.BarBGColor }
+func (t *BaseTheme) BarFG() color.Color { return t.BarFGColor }
+
+func (t *BaseTheme) FooterBG() color.Color    { return t.FooterBGColor }
+func (t *BaseTheme) FooterFG() color.Color    { return t.FooterFGColor }
+func (t *BaseTheme) FooterMuted() color.Color { return t.FooterMutedColor }
+
+func (t *BaseTheme) DialogBG() color.Color     { return t.DialogBGColor }
+func (t *BaseTheme) DialogFG() color.Color     { return t.DialogFGColor }
+func (t *BaseTheme) DialogBorder() color.Color { return t.DialogBorderColor }
+func (t *BaseTheme) DialogScrim() color.Color  { return t.DialogScrimColor }
+
+// h converts a hex string to a color.Color via lipgloss.Color.
+func h(hex string) color.Color {
+	return lipgloss.Color(hex)
 }
 
-type StateTokens struct {
-	Info    string
-	Success string
-	Warning string
-	Danger  string
-}
-
-type SelectionTokens struct {
-	BG string
-	FG string
-}
-
-type InputTokens struct {
-	BG          string
-	FG          string
-	Placeholder string
-	Cursor      string
-	Border      string
-}
-
-type BarTokens struct {
-	BG string
-	FG string
-}
-
-type FooterTokens struct {
-	AnchoredBG    string
-	AnchoredFG    string
-	AnchoredMuted string
-}
-
-type DialogTokens struct {
-	BG     string
-	FG     string
-	Border string
-	Scrim  string
-}
-
-type CardTokens struct {
-	ChromeBG    string
-	BodyBG      string
-	FrameFG     string
-	FocusEdgeBG string
-}
-
-type Theme struct {
-	Name      string
-	Surface   SurfaceTokens
-	Text      TextTokens
-	Border    BorderTokens
-	State     StateTokens
-	Selection SelectionTokens
-	Input     InputTokens
-	Bar       BarTokens
-	Footer    FooterTokens
-	Dialog    DialogTokens
-	Card      CardTokens
-}
-
-type ThemeTier string
-
-const (
-	ThemeTierStable       ThemeTier = "stable"
-	ThemeTierExperimental ThemeTier = "experimental"
-)
-
-type ThemeMeta struct {
-	Tier  ThemeTier
-	Score float64
-}
-
-const (
-	minSurfacePanelCanvasDelta      = 0.045
-	minSurfaceInteractivePanelDelta = 0.030
-	minCardChromeBodyDelta          = 0.020
-	minCardFocusEdgeChromeDelta     = 0.040
-	minTextPrimaryMutedDelta        = 0.060
-	minFooterFGToBGDelta            = 0.120
-	minFooterMutedToBGDelta         = 0.070
-	minFooterFGMutedDelta           = 0.040
-)
-
-const (
-	DefaultName         = "catppuccin-mocha"
-	CatppuccinMochaName = "catppuccin-mocha"
-	DraculaName         = "dracula"
-)
-
-func AvailableThemes() []string {
-	return availableThemeNames()
-}
-
-func AvailableStableThemes() []string {
-	return availableStableThemeNames()
-}
-
-func ThemeMetadata(name string) (ThemeMeta, bool) {
-	return themeMetadata(name)
-}
-
+// Preset returns a named built-in theme. Falls back to CatppuccinMocha if
+// the name is not found.
 func Preset(name string) Theme {
-	t, ok := presetTheme(name)
-	if !ok {
-		t, _ = presetTheme(DefaultName)
+	if t, ok := presets[name]; ok {
+		return t
 	}
-	return t
+	return presets[DefaultName]
 }
 
-func presetTheme(name string) (Theme, bool) {
-	t, ok := builtinThemes[name]
-	if !ok {
-		return Theme{}, false
+// Names returns all built-in preset names, default first.
+func Names() []string {
+	out := make([]string, 0, len(presets))
+	out = append(out, DefaultName)
+	for name := range presets {
+		if name != DefaultName {
+			out = append(out, name)
+		}
 	}
-	if t.Name == "" {
-		t.Name = name
-	}
-	return t, true
+	return out
 }
 
-func validateTheme(t Theme) error {
-	// ── required tokens ───────────────────────────────────────────────────────
-	required := []struct {
-		label string
-		value string
-	}{
-		{"surface.canvas", t.Surface.Canvas},
-		{"surface.panel", t.Surface.Panel},
-		{"surface.overlay", t.Surface.Overlay},
-		{"surface.interactive", t.Surface.Interactive},
-		{"text.primary", t.Text.Primary},
-		{"text.muted", t.Text.Muted},
-		{"text.inverse", t.Text.Inverse},
-		{"text.accent", t.Text.Accent},
-		{"border.normal", t.Border.Normal},
-		{"border.subtle", t.Border.Subtle},
-		{"border.focus", t.Border.Focus},
-		{"state.info", t.State.Info},
-		{"state.success", t.State.Success},
-		{"state.warning", t.State.Warning},
-		{"state.danger", t.State.Danger},
-		{"selection.bg", t.Selection.BG},
-		{"selection.fg", t.Selection.FG},
-		{"input.bg", t.Input.BG},
-		{"input.fg", t.Input.FG},
-		{"input.placeholder", t.Input.Placeholder},
-		{"input.cursor", t.Input.Cursor},
-		{"input.border", t.Input.Border},
-		{"bar.bg", t.Bar.BG},
-		{"bar.fg", t.Bar.FG},
-		{"dialog.bg", t.Dialog.BG},
-		{"dialog.fg", t.Dialog.FG},
-		{"dialog.border", t.Dialog.Border},
-		{"dialog.scrim", t.Dialog.Scrim},
-		{"card.chromeBG", t.Card.ChromeBG},
-		{"card.bodyBG", t.Card.BodyBG},
-		{"card.frameFG", t.Card.FrameFG},
-		{"card.focusEdgeBG", t.Card.FocusEdgeBG},
-	}
-	for _, c := range required {
-		if c.value == "" {
-			return fmt.Errorf("theme token %q is required", c.label)
-		}
-	}
-
-	footerProvided := 0
-	for _, v := range []string{t.Footer.AnchoredBG, t.Footer.AnchoredFG, t.Footer.AnchoredMuted} {
-		if v != "" {
-			footerProvided++
-		}
-	}
-	if footerProvided > 0 && footerProvided < 3 {
-		return fmt.Errorf("footer anchored tokens must be set together: footer.anchoredBG, footer.anchoredFG, footer.anchoredMuted")
-	}
-
-	// ── layer separation checks ───────────────────────────────────────────────
-	// Key layer pairs must be visually distinct. Thresholds are calibrated to
-	// the minimum detectable contrast in dark terminal themes:
-	//   - input.bg vs canvas: 0.03 (raised surface, subtle but visible)
-	//   - selection.bg vs canvas: 0.05 (must pop clearly)
-	//   - selection.bg vs input.bg: 0.05 (selected row must stand out from field)
-	//   - dialog.bg vs canvas: 0.03 (dialog body is a raised surface)
-	layerPairs := []struct {
-		labelA, labelB string
-		a, b           string
-		minDelta       float64
-	}{
-		{"surface.panel", "surface.canvas", t.Surface.Panel, t.Surface.Canvas, minSurfacePanelCanvasDelta},
-		{"surface.interactive", "surface.panel", t.Surface.Interactive, t.Surface.Panel, minSurfaceInteractivePanelDelta},
-		{"text.primary", "text.muted", t.Text.Primary, t.Text.Muted, minTextPrimaryMutedDelta},
-		{"input.bg", "surface.canvas", t.Input.BG, t.Surface.Canvas, 0.03},
-		{"selection.bg", "surface.canvas", t.Selection.BG, t.Surface.Canvas, 0.05},
-		{"selection.bg", "input.bg", t.Selection.BG, t.Input.BG, 0.05},
-		{"dialog.bg", "surface.canvas", t.Dialog.BG, t.Surface.Canvas, 0.03},
-		{"bar.bg", "surface.canvas", t.Bar.BG, t.Surface.Canvas, 0.02},
-		{"card.chromeBG", "card.bodyBG", t.Card.ChromeBG, t.Card.BodyBG, minCardChromeBodyDelta},
-		{"card.focusEdgeBG", "card.chromeBG", t.Card.FocusEdgeBG, t.Card.ChromeBG, minCardFocusEdgeChromeDelta},
-	}
-	for _, p := range layerPairs {
-		delta := lumDelta(p.a, p.b)
-		if delta < p.minDelta {
-			return fmt.Errorf(
-				"theme tokens %q and %q are too similar (luminance delta %.3f < %.3f) — increase contrast",
-				p.labelA, p.labelB, delta, p.minDelta,
-			)
-		}
-	}
-
-	if footerProvided == 3 {
-		footerPairs := []struct {
-			labelA, labelB string
-			a, b           string
-			minDelta       float64
-		}{
-			{"footer.anchoredFG", "footer.anchoredBG", t.Footer.AnchoredFG, t.Footer.AnchoredBG, minFooterFGToBGDelta},
-			{"footer.anchoredMuted", "footer.anchoredBG", t.Footer.AnchoredMuted, t.Footer.AnchoredBG, minFooterMutedToBGDelta},
-			{"footer.anchoredFG", "footer.anchoredMuted", t.Footer.AnchoredFG, t.Footer.AnchoredMuted, minFooterFGMutedDelta},
-		}
-		for _, p := range footerPairs {
-			delta := lumDelta(p.a, p.b)
-			if delta < p.minDelta {
-				return fmt.Errorf(
-					"theme tokens %q and %q are too similar (luminance delta %.3f < %.3f) — increase contrast",
-					p.labelA, p.labelB, delta, p.minDelta,
-				)
-			}
-		}
-	}
-
-	return nil
-}
-
-// builtinThemes drives the theme registry. All entries are derived from
-// well-known iTerm2-Color-Schemes palettes via the bubbletint adapter so
-// that every theme has professionally designed contrast ratios.
-var builtinThemes = map[string]Theme{
-	// Catppuccin family
-	"catppuccin-mocha":     fromTint(tint.TintCatppuccinMocha, "catppuccin-mocha"),
-	"catppuccin-macchiato": fromTint(tint.TintCatppuccinMacchiato, "catppuccin-macchiato"),
-	"catppuccin-frappe":    fromTint(tint.TintCatppuccinFrappe, "catppuccin-frappe"),
-
-	// Dracula family — TintDraculaPlus has better contrast than base Dracula
-	"dracula": fromTint(tint.TintDraculaPlus, "dracula"),
-
-	// Tokyo Night family
-	"tokyo-night":       fromTint(tint.TintTokyoNight, "tokyo-night"),
-	"tokyo-night-storm": fromTint(tint.TintTokyoNightStorm, "tokyo-night-storm"),
-
-	// Nordic / cool
-	"nord": fromTint(tint.TintNord, "nord"),
-
-	// Warm / retro
-	"bento-rose":   bentoRoseTheme(),
-	"gruvbox-dark": fromTint(tint.TintGruvboxDark, "gruvbox-dark"),
-	"monokai-pro":  fromTint(tint.TintMonokaiPro, "monokai-pro"),
-
-	// Earthy / artistic
-	"kanagawa":   fromTint(tint.TintKanagawa, "kanagawa"),
-	"rose-pine":  fromTint(tint.TintRosePine, "rose-pine"),
-	"ayu-mirage": fromTint(tint.TintAyuMirage, "ayu-mirage"),
-
-	// Editor-inspired
-	"one-dark":       fromTint(tint.TintOneDark, "one-dark"),
-	"material-ocean": fromTint(tint.TintMaterialOcean, "material-ocean"),
-	"github-dark":    fromTint(tint.TintGitHubDark, "github-dark"),
-}
+const DefaultName = "catppuccin-mocha"

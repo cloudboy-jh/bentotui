@@ -80,21 +80,17 @@ func (d selectDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item
 	}
 	content := prefix + opt.label
 	if isSelected {
-		bg := pick(t.Selection.BG, t.Border.Focus)
-		fg := pick(t.Selection.FG, t.Text.Inverse)
 		line := lipgloss.NewStyle().
-			Background(lipgloss.Color(bg)).
-			Foreground(lipgloss.Color(fg)).
+			Background(t.SelectionBG()).
+			Foreground(t.SelectionFG()).
 			Bold(true).
 			Width(width).
 			Render(content)
 		_, _ = io.WriteString(w, line)
 	} else {
-		bg := pick(t.Surface.Panel, t.Surface.Canvas)
-		fg := pick(t.Text.Primary, t.Text.Primary)
 		line := lipgloss.NewStyle().
-			Background(lipgloss.Color(bg)).
-			Foreground(lipgloss.Color(fg)).
+			Background(t.BackgroundPanel()).
+			Foreground(t.Text()).
 			Width(width).
 			Render(content)
 		_, _ = io.WriteString(w, line)
@@ -252,7 +248,7 @@ func (m *Model) View() tea.View {
 		caret = " ^"
 	}
 	// Header row: uses input surface tokens.
-	headerRow := styles.Row(pick(t.Input.BG, t.Surface.Panel), pick(t.Input.FG, t.Text.Primary), w, head+caret)
+	headerRow := styles.Row(t.InputBG(), t.InputFG(), w, head+caret)
 
 	if !m.open || len(m.items) == 0 {
 		return tea.NewView(headerRow)

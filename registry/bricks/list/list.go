@@ -20,7 +20,6 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
-// RowKind marks whether a row is normal content or a section header.
 type RowKind int
 
 const (
@@ -45,7 +44,6 @@ const (
 	SelectedSubtle  SelectedStyle = "subtle"
 )
 
-// Row is a structured list row.
 type Row struct {
 	Kind          RowKind
 	Primary       string
@@ -59,14 +57,8 @@ type Row struct {
 	Section       string
 }
 
-// RowFormatter renders one row at the given width.
-// The returned string must be plain content — theme bg/fg wrapping
-// is applied by the delegate after the formatter returns.
 type RowFormatter func(row Row, selected bool, width int) string
 
-// Model is a scrollable list backed by bubbles/list.
-// Each row owns an explicit background from the Bento theme so it
-// renders correctly on any parent surface without bleed-through.
 type Model struct {
 	width     int
 	height    int
@@ -78,6 +70,7 @@ type Model struct {
 	formatter RowFormatter
 	inner     bubbleslist.Model
 	delegate  *rowDelegate
+	theme     theme.Theme // nil = use theme.CurrentTheme()
 }
 
 type Density string
@@ -102,8 +95,6 @@ func (i listItem) FilterValue() string {
 	return ""
 }
 
-// rowDelegate renders each row with explicit Bento theme bg/fg applied,
-// so rows are opaque on any parent surface — no transparent-row bleed.
 type rowDelegate struct{ owner *Model }
 
 func (d rowDelegate) Height() int  { return 1 }
@@ -126,7 +117,6 @@ func (d rowDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bu
 		width = 1
 	}
 
-	// Build the content string (plain — no ANSI from formatter).
 	var content string
 	if d.owner.formatter != nil {
 		content = d.owner.formatter(li.row, selected, width)
@@ -134,35 +124,22 @@ func (d rowDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bu
 		content = defaultFormatter(li.row, selected, width, d.owner.density)
 	}
 
-	// Wrap content in an explicit background/foreground so the row is
-	// opaque — the parent surface does not need to compensate.
-	t := theme.CurrentTheme()
+	t := d.owner.activeTheme()
 	var line string
 	switch {
 	case li.row.Kind == RowSection:
-		bg := pick(t.Surface.Panel, t.Surface.Canvas)
-		fg := pick(t.Text.Muted, t.Text.Primary)
-		line = styles.RowClip(bg, fg, width, content)
+		line = styles.RowClip(t.BackgroundPanel(), t.TextMuted(), width, content)
 	case selected && d.owner.focused:
-		bg := pick(t.Selection.BG, t.Border.Focus)
-		fg := pick(t.Selection.FG, t.Text.Inverse)
-		line = styles.RowClip(bg, fg, width, content)
+		line = styles.RowClip(t.SelectionBG(), t.SelectionFG(), width, content)
 	case selected && !d.owner.focused:
-		// Blurred selection: show position with accent tint, no full contrast.
-		bg := pick(t.Surface.Interactive, t.Surface.Panel)
-		fg := pick(t.Text.Accent, t.Text.Primary)
-		line = styles.RowClip(bg, fg, width, content)
+		line = styles.RowClip(t.BackgroundInteractive(), t.TextAccent(), width, content)
 	default:
-		bg := pick(t.Surface.Panel, t.Surface.Canvas)
-		fg := pick(t.Text.Primary, t.Text.Primary)
-		line = styles.RowClip(bg, fg, width, content)
+		line = styles.RowClip(t.BackgroundPanel(), t.Text(), width, content)
 	}
 
 	_, _ = io.WriteString(w, line)
 }
 
-// New creates a list with an optional cap on stored items.
-// maxItems <= 0 defaults to 200.
 func New(maxItems int) *Model {
 	if maxItems <= 0 {
 		maxItems = 200
@@ -183,12 +160,13 @@ func New(maxItems int) *Model {
 	return l
 }
 
-// Append adds an item to the bottom of the list.
-func (l *Model) Append(item string) {
-	l.AppendRow(Row{Kind: RowItem, Label: item})
+func (l *Model) Append(item string)         { l.AppendRow(Row{Kind: RowItem, Label: item}) }
+func (l *Model) AppendSection(title string) { l.AppendRow(Row{Kind: RowSection, Section: title}) }
+func (l *Model) Prepend(item string)        { l.PrependRow(Row{Kind: RowItem, Label: item}) }
+func (l *Model) PrependSection(title string) {
+	l.PrependRow(Row{Kind: RowSection, Section: title})
 }
 
-// AppendRow adds a structured row to the bottom of the list.
 func (l *Model) AppendRow(row Row) {
 	if row.Kind == RowSection && strings.TrimSpace(row.Section) == "" {
 		row.Section = row.Label
@@ -200,17 +178,6 @@ func (l *Model) AppendRow(row Row) {
 	l.syncInner()
 }
 
-// AppendSection adds a section/header row to the bottom.
-func (l *Model) AppendSection(title string) {
-	l.AppendRow(Row{Kind: RowSection, Section: title})
-}
-
-// Prepend adds an item to the top of the list.
-func (l *Model) Prepend(item string) {
-	l.PrependRow(Row{Kind: RowItem, Label: item})
-}
-
-// PrependRow adds a structured row to the top of the list.
 func (l *Model) PrependRow(row Row) {
 	if row.Kind == RowSection && strings.TrimSpace(row.Section) == "" {
 		row.Section = row.Label
@@ -222,19 +189,12 @@ func (l *Model) PrependRow(row Row) {
 	l.syncInner()
 }
 
-// PrependSection adds a section/header row to the top.
-func (l *Model) PrependSection(title string) {
-	l.PrependRow(Row{Kind: RowSection, Section: title})
-}
-
-// Clear removes all items.
 func (l *Model) Clear() {
 	l.rows = nil
 	l.cursor = 0
 	l.syncInner()
 }
 
-// Items returns a copy of the current item list labels.
 func (l *Model) Items() []string {
 	out := make([]string, 0, len(l.rows))
 	for _, row := range l.rows {
@@ -246,14 +206,8 @@ func (l *Model) Items() []string {
 	return out
 }
 
-// SetFormatter sets a custom row formatter.
-// The formatter returns plain content — bg/fg wrapping is handled by the delegate.
-func (l *Model) SetFormatter(f RowFormatter) {
-	l.formatter = f
-	l.syncInner()
-}
+func (l *Model) SetFormatter(f RowFormatter) { l.formatter = f; l.syncInner() }
 
-// SetDensity controls row verbosity in the default formatter.
 func (l *Model) SetDensity(v Density) {
 	switch v {
 	case DensityCompact:
@@ -264,7 +218,6 @@ func (l *Model) SetDensity(v Density) {
 	l.syncInner()
 }
 
-// SetCursor sets the selected item index (item rows only).
 func (l *Model) SetCursor(i int) {
 	count := l.itemCount()
 	if count <= 0 {
@@ -280,6 +233,16 @@ func (l *Model) SetCursor(i int) {
 	}
 	l.cursor = i
 	l.syncInner()
+}
+
+// SetTheme updates the theme. Call on ThemeChangedMsg.
+func (l *Model) SetTheme(t theme.Theme) { l.theme = t }
+
+func (l *Model) activeTheme() theme.Theme {
+	if l.theme != nil {
+		return l.theme
+	}
+	return theme.CurrentTheme()
 }
 
 func (l *Model) Init() tea.Cmd { return nil }
@@ -321,8 +284,6 @@ func (l *Model) Focus()          { l.focused = true }
 func (l *Model) Blur()           { l.focused = false }
 func (l *Model) IsFocused() bool { return l.focused }
 
-// defaultFormatter builds the plain content string for a row.
-// No ANSI styling — theme bg/fg is applied by the delegate wrapper.
 func defaultFormatter(row Row, selected bool, width int, density Density) string {
 	if row.Kind == RowSection {
 		title := strings.TrimSpace(row.Section)
@@ -457,13 +418,6 @@ func (l *Model) rowToItemCursor(rowIdx int) int {
 		return itemIdx - 1
 	}
 	return 0
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }
 
 func max(a, b int) int {

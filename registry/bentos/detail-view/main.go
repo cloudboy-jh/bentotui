@@ -5,9 +5,8 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
-	elevatedcard "github.com/cloudboy-jh/bentotui/registry/bricks/elevated-card"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/card"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/list"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/surface"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
@@ -49,11 +48,11 @@ type model struct {
 	cursor int
 
 	navList     *list.Model
-	navCard     *elevatedcard.Model
+	navCard     *card.Model
 	detailText  *textBlock
-	detailCard  *elevatedcard.Model
+	detailCard  *card.Model
 	sessionText *textBlock
-	sessionCard *elevatedcard.Model
+	sessionCard *card.Model
 	footer      *bar.Model
 }
 
@@ -78,22 +77,19 @@ func newModel() *model {
 	}
 	nav.SetCursor(0)
 
-	navCard := elevatedcard.New(
-		elevatedcard.Title("Sections"),
-		elevatedcard.CardVariant(elevatedcard.VariantDense),
-		elevatedcard.Content(nav),
+	navCard := card.New(
+		card.Title("Sections"),
+		card.Content(nav),
 	)
 	detailText := &textBlock{}
-	detailCard := elevatedcard.New(
-		elevatedcard.Title("Detail"),
-		elevatedcard.CardVariant(elevatedcard.VariantEmphasis),
-		elevatedcard.Content(detailText),
+	detailCard := card.New(
+		card.Title("Detail"),
+		card.Content(detailText),
 	)
 	sessionText := &textBlock{}
-	sessionCard := elevatedcard.New(
-		elevatedcard.Title("Session"),
-		elevatedcard.CardVariant(elevatedcard.VariantDense),
-		elevatedcard.Content(sessionText),
+	sessionCard := card.New(
+		card.Title("Session"),
+		card.Content(sessionText),
 	)
 
 	footer := bar.New(
@@ -152,7 +148,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	t := theme.CurrentTheme()
-	canvas := lipgloss.Color(t.Surface.Canvas)
+	canvas := t.Background()
 	if m.width == 0 {
 		v := tea.NewView("")
 		v.AltScreen = true

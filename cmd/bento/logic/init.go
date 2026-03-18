@@ -106,7 +106,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.3.5"
+const version = "v0.4.0"
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
 	"██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗\n" +
@@ -200,7 +200,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	t := theme.CurrentTheme()
-	canvasColor := lipgloss.Color(t.Surface.Canvas)
+	canvasColor := t.Background()
 	if m.width == 0 {
 		v := tea.NewView("")
 		v.AltScreen = true
@@ -208,10 +208,10 @@ func (m *model) View() tea.View {
 		return v
 	}
 
-	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Muted))
-	bright := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Primary))
+	dim := lipgloss.NewStyle().Foreground(t.TextMuted())
+	bright := lipgloss.NewStyle().Foreground(t.Text())
 
-	wm := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Text.Accent)).Bold(true).Render(wordmark)
+	wm := lipgloss.NewStyle().Foreground(t.TextAccent()).Bold(true).Render(wordmark)
 
 	inputBlockW := m.inputW
 	if inputBlockW == 0 {
@@ -221,28 +221,28 @@ func (m *model) View() tea.View {
 	inputStr := viewString(m.inputBox.View())
 	mkRow := func(fg, content string) string {
 		return lipgloss.NewStyle().
-			Background(lipgloss.Color(t.Input.BG)).
+			Background(t.InputBG()).
 			Foreground(lipgloss.Color(fg)).
 			PaddingLeft(2).PaddingRight(2).
 			Width(contentW).
 			Render(content)
 	}
-	blankRow := lipgloss.NewStyle().Background(lipgloss.Color(t.Input.BG)).Width(contentW + 4).Render(" ")
+	blankRow := lipgloss.NewStyle().Background(t.InputBG()).Width(contentW + 4).Render(" ")
 	inner := lipgloss.JoinVertical(lipgloss.Left,
 		blankRow,
-		mkRow(t.Input.FG, inputStr),
-		mkRow(t.Text.Muted, "type /theme or /dialog"),
+		mkRow(t.InputFG(), inputStr),
+		mkRow(t.TextMuted(), "type /theme or /dialog"),
 		blankRow,
 	)
 	block := lipgloss.NewStyle().
-		Background(lipgloss.Color(t.Input.BG)).
+		Background(t.InputBG()).
 		Border(lipgloss.Border{Left: "|"}, false, false, false, true).
-		BorderForeground(lipgloss.Color(t.Border.Focus)).
+		BorderForeground(t.BorderFocus()).
 		Width(inputBlockW - 1).
 		Render(inner)
 
 	kbdStr := dim.Render("enter ") + bright.Render("submit") + dim.Render("  ctrl+c ") + bright.Render("quit")
-	tipDot := lipgloss.NewStyle().Foreground(lipgloss.Color(t.State.Info)).Render("* Tip")
+	tipDot := lipgloss.NewStyle().Foreground(t.Info()).Render("* Tip")
 	tipStr := tipDot + dim.Render("  This file is yours. Edit anything.")
 
 	body := rooms.RenderFunc(func(width, height int) string {

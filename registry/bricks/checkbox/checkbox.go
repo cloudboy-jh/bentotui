@@ -8,6 +8,7 @@
 package checkbox
 
 import (
+	"image/color"
 	"strings"
 
 	bubbleskey "charm.land/bubbles/v2/key"
@@ -73,23 +74,15 @@ func (m *Model) View() tea.View {
 	}
 	content := strings.TrimSpace(mark + " " + m.label)
 	if m.width > 0 {
-		bg := pick(t.Input.BG, t.Surface.Panel)
-		fg := pick(t.Input.FG, t.Text.Primary)
+		var bg, fg color.Color
 		if m.focused {
-			bg = pick(t.Selection.BG, t.Border.Focus)
-			fg = pick(t.Selection.FG, t.Text.Inverse)
+			bg = t.SelectionBG()
+			fg = t.SelectionFG()
+		} else {
+			bg = t.InputBG()
+			fg = t.InputFG()
 		}
 		return tea.NewView(styles.Row(bg, fg, m.width, content))
 	}
-	if m.focused {
-		return tea.NewView(styles.New(t).ActionButton(true).Render(content))
-	}
 	return tea.NewView(content)
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }

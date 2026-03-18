@@ -1,134 +1,54 @@
 # BentoTUI — Next Steps
 
-## Current state (repo reality)
+## Current state (v0.4.0)
 
-Completed in this directory today:
+Shipped in this pass:
 
-- Starter app is present and runnable at `cmd/starter-app/main.go`
-- Registry embedding is wired via `registry/embed.go`
-- `bento` CLI has working `init`, `add`, `list`, and `doctor` paths under `cmd/bento/`
-- Registry component catalog is finalized and shipped (`surface`, `panel`, `bar`, `dialog`, `filepicker`, `list`, `table`, `text`, `input`, `badge`, `kbd`, `wordmark`, `select`, `checkbox`, `progress`, `tabs`, `toast`, `separator`)
-- Wave 1 bento examples are present under `registry/bentos/` (`home-screen`, `app-shell`, `dashboard`)
-- `detail-view` reference bento is also shipped under `registry/bentos/detail-view`
-- Named room catalog shipped at `registry/rooms/` with `Rail` as the canonical rail+main contract
-- App-shell has shifted to a single-screen UX app role (rail + table + list + progress + palette)
-- Theme engine now enforces card/footer contrast and stable-vs-experimental theme tiers
+- Theme interface model — `Theme` is a Go interface, 16 presets as plain structs
+- Colors-in architecture — every brick accepts `WithTheme` + `SetTheme`, no forced global
+- `card` brick merges `panel` + `elevated-card` — `Flat()` option for panel style
+- `Frame` + `FrameMainDrawer` + `FrameTriple` removed — use `Pancake`/`Focus`/`TopbarPancake`
+- `theme/styles/System` struct deleted — `Row`, `RowClip`, `ClipANSI` as pure functions
+- All docs updated to reflect v0.4.0 reality
 
 ---
 
 ## Immediate priorities
 
-### 1) Bento-first Wave 2 buildout
+### 1 — Wave 2 bentos
 
-- Build and ship `registry/bentos/form`
-- Build and ship `registry/bentos/settings`
-- Build and ship `registry/bentos/log-viewer`
-- Build and ship `registry/bentos/command-view`
-- Keep each bento runnable with `go run ./registry/bentos/<name>` and copy-and-own friendly
+Build and ship these using existing bricks:
 
-### 2) App-shell as UX proving ground
-
-- Keep app-shell focused on UX composition quality (not geometry/math diagnostics)
-- Validate rail/main/footer layering, command palette behavior, and theme switching
-- Keep diagnostics out of default runtime UX surface
-
-### 3) Brick policy (strict extraction gate)
-
-- New brick only when the same gap appears in at least 2 bentos
-- Prefer composing existing bricks first
-- Require app-shell usage + tests before marking a new brick pattern stable
-
-### 4) Tighten `bento init` output
-
-- Simplify the generated `main.go` to a shorter starter shell
-- Add explicit "next commands" comments (`bento add ...`, `go run .`)
-- Ensure the scaffold stays easy to edit and does not feel framework-coupled
-
-### 5) Add confidence checks
-
-- Add `go test ./registry/...` coverage for component rendering behavior
-- Add smoke tests for `logic.InstallComponent` and `logic.ScaffoldProject`
-- Wire tests into a default local/CI command path
-
-### 6) Start wrap/scaffold foundation
-
-- Define deterministic manifest schema for `bento wrap`
-- Implement `--manifest-only` and `--scaffold` before any AI-enhance layer
-
----
-
-## Detailed build backlog
-
-### Final component catalog (Bento-owned)
-
-Core layout/container components:
-
-- `surface`
-- `panel`
-- `bar`
-- `dialog`
-
-Display helpers:
-
-- `badge`
-- `kbd`
-- `wordmark`
-
-Form/feedback components:
-
-- `filepicker`
-- `select`
-- `checkbox`
-- `progress`
-
-Advanced composition helpers:
-
-- `tabs`
-- `toast`
-- `separator`
-
-Primitive policy:
-
-- Do not add `spinner` as a Bento component; use `charm.land/bubbles/v2/spinner`
-- Default to Charm-backed wrappers unless Bento-specific composition value is clear
-- Existing primitive-like bricks should wrap Bubbles/Huh internals where applicable
-- Do not add new bricks unless at least 2 bentos need the same abstraction
-
-### Bento examples to build
-
-- `registry/bentos/home-screen` — mirror starter app pattern
-- `registry/bentos/app-shell` — rail + main workspace + anchored footer + command palette
-- `registry/bentos/dashboard` — cards + table composition
-- `registry/bentos/detail-view` — list + detail pane (shipped)
-- `registry/bentos/form` — labeled inputs + validation hints
-- `registry/bentos/log-viewer` — filter + scrollable output
-- `registry/bentos/settings` — left nav + settings content
+- `registry/bentos/form` — labeled inputs, validation hints
+- `registry/bentos/log-viewer` — scrollable filter + output
+- `registry/bentos/settings` — left nav + settings content pane
 - `registry/bentos/command-view` — command-palette-first screen
 
-### CLI and platform items
+Keep each bento runnable with `go run ./registry/bentos/<name>` and
+copy-and-own friendly.
 
-- `bento upgrade <component>` — diff local copy vs registry version
-- Improve `bento init` template toward a smaller single-screen scaffold
-- Add overwrite strategy for `bento add` (`--force` or guided mode)
+### 2 — Brick test coverage
 
-### Wrap + AI integration items
+- Add snapshot tests for every brick's `View()` output
+- Cover: list delegate rendering, card raised/flat modes, bar card truncation,
+  dialog frame dimensions, input style sync
 
-- `bento wrap --manifest-only`
-- `bento wrap --scaffold`
-- `bento wrap --enhance` (optional LLM pass after deterministic scaffold)
-- MCP tools: `bento_wrap`, `bento_scaffold`, `bento_enhance`
-- Public enhancement API: `bento.Enhance()`
-- `llms.txt` context for enhancement/scaffold tooling
+### 3 — `bento init` cleanup
 
-### Suggested execution order
+- Simplify generated `main.go` to use `card` instead of old `panel`/`elevated-card`
+- Add `// bento add card`, `// bento add bar` comments pointing to next steps
+- Remove any old token struct references from scaffold template
 
-1. Keep `registry/bentos/home-screen` aligned with starter-app behavior
-2. Ship Wave 2 bentos (`form`, `settings`, `log-viewer`, `command-view`) using existing bricks first
-3. Use app-shell as the UX sandbox for promotion gates (list/table/progress/footer/palette/theme)
-4. Add tests for registry rendering + CLI logic
-5. Improve `bento init` scaffold clarity
-6. Implement `bento wrap` deterministic pipeline
-7. Layer optional AI enhancement surface
+### 4 — `bento upgrade`
+
+- Diff local copied component against current registry version
+- Print a unified diff — no auto-merge, the user decides
+
+### 5 — CLI + TUI usage examples
+
+The theme refactor unlocked using bricks in CLI/non-TUI contexts. Add an
+example showing how to render a `card` or `table` to stdout without a
+`tea.Program` — demonstrates the breadth of the "TUI and CLI" positioning.
 
 ---
 

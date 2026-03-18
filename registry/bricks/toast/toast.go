@@ -10,6 +10,7 @@ package toast
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -112,26 +113,19 @@ func (m *Model) View() tea.View {
 	return tea.NewView(strings.Join(lines, "\n"))
 }
 
-func toastColors(t theme.Theme, v Variant) (bg, fg string) {
-	fg = pick(t.Text.Inverse, t.Text.Primary)
+func toastColors(t theme.Theme, v Variant) (bg, fg color.Color) {
+	fg = t.TextInverse()
 	switch v {
 	case Success:
-		bg = pick(t.State.Success, t.Selection.BG)
+		bg = t.Success()
 	case Warning:
-		bg = pick(t.State.Warning, t.Selection.BG)
+		bg = t.Warning()
 	case Danger:
-		bg = pick(t.State.Danger, t.Selection.BG)
+		bg = t.Error()
 	default:
-		bg = pick(t.State.Info, t.Selection.BG)
+		bg = t.Info()
 	}
 	return bg, fg
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }
 
 func min(a, b int) int {

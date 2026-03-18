@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bentos/app-shell/ui"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/dialog"
@@ -158,7 +157,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() tea.View {
 	t := theme.CurrentTheme()
-	canvas := lipgloss.Color(t.Surface.Canvas)
+	canvas := t.Background()
 
 	if m.width == 0 {
 		v := tea.NewView("")

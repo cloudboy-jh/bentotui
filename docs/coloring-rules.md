@@ -1,176 +1,124 @@
 # Bento Brick Coloring Rules
 
-These rules exist to stop recurring visual bugs — color bleed, invisible selected text,
-mismatched backgrounds — from being introduced when building or modifying bricks.
-Follow them every time. They are not optional.
+These rules prevent the recurring visual bugs — color bleed, invisible selected
+text, mismatched backgrounds — that appear when building or modifying bricks.
+Follow them every time.
 
 ---
 
-## Rule 1 — Always use `Selection.FG` on foreground, `Selection.BG` on background
-
-**Never pass a `BG` token as a `Foreground()` argument, or a `FG` token as a `Background()` argument.**
+## Rule 1 — SelectionBG is a background, SelectionFG is a foreground. Never swap.
 
 ```go
-// WRONG — Selection.BG is a background color; as FG it becomes near-invisible text
-lipgloss.NewStyle().Foreground(lipgloss.Color(t.Selection.BG))
+// Wrong — SelectionBG() as a foreground produces near-invisible text
+lipgloss.NewStyle().Foreground(t.SelectionBG())
 
-// CORRECT
+// Correct
 lipgloss.NewStyle().
-    Background(lipgloss.Color(t.Selection.BG)).
-    Foreground(lipgloss.Color(t.Selection.FG))
+    Background(t.SelectionBG()).
+    Foreground(t.SelectionFG())
 ```
 
-The `Selection.*`, `Bar.*`, `Footer.*`, `Card.*`, `Dialog.*`, `Input.*` token pairs
-always come in `BG`/`FG` pairs. Both must be applied together. Using one without the
-other will produce invisible or low-contrast text on every theme.
-
-**Quick check:** if you see `t.Selection.BG` inside a `Foreground()` call, it is a bug.
+All `BG`/`FG` pairs (`SelectionBG/FG`, `BarBG/FG`, `FooterBG/FG`, `DialogBG/FG`,
+`InputBG/FG`) must be applied together. Using one without the other will produce
+invisible or low-contrast text on every theme.
 
 ---
 
-## Rule 2 — Apply theme tokens only in `View()`, never during data mutations
-
-Theme must be read once per render, not during `AddRow`, `SetSize`, `Focus`, `Blur`,
-`SetItems`, or any other state-mutation path.
+## Rule 2 — Read theme in View(), never during data mutations
 
 ```go
-// WRONG — theme read on every data mutation
+// Wrong — theme read on every AddRow
 func (t *Model) AddRow(cells ...string) {
     t.rows = append(t.rows, cells)
-    t.syncInner() // ← syncInner reads theme.CurrentTheme() — wrong lifecycle
+    t.syncInner() // ← reads theme — wrong lifecycle
 }
 
-// CORRECT — data sync is theme-free; theme read only at render time
+// Correct — data sync is theme-free; theme read only at render time
 func (t *Model) AddRow(cells ...string) {
     t.rows = append(t.rows, cells)
-    t.syncData() // ← no theme access here
+    t.syncData() // ← no theme
 }
 
 func (t *Model) View() tea.View {
-    t.applyTheme() // ← theme read happens here, once per render
+    t.applyTheme() // ← theme read here, once per render
     return tea.NewView(t.inner.View())
 }
 ```
 
-**Why:** theme switches (`theme.SetTheme(...)`) take effect on the next `View()` call.
-If theme is baked into data structures during mutations, a theme change before `View()`
-will not take effect until the next mutation triggers a re-sync — which is unpredictable
-and means live theme switching is broken.
-
 ---
 
-## Rule 3 — Never set `Background` on Bubbles `Cell` style when also using `Selected`
+## Rule 3 — No Background on bubbles/table Cell when using Selected
 
-When wrapping `bubbles/table` (or similar row-based Bubbles components), the upstream
-`renderRow()` function applies `Cell.Render()` per-cell first, joins the cells into a
-string, then applies `Selected.Render()` to the joined string for the selected row.
-
-If `Cell` carries a `Background`, those ANSI escape sequences are embedded into the
-joined string *before* `Selected` repaints. The result: padding characters inside each
-cell carry the `Cell` BG color, while `Selected` wraps the whole row with `Selected` BG.
-The terminal sees conflicting background ANSI codes within the same row — color bleed.
+`bubbles/table` applies `Cell.Render()` per cell, joins them, then applies
+`Selected.Render()` to the joined row string. If `Cell` carries a `Background`,
+those ANSI codes are already embedded before `Selected` rewraps — causing
+padding cells to show `Cell` BG while `Selected` BG only covers the outer wrap.
 
 ```go
-// WRONG — Cell.Background causes bleed inside Selected rows
-styles.Cell = lipgloss.NewStyle().
-    Background(lipgloss.Color(cellBG)). // ← ANSI codes now embedded in joined row string
-    Foreground(lipgloss.Color(textFG))
+// Wrong — bleed on selected row padding
+styles.Cell = lipgloss.NewStyle().Background(cellBG).Foreground(textFG)
 
-styles.Selected = lipgloss.NewStyle().
-    Background(lipgloss.Color(selectedBG)). // ← rewraps already-colored string: bleed
-    Foreground(lipgloss.Color(selectedFG))
-
-// CORRECT — Cell has no Background; Selected owns the entire row background
-styles.Cell = lipgloss.NewStyle().
-    Foreground(lipgloss.Color(textFG)) // No Background
-
-styles.Selected = lipgloss.NewStyle().
-    Background(lipgloss.Color(selectedBG)). // Full control — no conflict
-    Foreground(lipgloss.Color(selectedFG))
+// Correct — Cell has no Background; Selected owns the entire row
+styles.Cell = lipgloss.NewStyle().Foreground(textFG)
+styles.Selected = lipgloss.NewStyle().Background(selectedBG).Foreground(selectedFG)
 ```
 
-**Header is exempt:** headers are never re-wrapped by `Selected`, so `Header.Background`
-is safe.
+Header is exempt — headers are never re-wrapped by `Selected`.
 
 ---
 
-## Rule 4 — Every rendered row must own its full width with explicit background
-
-Any row emitted to the terminal must carry an explicit background color for its full
-width. Rows without explicit backgrounds are transparent — they inherit whatever color
-is behind them, which changes unpredictably across parent panels, surfaces, and themes.
-
-Use `styles.Row()` or `styles.RowClip()` for all surface-facing row output:
+## Rule 4 — Every row must own its full width with explicit background
 
 ```go
-// WRONG — bare string, transparent background
+// Wrong — transparent row inherits whatever is behind it
 return prefix + content
 
-// CORRECT — explicit bg/fg, full width owned
+// Correct — full width, explicit Bg on every cell
 return styles.Row(bg, fg, width, content)
-// or for content that may overflow:
 return styles.RowClip(bg, fg, width, content)
 ```
 
-This applies to:
-- List row delegates
-- Select item delegates
-- Toast rows
-- Custom content rendered into panels or cards
-- Any row assembled with string concatenation before being painted to a surface
+Applies to: list row delegates, select delegates, toast rows, custom content
+rendered into cards, any row assembled before being painted to a surface.
 
-**Exception:** content that is immediately passed into a `lipgloss.Style.Width(w).Render()`
-chain that carries a `Background` is fine — the `Width()` expansion will fill the row.
+Exception: content passed immediately into `.Background(x).Width(w).Render()`
+is fine — `Width()` expansion fills the row.
 
 ---
 
-## Rule 5 — Set all fields of upstream `Styles` structs, not a partial subset
+## Rule 5 — Set all fields of upstream Styles structs
 
-When applying theme colors to a Bubbles component's `Styles` struct, set every field
-that struct exposes. Skipped fields fall back to upstream defaults — which are always
-hardcoded ANSI256 colors, not theme colors.
+When applying theme colors to a bubbles component's `Styles` struct, set every
+field. Skipped fields fall back to upstream hardcoded ANSI256 colors.
 
 ```go
-// WRONG — Symlink style skipped; symlinks show upstream ANSI color "36" (cyan) on all themes
+// Wrong — Symlink style skipped; shows upstream cyan on all themes
 s.Cursor = ...
 s.Directory = ...
 s.File = ...
 // s.Symlink ← missing
 
-// CORRECT
-s.Cursor = ...
-s.Directory = ...
-s.File = ...
-s.Symlink = lipgloss.NewStyle().Foreground(lipgloss.Color(pick(t.Text.Accent, t.Text.Primary)))
+// Correct
+s.Symlink = lipgloss.NewStyle().Foreground(t.TextAccent())
 ```
 
-Before shipping a new Bubbles wrapper, look at the upstream `Styles` struct definition
-and check every field is covered. If a field is intentionally left at upstream default,
-add a comment saying so.
+Before shipping a bubbles wrapper, check every field in the upstream `Styles`
+struct. If a field is intentionally left at upstream default, add a comment.
 
 ---
 
 ## Rule 6 — Never scan rendered output to detect selection state
 
-Do not call `m.inner.View()` and then scan the returned string for cursor markers like
-`"> "` to determine which row is selected. This is fragile and breaks whenever content
-contains the marker string.
-
-Instead, query selection state from the model directly — either via `m.Index()` in a
-delegate `Render()` method, or by tracking cursor state in your wrapper model.
-
 ```go
-// WRONG — string scanning to detect selected row
+// Wrong — fragile, breaks when content contains "> "
 menu := m.inner.View()
 for _, line := range strings.Split(menu, "\n") {
-    if strings.HasPrefix(strings.TrimLeft(line, " "), "> ") { // ← fragile
-        // paint as selected
-    }
+    if strings.HasPrefix(line, "> ") { ... }
 }
 
-// CORRECT — query state in the delegate where you have direct access to it
+// Correct — query state in the delegate
 func (d myDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bubbleslist.Item) {
-    isSelected := index == m.Index() // ← source of truth
+    isSelected := index == m.Index()
     if isSelected {
         // paint with selection colors
     }
@@ -179,91 +127,95 @@ func (d myDelegate) Render(w io.Writer, m bubbleslist.Model, index int, item bub
 
 ---
 
-## Rule 7 — Set `focus` state visually in both focused and blurred cases
+## Rule 7 — Focused and blurred states must look different
 
-Every interactive brick must render a distinct visual difference between focused and
-blurred states. Blurred does not mean invisible — it means reduced contrast, not removed.
+Blurred does not mean invisible — it means reduced contrast.
 
 ```go
-// Focus: full selection contrast
+// Focused: full selection contrast
 styles.Selected = lipgloss.NewStyle().
     Bold(true).
-    Background(lipgloss.Color(t.Selection.BG)).
-    Foreground(lipgloss.Color(t.Selection.FG))
+    Background(t.SelectionBG()).
+    Foreground(t.SelectionFG())
 
-// Blur: position indicator without high contrast
+// Blurred: position visible but clearly not active
 styles.Selected = lipgloss.NewStyle().
-    Foreground(lipgloss.Color(t.Text.Accent))
-    // No bold, no Background — position is visible but clearly not active
+    Foreground(t.TextAccent())
 ```
 
-The standard token mapping for states:
+Standard state-to-token mapping:
 
-| State | Background token | Foreground token |
+| State | Background | Foreground |
 |---|---|---|
-| Selected + Focused | `Selection.BG` | `Selection.FG` |
-| Selected + Blurred | none or `Surface.Interactive` | `Text.Accent` |
-| Normal row | `Surface.Panel` | `Text.Primary` |
-| Section header | `Surface.Panel` | `Text.Muted` |
-| Disabled / muted | `Surface.Canvas` | `Text.Muted` |
-| Error / danger | `State.Danger` | `Text.Inverse` |
+| Selected + Focused | `SelectionBG()` | `SelectionFG()` |
+| Selected + Blurred | `BackgroundInteractive()` or none | `TextAccent()` |
+| Normal row | `BackgroundPanel()` | `Text()` |
+| Section header | `BackgroundPanel()` | `TextMuted()` |
+| Disabled / muted | `Background()` | `TextMuted()` |
+| Error / danger | `Error()` | `TextInverse()` |
 
 ---
 
-## Rule 8 — Read `theme.CurrentTheme()` at most once per `View()` call
-
-Call `theme.CurrentTheme()` once at the top of `View()` (or the method it calls) and
-pass the result down. Do not call it inside loops, per-row, or per-delegate-render.
+## Rule 8 — Use theme interface methods, not struct field accessors
 
 ```go
-// WRONG — called per row (inside delegate Render, which is called per item)
-func (d delegate) Render(...) {
-    t := theme.CurrentTheme() // ← called N times per View()
-}
+// Wrong — old struct-based token access (removed in v0.4.0)
+lipgloss.Color(t.Surface.Canvas)
+lipgloss.Color(t.Text.Muted)
+lipgloss.Color(t.Selection.BG)
 
-// CORRECT — called once, passed via the delegate's owner pointer
-func (d delegate) Render(...) {
-    t := theme.CurrentTheme() // acceptable in delegate since it runs once per item;
-    // but prefer: store the theme snapshot on the owner model in View() and read from there
-}
+// Correct — interface methods, return color.Color directly
+t.Background()
+t.TextMuted()
+t.SelectionBG()
 ```
 
-If a delegate is used (list, select), either:
-- Read `theme.CurrentTheme()` once in the delegate `Render()` (acceptable — it's fast),
-- Or snapshot the theme on the owner model in `View()` and read it from the owner pointer
-  in the delegate (preferred for consistency).
+Theme methods return `color.Color`. Pass them directly to lipgloss — do not
+wrap in `lipgloss.Color()` (that takes a string, not a `color.Color`).
+
+```go
+// Correct
+lipgloss.NewStyle().Background(t.BackgroundPanel()).Foreground(t.Text())
+
+// Wrong — double-wrapping
+lipgloss.NewStyle().Background(lipgloss.Color(t.BackgroundPanel()))
+```
 
 ---
 
 ## Token quick-reference
 
-| Token | Correct use |
+| Method | Correct use |
 |---|---|
-| `Surface.Canvas` | Full-screen base background |
-| `Surface.Panel` | Panel, card, list row background |
-| `Surface.Interactive` | Hovered/blurred-selected background |
-| `Selection.BG` | Selected row background only |
-| `Selection.FG` | Selected row foreground only |
-| `Text.Primary` | Normal body text |
-| `Text.Muted` | Secondary, section headers, hints |
-| `Text.Accent` | Blurred-selected indicator, links, icons |
-| `Text.Inverse` | Text on high-contrast selection backgrounds |
-| `Border.Focus` | Focused panel border, fallback selection BG |
-| `Border.Normal` | Default unfocused border |
-| `Border.Subtle` | Dividers, cell separators |
-| `State.Danger` | Error state background |
-| `State.Warn` | Warning state indicator |
-| `State.Success` | Success state indicator |
+| `Background()` | Full-screen canvas (`surf.Fill`) |
+| `BackgroundPanel()` | Panel, card, list row background |
+| `BackgroundInteractive()` | Hovered / blurred-selected background |
+| `CardChrome()` | Raised card header band |
+| `CardBody()` | Raised card content slab |
+| `SelectionBG()` | Selected row background only |
+| `SelectionFG()` | Selected row foreground only |
+| `Text()` | Normal body text |
+| `TextMuted()` | Secondary text, section headers, hints |
+| `TextAccent()` | Blurred selection indicator, links |
+| `TextInverse()` | Text on high-contrast selection backgrounds |
+| `BorderFocus()` | Focused border / fallback selection |
+| `BorderNormal()` | Default unfocused border |
+| `BorderSubtle()` | Dividers, cell separators |
+| `Error()` | Error state background |
+| `Warning()` | Warning state |
+| `Success()` | Success state |
+| `Info()` | Info state |
 
 ---
 
-## Checklist before shipping any new brick
+## Checklist before shipping a new brick
 
-- [ ] `Selection.BG` used only as `Background`, `Selection.FG` only as `Foreground`
+- [ ] `SelectionBG()` used only as `Background()`, `SelectionFG()` only as `Foreground()`
 - [ ] Theme read only in `View()` (or `applyTheme()` called from `View()`), never in mutation paths
 - [ ] `Cell` style has no `Background` if the component uses `Selected` to wrap full rows
-- [ ] All fields of upstream `Styles` structs are set (or explicitly noted as intentionally defaulted)
-- [ ] All rendered rows go through `styles.Row()` or `styles.RowClip()` or equivalent `Background().Width().Render()` chain
+- [ ] All fields of upstream `Styles` structs are set (or explicitly noted as intentional defaults)
+- [ ] All rendered rows go through `styles.Row()` / `styles.RowClip()` or `.Background().Width().Render()`
 - [ ] No string scanning of `View()` output to detect selection state
-- [ ] Focused and blurred states produce visually distinct (not identical) output
-- [ ] `theme.CurrentTheme()` called once per render, not per row or per mutation
+- [ ] Focused and blurred states produce visually distinct output
+- [ ] Brick accepts `WithTheme(t theme.Theme)` option and `SetTheme(t theme.Theme)` setter
+- [ ] No `lipgloss.Color(t.Method())` wrapping — pass `color.Color` values directly

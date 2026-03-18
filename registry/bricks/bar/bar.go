@@ -3,17 +3,11 @@
 // | left/status            cards            right     |
 // +--------------------------------------------------+
 // Single-row command or metadata strip.
-// Package bar provides a single-row themed status/navigation bar.
 // Copy this file into your project: bento add bar
-//
-// Dependencies (real Go module imports, not copied):
-//   - charm.land/bubbletea/v2
-//   - charm.land/lipgloss/v2
-//   - github.com/cloudboy-jh/bentotui/theme
-//   - github.com/cloudboy-jh/bentotui/theme/styles
 package bar
 
 import (
+	"image/color"
 	"sort"
 	"strings"
 
@@ -23,7 +17,6 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
 
-// CardVariant controls the visual weight of a card's command badge.
 type CardVariant string
 
 const (
@@ -56,7 +49,6 @@ const (
 	AnchoredCardStyleMixed AnchoredCardStyle = "mixed"
 )
 
-// Card is a single keybinding hint rendered inside a bar.
 type Card struct {
 	Command  string
 	Label    string
@@ -65,11 +57,10 @@ type Card struct {
 	Priority int
 }
 
-// Option configures a Model at construction time.
 type Option func(*Model)
 
-// Model is the bar component. Stateless with respect to theme — always reads
-// theme.CurrentTheme() in View().
+// Model is the bar component. Reads theme from WithTheme() or falls back
+// to theme.CurrentTheme() — never stores global state directly.
 type Model struct {
 	left         string
 	statusPill   string
@@ -82,9 +73,9 @@ type Model struct {
 	role         Role
 	footerMode   FooterMode
 	anchoredCard AnchoredCardStyle
+	theme        theme.Theme // nil = use theme.CurrentTheme()
 }
 
-// New constructs a bar with the given options.
 func New(opts ...Option) *Model {
 	m := &Model{role: RoleTop, footerMode: FooterModeNormal, anchoredCard: AnchoredCardStylePlain}
 	for _, opt := range opts {
@@ -93,27 +84,20 @@ func New(opts ...Option) *Model {
 	return m
 }
 
-// ── options ───────────────────────────────────────────────────────────────────
-
 func Left(v string) Option  { return func(m *Model) { m.left = v } }
 func Right(v string) Option { return func(m *Model) { m.right = v } }
 func StatusPill(v string) Option {
 	return func(m *Model) { m.statusPill = strings.TrimSpace(v) }
 }
-
 func LeftCard(c Card) Option  { return func(m *Model) { cp := c; m.leftCard = &cp } }
 func RightCard(c Card) Option { return func(m *Model) { cp := c; m.rightCard = &cp } }
-
 func Cards(cards ...Card) Option {
 	return func(m *Model) { m.cards = append([]Card(nil), cards...) }
 }
-
-func CompactCards() Option { return func(m *Model) { m.compactCards = true } }
-func RoleTopBar() Option   { return func(m *Model) { m.role = RoleTop } }
-func RoleSubBar() Option   { return func(m *Model) { m.role = RoleSubheader } }
-func RoleFooterBar() Option {
-	return func(m *Model) { m.role = RoleFooter }
-}
+func CompactCards() Option  { return func(m *Model) { m.compactCards = true } }
+func RoleTopBar() Option    { return func(m *Model) { m.role = RoleTop } }
+func RoleSubBar() Option    { return func(m *Model) { m.role = RoleSubheader } }
+func RoleFooterBar() Option { return func(m *Model) { m.role = RoleFooter } }
 func FooterAnchored() Option {
 	return func(m *Model) {
 		m.role = RoleFooter
@@ -124,7 +108,10 @@ func AnchoredCardStyleMode(style AnchoredCardStyle) Option {
 	return func(m *Model) { m.anchoredCard = style }
 }
 
-// ── tea.Model ─────────────────────────────────────────────────────────────────
+// WithTheme sets the theme for this bar instance.
+func WithTheme(t theme.Theme) Option {
+	return func(m *Model) { m.theme = t }
+}
 
 func (m *Model) Init() tea.Cmd { return nil }
 
@@ -136,7 +123,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.activeTheme()
 
 	left := m.renderLeftSegment(t)
 	cards := m.renderCardBlock(t, -1)
@@ -144,11 +131,10 @@ func (m *Model) View() tea.View {
 
 	if m.width == 0 {
 		line := strings.TrimSpace(strings.Join(nonEmpty(left, cards, rightRaw), "  "))
-		colors := styles.New(t).StatusRowColors(string(m.role), m.role == RoleFooter && m.footerMode == FooterModeAnchored)
-		// No width — single solid background, no seam.
+		bg, fg := m.rowColors(t)
 		return tea.NewView(lipgloss.NewStyle().
-			Foreground(lipgloss.Color(colors.FG)).
-			Background(lipgloss.Color(colors.BG)).
+			Foreground(fg).
+			Background(bg).
 			Render(line))
 	}
 
@@ -184,12 +170,8 @@ func (m *Model) View() tea.View {
 	return m.renderLine(t, line)
 }
 
-// ── sizing ────────────────────────────────────────────────────────────────────
-
 func (m *Model) SetSize(width, _ int) { m.width = width }
 func (m *Model) GetSize() (int, int)  { return m.width, 1 }
-
-// ── mutations ─────────────────────────────────────────────────────────────────
 
 func (m *Model) SetLeft(v string)       { m.left = v }
 func (m *Model) SetRight(v string)      { m.right = v }
@@ -209,22 +191,39 @@ func (m *Model) SetAnchored(v bool) {
 		m.footerMode = FooterModeNormal
 	}
 }
-func (m *Model) SetAnchoredCardStyle(style AnchoredCardStyle) {
-	m.anchoredCard = style
+func (m *Model) SetAnchoredCardStyle(style AnchoredCardStyle) { m.anchoredCard = style }
+
+// SetTheme updates the theme. Call on ThemeChangedMsg.
+func (m *Model) SetTheme(t theme.Theme) { m.theme = t }
+
+func (m *Model) activeTheme() theme.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return theme.CurrentTheme()
 }
 
-// ── rendering ─────────────────────────────────────────────────────────────────
+func (m *Model) rowColors(t theme.Theme) (bg, fg color.Color) {
+	anchored := m.role == RoleFooter && m.footerMode == FooterModeAnchored
+	switch m.role {
+	case RoleSubheader:
+		return t.BackgroundPanel(), t.TextMuted()
+	case RoleFooter:
+		if anchored {
+			return t.FooterBG(), t.FooterFG()
+		}
+		return t.BackgroundPanel(), t.Text()
+	default:
+		return t.BarBG(), t.BarFG()
+	}
+}
 
 func (m *Model) renderLine(t theme.Theme, text string) tea.View {
-	bar := styles.New(t).StatusRowColors(string(m.role), m.role == RoleFooter && m.footerMode == FooterModeAnchored)
-	return tea.NewView(renderRow(m.width, bar.BG, bar.FG, text))
+	bg, fg := m.rowColors(t)
+	return tea.NewView(renderRow(m.width, bg, fg, text))
 }
 
-// renderRow renders a full-width bar row with a single lipgloss call.
-// Background fills every cell — no canvas seams, no ANSI bleed.
-// The entire width is owned by one style.Width() call so the gap between
-// left and right segments is the same background color as the rest of the bar.
-func renderRow(width int, bg, fg, content string) string {
+func renderRow(width int, bg, fg color.Color, content string) string {
 	if width <= 0 {
 		return ""
 	}
@@ -234,7 +233,12 @@ func renderRow(width int, bg, fg, content string) string {
 func (m *Model) renderLeftSegment(t theme.Theme) string {
 	parts := make([]string, 0, 2)
 	if m.statusPill != "" {
-		parts = append(parts, styles.New(t).StatusPillMuted().Render(m.statusPill))
+		parts = append(parts, lipgloss.NewStyle().
+			Bold(true).
+			Padding(0, 1).
+			Foreground(t.Text()).
+			Background(t.BackgroundPanel()).
+			Render(m.statusPill))
 	}
 	if m.leftCard != nil {
 		parts = append(parts, renderCard(t, *m.leftCard, true, m.compactMode(), m.anchoredMode()))
@@ -260,7 +264,6 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 	if len(m.cards) == 0 {
 		return ""
 	}
-
 	entries := make([]cardEntry, 0, len(m.cards))
 	for i, c := range m.cards {
 		if strings.TrimSpace(c.Command) == "" {
@@ -271,16 +274,13 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 	if len(entries) == 0 {
 		return ""
 	}
-
 	if width < 0 {
 		return joinEntries(t, entries, m.compactMode(), m.anchoredMode())
 	}
-
 	rendered := joinEntries(t, entries, m.compactMode(), m.anchoredMode())
 	if lipgloss.Width(rendered) <= width {
 		return rendered
 	}
-
 	order := truncateOrder(entries)
 	for _, idx := range order {
 		entries[idx].showLabel = false
@@ -289,7 +289,6 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 			return rendered
 		}
 	}
-
 	keep := make([]bool, len(entries))
 	for i := range keep {
 		keep[i] = true
@@ -301,28 +300,38 @@ func (m *Model) renderCardBlock(t theme.Theme, width int) string {
 			return rendered
 		}
 	}
-
 	return clipWidth(rendered, width)
 }
 
 func (m *Model) compactMode() bool {
 	return m.compactCards || (m.role == RoleFooter && m.footerMode == FooterModeAnchored)
 }
-
 func (m *Model) anchoredMode() bool {
 	return m.role == RoleFooter && m.footerMode == FooterModeAnchored
 }
 
-// renderCard renders a command/label card pair for the bar.
 func renderCard(t theme.Theme, c Card, showLabel bool, compact bool, anchored bool) string {
 	if anchored {
-		sys := styles.New(t)
-		commandPart := sys.FooterCardCommandAnchored(string(c.Variant), c.Enabled).Render(c.Command)
+		var commandFG color.Color
+		switch c.Variant {
+		case CardDanger:
+			commandFG = t.Error()
+		case CardMuted:
+			commandFG = t.FooterMuted()
+		default:
+			commandFG = t.FooterFG()
+		}
+		if !c.Enabled {
+			commandFG = t.FooterMuted()
+		}
+		cmdStyle := lipgloss.NewStyle().Bold(true).Foreground(commandFG)
+		commandPart := cmdStyle.Render(c.Command)
 		label := strings.TrimSpace(c.Label)
 		if !showLabel || label == "" {
 			return commandPart
 		}
-		labelPart := sys.FooterCardLabelAnchored(string(c.Variant), c.Enabled).Render(label)
+		labelStyle := lipgloss.NewStyle().Foreground(t.FooterMuted())
+		labelPart := labelStyle.Render(label)
 		if compact {
 			if strings.EqualFold(label, c.Command) || strings.HasPrefix(strings.ToLower(label), strings.ToLower(c.Command)+" ") {
 				return labelPart
@@ -332,13 +341,33 @@ func renderCard(t theme.Theme, c Card, showLabel bool, compact bool, anchored bo
 		return commandPart + " " + labelPart
 	}
 
-	sys := styles.New(t)
-	commandPart := sys.FooterCardCommand(string(c.Variant), c.Enabled).Render(c.Command)
+	var commandFG, commandBG color.Color
+	switch c.Variant {
+	case CardPrimary:
+		commandFG, commandBG = t.SelectionFG(), t.SelectionBG()
+	case CardDanger:
+		commandFG, commandBG = t.TextInverse(), t.Error()
+	case CardMuted:
+		commandFG, commandBG = t.TextMuted(), t.BackgroundPanel()
+	default:
+		commandFG, commandBG = t.SelectionFG(), t.BorderFocus()
+	}
+	if !c.Enabled {
+		commandFG, commandBG = t.TextMuted(), t.BackgroundPanel()
+	}
+	cmdStyle := lipgloss.NewStyle().Bold(true).Foreground(commandFG).Background(commandBG)
+	commandPart := cmdStyle.Render(c.Command)
 	label := strings.TrimSpace(c.Label)
 	if !showLabel || label == "" {
 		return commandPart
 	}
-	labelPart := sys.FooterCardLabel(string(c.Variant), c.Enabled).Render(label)
+	labelStyle := lipgloss.NewStyle().
+		Foreground(t.Text()).
+		Background(t.BackgroundInteractive())
+	if !c.Enabled {
+		labelStyle = lipgloss.NewStyle().Foreground(t.TextMuted()).Background(t.BackgroundPanel())
+	}
+	labelPart := labelStyle.Render(label)
 	if compact {
 		if strings.EqualFold(label, c.Command) || strings.HasPrefix(strings.ToLower(label), strings.ToLower(c.Command)+" ") {
 			return labelPart
@@ -389,8 +418,6 @@ func truncateOrder(entries []cardEntry) []int {
 	return idx
 }
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
 func nonEmpty(parts ...string) []string {
 	out := make([]string, 0, len(parts))
 	for _, p := range parts {
@@ -415,11 +442,6 @@ func max(a, b int) int {
 	return b
 }
 
-// composeAlignedLine builds the raw content string for a bar row.
-// It uses plain spaces to position left and right segments — the actual
-// background color is applied by renderRow() wrapping this output with
-// a single lipgloss Width() call, so every cell (including the gap) is
-// the same solid background. Never call this outside of renderLine.
 func composeAlignedLine(width int, left, right string) string {
 	left = strings.TrimSpace(left)
 	right = strings.TrimSpace(right)
@@ -430,8 +452,6 @@ func composeAlignedLine(width int, left, right string) string {
 		return left
 	}
 	if left == "" {
-		// renderRow's Width() will right-justify by filling the full width,
-		// but we still need the right content anchored at the right edge.
 		pad := max(0, width-lipgloss.Width(right))
 		return strings.Repeat(" ", pad) + right
 	}

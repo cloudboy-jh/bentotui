@@ -1,13 +1,14 @@
-// Brick: Badge:
+// Brick: Badge
 // +-----------------------------+
 // | [ variant label text ]      |
 // +-----------------------------+
 // Inline status/emphasis pill.
-// Package badge provides a small inline themed label.
 // Copy this file into your project: bento add badge
 package badge
 
 import (
+	"image/color"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/theme"
@@ -31,6 +32,7 @@ type Model struct {
 	bold    bool
 	width   int
 	height  int
+	theme   theme.Theme // nil = use theme.CurrentTheme()
 }
 
 func New(text string) *Model {
@@ -40,42 +42,45 @@ func New(text string) *Model {
 func (m *Model) SetText(text string)                 { m.text = text }
 func (m *Model) SetVariant(v Variant)                { m.variant = v }
 func (m *Model) SetBold(b bool)                      { m.bold = b }
-func (m *Model) SetSize(width, height int)           { m.width, m.height = width, height }
+func (m *Model) SetSize(w, h int)                    { m.width, m.height = w, h }
 func (m *Model) GetSize() (int, int)                 { return m.width, m.height }
 func (m *Model) Init() tea.Cmd                       { return nil }
 func (m *Model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 
+// SetTheme updates the theme. Call on ThemeChangedMsg.
+func (m *Model) SetTheme(t theme.Theme) { m.theme = t }
+
+func (m *Model) activeTheme() theme.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return theme.CurrentTheme()
+}
+
 func (m *Model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.activeTheme()
 	fg, bg := badgeColors(t, m.variant)
 	style := lipgloss.NewStyle().
-		Foreground(lipgloss.Color(fg)).
-		Background(lipgloss.Color(bg)).
+		Foreground(fg).
+		Background(bg).
 		Padding(0, 1).
 		Bold(m.bold)
 	return tea.NewView(style.Render(m.text))
 }
 
-func badgeColors(t theme.Theme, v Variant) (fg, bg string) {
+func badgeColors(t theme.Theme, v Variant) (fg, bg color.Color) {
 	switch v {
 	case VariantNeutral:
-		return pick(t.Text.Primary, t.Text.Inverse), pick(t.Surface.Panel, t.Surface.Canvas)
+		return t.Text(), t.BackgroundPanel()
 	case VariantInfo:
-		return pick(t.Text.Inverse, t.Text.Primary), pick(t.State.Info, t.Text.Accent)
+		return t.TextInverse(), t.Info()
 	case VariantSuccess:
-		return pick(t.Text.Inverse, t.Text.Primary), pick(t.State.Success, t.Text.Accent)
+		return t.TextInverse(), t.Success()
 	case VariantWarning:
-		return pick(t.Text.Inverse, t.Text.Primary), pick(t.State.Warning, t.Text.Accent)
+		return t.TextInverse(), t.Warning()
 	case VariantDanger:
-		return pick(t.Text.Inverse, t.Text.Primary), pick(t.State.Danger, t.Text.Accent)
-	default:
-		return pick(t.Selection.FG, t.Text.Inverse), pick(t.Selection.BG, t.Text.Accent)
+		return t.TextInverse(), t.Error()
+	default: // VariantAccent
+		return t.SelectionFG(), t.SelectionBG()
 	}
-}
-
-func pick(v, fallback string) string {
-	if v == "" {
-		return fallback
-	}
-	return v
 }
