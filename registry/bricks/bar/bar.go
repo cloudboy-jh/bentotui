@@ -145,7 +145,11 @@ func (m *Model) View() tea.View {
 	if m.width == 0 {
 		line := strings.TrimSpace(strings.Join(nonEmpty(left, cards, rightRaw), "  "))
 		colors := styles.New(t).StatusRowColors(string(m.role), m.role == RoleFooter && m.footerMode == FooterModeAnchored)
-		return tea.NewView(lipgloss.NewStyle().Foreground(lipgloss.Color(colors.FG)).Background(lipgloss.Color(colors.BG)).Render(line))
+		// No width — single solid background, no seam.
+		return tea.NewView(lipgloss.NewStyle().
+			Foreground(lipgloss.Color(colors.FG)).
+			Background(lipgloss.Color(colors.BG)).
+			Render(line))
 	}
 
 	right := rightRaw
@@ -217,12 +221,14 @@ func (m *Model) renderLine(t theme.Theme, text string) tea.View {
 }
 
 // renderRow renders a full-width bar row with a single lipgloss call.
-// Background fills every cell — no canvas layers, no ANSI bleed.
+// Background fills every cell — no canvas seams, no ANSI bleed.
+// The entire width is owned by one style.Width() call so the gap between
+// left and right segments is the same background color as the rest of the bar.
 func renderRow(width int, bg, fg, content string) string {
 	if width <= 0 {
 		return ""
 	}
-	return styles.RowClip(bg, fg, width, content)
+	return styles.Row(bg, fg, width, styles.ClipANSI(content, width))
 }
 
 func (m *Model) renderLeftSegment(t theme.Theme) string {
@@ -409,6 +415,11 @@ func max(a, b int) int {
 	return b
 }
 
+// composeAlignedLine builds the raw content string for a bar row.
+// It uses plain spaces to position left and right segments — the actual
+// background color is applied by renderRow() wrapping this output with
+// a single lipgloss Width() call, so every cell (including the gap) is
+// the same solid background. Never call this outside of renderLine.
 func composeAlignedLine(width int, left, right string) string {
 	left = strings.TrimSpace(left)
 	right = strings.TrimSpace(right)
@@ -419,10 +430,14 @@ func composeAlignedLine(width int, left, right string) string {
 		return left
 	}
 	if left == "" {
+		// renderRow's Width() will right-justify by filling the full width,
+		// but we still need the right content anchored at the right edge.
 		pad := max(0, width-lipgloss.Width(right))
 		return strings.Repeat(" ", pad) + right
 	}
-	pad := width - lipgloss.Width(left) - lipgloss.Width(right)
+	lw := lipgloss.Width(left)
+	rw := lipgloss.Width(right)
+	pad := width - lw - rw
 	if pad < 1 {
 		pad = 1
 	}
