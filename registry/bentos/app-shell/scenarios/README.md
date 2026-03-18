@@ -1,4 +1,5 @@
 This directory is intentionally retired.
 
-App-shell no longer runs scenario-driven harness flows; it now renders a
-single-screen UX composition model from `state/`.
+`app-shell` is now maintained as a template-grade bento rooted in `state/`.
+Use `registry/bentos/app-shell` directly as the baseline shell and compose new
+pages with `registry/rooms` contracts.

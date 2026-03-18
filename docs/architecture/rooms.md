@@ -1,7 +1,11 @@
 # BentoTUI Rooms
 
-`registry/rooms` provides named layout functions. Each function takes
-`(width, height, ...cells)` and returns a rendered `string`.
+`registry/rooms` is BentoTUI's page-layout grammar.
+
+You import the package once per page file, then choose a room function for that
+page's shape.
+
+Each room takes `(width, height, ...cells)` and returns a rendered `string`.
 
 Rules:
 
@@ -10,6 +14,21 @@ Rules:
 - Composite room output through `surface` in your app `View()`
 - `Frame` and its variants have been removed — use `Pancake`, `TopbarPancake`,
   or `Focus` instead
+
+---
+
+## Room selection model
+
+Pick one room per page:
+
+- simple command page: `rooms.Focus`
+- workspace shell: `rooms.AppShell`
+- sidebar details page: `rooms.SidebarDetail`
+- diff screen: `rooms.DiffWorkspace`
+- metrics screen: `rooms.Dashboard`
+
+Lower-level room functions (`HSplit`, `VSplit`, `HolyGrail`, etc.) remain
+available as advanced building blocks.
 
 ---
 
@@ -34,6 +53,15 @@ rooms.RenderFunc(func(width, height int) string { ... })
 ---
 
 ## Named Rooms
+
+### Product rooms (recommended first)
+
+- `AppShell(w, h, content, footer)`
+- `SidebarDetail(w, h, sidebarWidth, sidebar, detail, footer)`
+- `Dashboard(w, h, topLeft, topRight, bottomLeft, bottomRight, footer)`
+- `DiffWorkspace(w, h, railWidth, header, fileRail, diffMain, footer)`
+
+### Core rooms
 
 ### Focus layouts
 
@@ -71,6 +99,29 @@ rooms.RenderFunc(func(width, height int) string { ... })
 ### Strip layout
 
 - `BigTopStrip(w, h, stripHeight, primary, strip)`
+
+---
+
+## Per-page usage example
+
+```go
+import "github.com/cloudboy-jh/bentotui/registry/rooms"
+
+func (m *diffPage) View() tea.View {
+    screen := rooms.DiffWorkspace(
+        m.width,
+        m.height,
+        28,
+        m.header,
+        m.fileRail,
+        m.diffMain,
+        m.footer,
+    )
+    return tea.NewView(screen)
+}
+```
+
+`main.go` should route pages. Page files should choose rooms.
 
 ---
 

@@ -1,12 +1,16 @@
 # BentoTUI Architecture
 
-v0.4.0 — updated after theme interface refactor + panel/elevated-card merge + Frame removal
+v0.5.0 direction — productized bricks + rooms + bentos
 
 ## Overview
 
-BentoTUI is a **registry of copy-and-own components**, not a framework. Run
-`bento add card` and the source lands in your project. You own it. There is no
-framework to fight, no lifecycle to satisfy, no theming engine you must appease.
+BentoTUI is a **product system for full Go TUIs**:
+
+- `bricks`: official copy-and-own UI components
+- `rooms`: named page layout patterns
+- `bentos`: full app templates for fast shipping
+
+Run `bento add card` and the source lands in your project. You own it.
 
 The three stable shared imports are `theme`, `theme/styles`, and `registry/rooms`.
 Everything under `registry/bricks/` is copy-and-own.
@@ -44,9 +48,9 @@ Bubble Tea v2 frame (tea.NewView, AltScreen, BackgroundColor)
 Registry shape:
 
 ```
-registry/bentos/  → full apps (state machine + orchestration)
-registry/rooms/   → geometry/layout grammar only
-registry/bricks/  → reusable UI components (copy-and-own)
+registry/bentos/  → template apps (state machine + orchestration)
+registry/rooms/   → named page layouts + geometry grammar
+registry/bricks/  → official UI components (copy-and-own)
 ```
 
 ---

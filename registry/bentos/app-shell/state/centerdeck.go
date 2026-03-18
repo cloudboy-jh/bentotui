@@ -11,6 +11,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/registry/bricks/progress"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/table"
 	"github.com/cloudboy-jh/bentotui/registry/rooms"
+	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 type centerDeck struct {
@@ -111,13 +112,13 @@ func (d *centerDeck) SetActiveSection(section string) {
 
 	switch section {
 	case "Services":
-		
+
 	case "Queue":
-		
+
 	case "Progress":
-		
+
 	default:
-		
+
 	}
 }
 
@@ -145,6 +146,15 @@ func (d *centerDeck) SetWorkspaceMeta(section string, compact bool) {
 func (d *centerDeck) SetProgress(value float64, label string) {
 	d.progress.SetValue(value, label)
 	d.progressCard.SetFooter(fmt.Sprintf("overall %.0f%%", value*100))
+}
+
+func (d *centerDeck) SetTheme(t theme.Theme) {
+	if t == nil {
+		return
+	}
+	d.tableCard.SetTheme(t)
+	d.queueCard.SetTheme(t)
+	d.progressCard.SetTheme(t)
 }
 
 type progressPane struct {

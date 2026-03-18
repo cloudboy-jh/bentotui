@@ -6,6 +6,24 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-18
+
+### Added
+
+- Added high-level room contracts in `registry/rooms`:
+  `AppShell`, `SidebarDetail`, `Dashboard`, and `DiffWorkspace`.
+- Added guardrail policy tests in `internal/policy/guardrails_test.go` and
+  CI coverage in `.github/workflows/ci.yml`.
+- Added `docs/usage-guide.md` and `docs/astro-content.md` to lock Bento-first
+  positioning and website messaging.
+
+### Changed
+
+- Reframed docs and READMEs around a product workflow:
+  bricks (official components), rooms (page layouts), bentos (template apps).
+- Updated starter/scaffold copy to guide users toward rooms + bricks page
+  composition instead of low-level component exploration.
+
 ## [0.4.1] - 2026-03-18
 
 ### Added

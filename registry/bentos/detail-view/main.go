@@ -41,6 +41,7 @@ type item struct {
 }
 
 type model struct {
+	theme  theme.Theme
 	width  int
 	height int
 
@@ -64,6 +65,7 @@ func main() {
 }
 
 func newModel() *model {
+	themeValue := theme.CurrentTheme()
 	items := []item{
 		{title: "Account", kind: "section", meta: "identity, profile, notifications"},
 		{title: "Billing", kind: "section", meta: "plans, seats, invoices"},
@@ -80,16 +82,19 @@ func newModel() *model {
 	navCard := card.New(
 		card.Title("Sections"),
 		card.Content(nav),
+		card.WithTheme(themeValue),
 	)
 	detailText := &textBlock{}
 	detailCard := card.New(
 		card.Title("Detail"),
 		card.Content(detailText),
+		card.WithTheme(themeValue),
 	)
 	sessionText := &textBlock{}
 	sessionCard := card.New(
 		card.Title("Session"),
 		card.Content(sessionText),
+		card.WithTheme(themeValue),
 	)
 
 	footer := bar.New(
@@ -101,9 +106,11 @@ func newModel() *model {
 			bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 		),
 		bar.CompactCards(),
+		bar.WithTheme(themeValue),
 	)
 
 	m := &model{
+		theme:       themeValue,
 		items:       items,
 		navList:     nav,
 		navCard:     navCard,
@@ -142,12 +149,20 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.syncDetail()
 			}
 		}
+	case theme.ThemeChangedMsg:
+		if msg.Theme != nil {
+			m.theme = msg.Theme
+			m.navCard.SetTheme(m.theme)
+			m.detailCard.SetTheme(m.theme)
+			m.sessionCard.SetTheme(m.theme)
+			m.footer.SetTheme(m.theme)
+		}
 	}
 	return m, nil
 }
 
 func (m *model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.theme
 	canvas := t.Background()
 	if m.width == 0 {
 		v := tea.NewView("")

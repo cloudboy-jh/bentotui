@@ -3,10 +3,11 @@
 API reference for every registry brick.
 All bricks are copy-and-own — run `bento add <name>` to copy source into your project.
 
-Charm-first policy: when Charm ships a mature primitive, Bento bricks wrap it
-and map theme tokens on top. Do not add custom reimplementations of `list`,
-`table`, `textinput`, `filepicker`, `progress`, or similar when the Charm
-version works.
+Bento-first policy: bricks are the official app-facing API. Users should be
+able to build full apps from bricks without touching raw bubbles internals.
+
+Some bricks use Charm primitives internally, but that remains an implementation
+detail hidden behind Bento APIs.
 
 Primitive policy: Bento does not ship a `spinner` brick. Use
 `charm.land/bubbles/v2/spinner` directly.

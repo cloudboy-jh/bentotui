@@ -94,6 +94,7 @@ const mainGoTemplate = `package main
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -106,7 +107,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.4.0"
+const version = "v0.5.0"
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
 	"██╔══██╗██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗\n" +
@@ -122,6 +123,7 @@ func main() {
 }
 
 type model struct {
+	theme     theme.Theme
 	inputBox  *input.Model
 	footerBar *bar.Model
 	dialogs   *dialog.Manager
@@ -131,8 +133,10 @@ type model struct {
 }
 
 func newModel() *model {
+	t := theme.CurrentTheme()
 	inp := input.New()
 	inp.SetPlaceholder("Ask anything... /theme /dialog")
+	inp.SetTheme(t)
 	foot := bar.New(
 		bar.FooterAnchored(),
 		bar.Left("~ {{.AppName}}"),
@@ -141,8 +145,9 @@ func newModel() *model {
 			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 		),
 		bar.CompactCards(),
+		bar.WithTheme(t),
 	)
-	return &model{inputBox: inp, footerBar: foot, dialogs: dialog.New()}
+	return &model{theme: t, inputBox: inp, footerBar: foot, dialogs: dialog.New()}
 }
 
 func (m *model) Init() tea.Cmd { return m.inputBox.Focus() }
@@ -199,7 +204,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.theme
 	canvasColor := t.Background()
 	if m.width == 0 {
 		v := tea.NewView("")
@@ -219,10 +224,10 @@ func (m *model) View() tea.View {
 	}
 	contentW := max(1, inputBlockW-5)
 	inputStr := viewString(m.inputBox.View())
-	mkRow := func(fg, content string) string {
+	mkRow := func(fg color.Color, content string) string {
 		return lipgloss.NewStyle().
 			Background(t.InputBG()).
-			Foreground(lipgloss.Color(fg)).
+			Foreground(fg).
 			PaddingLeft(2).PaddingRight(2).
 			Width(contentW).
 			Render(content)
@@ -231,7 +236,7 @@ func (m *model) View() tea.View {
 	inner := lipgloss.JoinVertical(lipgloss.Left,
 		blankRow,
 		mkRow(t.InputFG(), inputStr),
-		mkRow(t.TextMuted(), "type /theme or /dialog"),
+		mkRow(t.TextMuted(), "add bricks, pick a room, ship a page"),
 		blankRow,
 	)
 	block := lipgloss.NewStyle().
@@ -243,7 +248,7 @@ func (m *model) View() tea.View {
 
 	kbdStr := dim.Render("enter ") + bright.Render("submit") + dim.Render("  ctrl+c ") + bright.Render("quit")
 	tipDot := lipgloss.NewStyle().Foreground(t.Info()).Render("* Tip")
-	tipStr := tipDot + dim.Render("  This file is yours. Edit anything.")
+	tipStr := tipDot + dim.Render("  This app is yours. Build pages with rooms + bricks.")
 
 	body := rooms.RenderFunc(func(width, height int) string {
 		center := func(s string) string {
@@ -283,7 +288,12 @@ func (m *model) View() tea.View {
 }
 
 func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
-	_ = msg
+	if msg.Theme == nil {
+		return
+	}
+	m.theme = msg.Theme
+	m.inputBox.SetTheme(m.theme)
+	m.footerBar.SetTheme(m.theme)
 }
 
 func openThemePicker() tea.Cmd {

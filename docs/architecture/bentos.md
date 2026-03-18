@@ -1,13 +1,15 @@
 # Bentos
 
-`registry/bentos/` contains full runnable apps.
+`registry/bentos/` contains template-grade runnable apps.
 
-A **bento** is the full app composition layer:
+A **bento** is the full app composition layer you clone/remix to ship quickly:
 
 - state machine and focus ownership
 - keymap and interaction flow
 - draw/layer order and dialog routing
 - product-facing UX composition
+
+Bentos are not toy demos. They are the fastest starting point for real apps.
 
 ---
 
@@ -18,6 +20,7 @@ A **bento** is the full app composition layer:
 - Bentos hold `m.theme theme.Theme` as app state
 - Bentos call `SetTheme()` on bricks when `theme.ThemeChangedMsg` arrives
 - Bentos own final frame composition (`surface.Fill` + `surface.Draw`)
+- Bentos avoid direct raw `bubbles/*` imports unless a gap is explicitly allowed
 
 ---
 
@@ -62,7 +65,7 @@ Recommended frame stack:
 
 | Bento | Description |
 |---|---|
-| `home-screen` | Starter-style entry screen with theme picker and command hint |
+| `home-screen` | Starter entry shell with theme picker and command hint |
 | `dashboard` | Dense card/table composition — 2×2 grid of metric cards |
 | `app-shell` | Single-screen composition bento: rail + table + list + progress + command palette |
 | `detail-view` | List + detail pane split view |
@@ -72,14 +75,24 @@ Recommended frame stack:
 
 ## app-shell role
 
-`registry/bentos/app-shell` is the canonical UX proving ground.
+`registry/bentos/app-shell` is the canonical workspace template.
 
 It demonstrates the full Bento contract:
 
-- rooms provide geometry (`RailFooterStack`)
+- rooms provide page contracts (`AppShell`) plus lower-level geometry when needed
 - bricks provide primitives (card/table/list/progress/dialog/bar)
 - theme switching is explicit: `ThemeChangedMsg` → `SetTheme` on bricks
 - command palette is wired to the footer keybind
 
-Use app-shell to validate that a new brick or room layout composes correctly
-before shipping it.
+Use app-shell to validate a new brick/room contract before shipping it.
+
+---
+
+## One-day build target
+
+The intended workflow:
+
+1. Start from `home-screen` or `app-shell`
+2. Replace fake data with your domain
+3. Add pages using room patterns
+4. Ship a serious app shell in one day

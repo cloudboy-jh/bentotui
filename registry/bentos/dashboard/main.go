@@ -46,6 +46,7 @@ func (t *textBlock) View() tea.View {
 }
 
 type model struct {
+	theme  theme.Theme
 	width  int
 	height int
 
@@ -79,6 +80,7 @@ func main() {
 }
 
 func newModel() *model {
+	themeValue := theme.CurrentTheme()
 	t := table.New("SERVICE", "STATUS", "LATENCY", "ERR%")
 	t.SetCompact(true)
 	t.SetBorderless(true)
@@ -99,6 +101,7 @@ func newModel() *model {
 	tTxt := &textBlock{}
 
 	m := &model{
+		theme: themeValue,
 		botBar: bar.New(
 			bar.FooterAnchored(),
 			bar.Left(""),
@@ -107,6 +110,7 @@ func newModel() *model {
 				bar.Card{Command: "q", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 			),
 			bar.CompactCards(),
+			bar.WithTheme(themeValue),
 		),
 		metricATxt:   mATxt,
 		metricBTxt:   mBTxt,
@@ -121,10 +125,10 @@ func newModel() *model {
 		metricCValue: "Last deploy: 23m ago",
 	}
 
-	m.metricA = card.New(card.Title("Requests"), card.Content(mATxt))
-	m.metricB = card.New(card.Title("Errors"), card.Content(mBTxt))
-	m.metricC = card.New(card.Title("Deploy"), card.Content(mCTxt))
-	m.tableP = card.New(card.Title("Service Health"), card.Content(tTxt))
+	m.metricA = card.New(card.Title("Requests"), card.Content(mATxt), card.WithTheme(themeValue))
+	m.metricB = card.New(card.Title("Errors"), card.Content(mBTxt), card.WithTheme(themeValue))
+	m.metricC = card.New(card.Title("Deploy"), card.Content(mCTxt), card.WithTheme(themeValue))
+	m.tableP = card.New(card.Title("Service Health"), card.Content(tTxt), card.WithTheme(themeValue))
 
 	return m
 }
@@ -148,12 +152,21 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.metricBValue = "0.31%"
 			m.metricCValue = "Last deploy: 24m ago"
 		}
+	case theme.ThemeChangedMsg:
+		if msg.Theme != nil {
+			m.theme = msg.Theme
+			m.botBar.SetTheme(m.theme)
+			m.metricA.SetTheme(m.theme)
+			m.metricB.SetTheme(m.theme)
+			m.metricC.SetTheme(m.theme)
+			m.tableP.SetTheme(m.theme)
+		}
 	}
 	return m, nil
 }
 
 func (m *model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.theme
 	canvas := t.Background()
 
 	if m.width == 0 {

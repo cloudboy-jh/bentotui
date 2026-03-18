@@ -10,13 +10,17 @@
 [![Status](https://img.shields.io/badge/status-main%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
-The **shadcn of TUIs** — a registry of copy-and-own terminal UI components built on
-[Bubble Tea v2](https://github.com/charmbracelet/bubbletea) and
-[Lip Gloss v2](https://github.com/charmbracelet/lipgloss).
+The **best way to build full Go TUIs fast** — opinionated components, named
+layout rooms, and template apps you can remix quickly.
 
 Run `bento add card` and the source lands in your project. You own it — read it,
-modify it, delete what you don't need. No framework, no lifecycle, no theming
-engine you must satisfy.
+modify it, delete what you do not need.
+
+Build apps with:
+
+- **bricks** for UI components
+- **rooms** for page layout contracts
+- **bentos** for full app templates
 
 ## How it works
 
@@ -25,8 +29,8 @@ Three building blocks:
 | Thing | What it is |
 |---|---|
 | **bricks** | UI components — copied into your project via `bento add`. You own them. |
-| **rooms** | Layout geometry functions — imported, not copied. Zero color, zero theme. |
-| **bentos** | Complete runnable apps demonstrating real composition patterns. |
+| **rooms** | Named layout contracts for pages. Imported, not copied. Zero color, zero theme. |
+| **bentos** | Complete app templates you can clone/remix for production. |
 
 ```
 registry/bricks/    ← copy-and-own via `bento add`
@@ -51,6 +55,7 @@ go run ./registry/bentos/home-screen
 # Other bentos
 go run ./registry/bentos/dashboard
 go run ./registry/bentos/app-shell
+go run ./registry/bentos/detail-view
 
 # Copy bricks into your project
 bento add card bar input dialog list table surface
@@ -80,10 +85,10 @@ c.SetTheme(newTheme)
 | `surface` | Full-screen Ultraviolet cell buffer. Deterministic background paint. |
 | `card` | Content container — raised (chrome band) or flat (titled pane) via `Flat()`. Replaces `panel` + `elevated-card`. |
 | `bar` | Header/footer row with keybind cards, status pill, priority-aware overflow. |
-| `input` | Single-line text field wrapping `bubbles/textinput`. |
+| `input` | Single-line text field for command bars and forms. |
 | `dialog` | Modal manager — `Confirm`, `Custom`, `ThemePicker`, `CommandPalette`. |
-| `list` | Scrollable list with sections and structured rows, backed by `bubbles/list`. |
-| `table` | Header + data rows with compact/borderless/grid modes, backed by `bubbles/table`. |
+| `list` | Scrollable list with sections and structured rows. |
+| `table` | Header + data rows with compact/borderless/grid modes. |
 | `badge` | Inline status label — neutral, info, success, warning, danger, accent. |
 | `tabs` | Keyboard-navigable tab row. |
 | `kbd` | Keyboard shortcut pair (`command label`). |
@@ -95,7 +100,6 @@ c.SetTheme(newTheme)
 | `separator` | Horizontal or vertical divider. |
 | `text` | Static themed label. |
 | `wordmark` | Themed heading/title block. |
-| `kbd` | Keyboard shortcut command + label pair. |
 | `package-manager` | Sequential install flow with spinner + progress. |
 
 Primitive policy: Bento does not ship a `spinner` brick. Use `charm.land/bubbles/v2/spinner` directly.
@@ -112,6 +116,24 @@ Complete runnable screen patterns in `registry/bentos/`. Copy and own wholesale.
 | `detail-view` | List + detail split pane |
 | `dashboard-brick-lab` | Component showcase — list/table/filepicker/progress in cards |
 
+Use these as template baselines: keep the room contract, replace data and
+interactions with your own domain.
+
+## Rooms
+
+Import once per page file and choose a room function for that page.
+
+```go
+import "github.com/cloudboy-jh/bentotui/registry/rooms"
+
+screen := rooms.AppShell(w, h, content, footer)
+screen := rooms.SidebarDetail(w, h, 26, nav, detail, footer)
+screen := rooms.DiffWorkspace(w, h, 28, header, files, diff, footer)
+```
+
+Lower-level composition functions (`HSplit`, `VSplit`, `HolyGrail`, etc.) remain
+available for advanced layouts.
+
 ## Stable imports
 
 Three packages you import directly (not copied):
@@ -123,11 +145,20 @@ import "github.com/cloudboy-jh/bentotui/theme"
 // Row/RowClip/ClipANSI rendering utilities
 import "github.com/cloudboy-jh/bentotui/theme/styles"
 
-// Layout geometry — Focus, Rail, HolyGrail, HSplit, VSplit, ...
+// Layout contracts and geometry — AppShell, SidebarDetail, DiffWorkspace, ...
 import "github.com/cloudboy-jh/bentotui/registry/rooms"
 ```
 
 Everything else is copy-and-own.
+
+## Usage policy
+
+Use Bento defaults first:
+
+- Use `bento add` bricks for UI primitives you want to own
+- Use `registry/rooms` to pick room contracts per page
+- Use `theme` tokens for colors and state
+- Keep raw `bubbles/*` usage out of bentos unless there is a documented gap (current exception: spinner)
 
 ## Theme system
 
@@ -257,6 +288,8 @@ Bubble Tea v2 (tea.NewView, AltScreen, BackgroundColor)
 - [docs/architecture/bentos.md](./docs/architecture/bentos.md) — full app composition
 - [docs/theme-engine.md](./docs/theme-engine.md) — theme interface, presets, custom themes
 - [docs/coloring-rules.md](./docs/coloring-rules.md) — rules for correct color usage in bricks
+- [docs/usage-guide.md](./docs/usage-guide.md) — use Bento defaults first, layering/import rules
+- [docs/astro-content.md](./docs/astro-content.md) — website/marketing copy source
 
 ## License
 

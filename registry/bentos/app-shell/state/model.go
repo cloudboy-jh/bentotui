@@ -20,6 +20,7 @@ type toggleCompactMsg struct{}
 type pulseProgressMsg struct{}
 
 type Model struct {
+	theme  theme.Theme
 	width  int
 	height int
 
@@ -52,6 +53,7 @@ func NewModel() *Model {
 	}
 
 	m := &Model{
+		theme:      theme.CurrentTheme(),
 		sections:   []string{"Overview", "Services", "Queue", "Progress"},
 		centerDeck: deck,
 		themeOrder: themes,
@@ -70,6 +72,8 @@ func NewModel() *Model {
 		bar.Cards(ui.FooterCards()...),
 		bar.CompactCards(),
 	)
+	m.footer.SetTheme(m.theme)
+	m.centerDeck.SetTheme(m.theme)
 	m.syncAll()
 	return m
 }
@@ -156,7 +160,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.theme
 	canvas := t.Background()
 
 	if m.width == 0 {
@@ -168,7 +172,7 @@ func (m *Model) View() tea.View {
 
 	m.syncAll()
 
-	screen := rooms.Focus(m.width, m.height, m.centerDeck, m.footer)
+	screen := rooms.AppShell(m.width, m.height, m.centerDeck, m.footer)
 
 	surf := surface.New(m.width, m.height)
 	surf.Fill(canvas)
@@ -205,7 +209,7 @@ func (m *Model) syncAll() {
 
 func (m *Model) syncFooterLine() {
 	left := fmt.Sprintf("%s | queue:%d", strings.ToLower(m.sections[m.sectionIdx]), m.queueIdx+1)
-	right := fmt.Sprintf("theme:%s compact:%t %s", theme.CurrentThemeName(), m.compact, m.status)
+	right := fmt.Sprintf("theme:%s compact:%t %s", m.theme.Name(), m.compact, m.status)
 	m.footer.SetLeft(left)
 	m.footer.SetRight(right)
 }
@@ -234,10 +238,14 @@ func (m *Model) shiftTheme(step int) {
 }
 
 func (m *Model) applyTheme(name string) {
-	if _, err := theme.SetTheme(name); err != nil {
+	t, err := theme.SetTheme(name)
+	if err != nil {
 		m.status = "theme error: " + err.Error()
 		return
 	}
+	m.theme = t
+	m.footer.SetTheme(m.theme)
+	m.centerDeck.SetTheme(m.theme)
 	for i, n := range m.themeOrder {
 		if n == name {
 			m.themeIdx = i

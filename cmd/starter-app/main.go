@@ -18,7 +18,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.4.0"
+const version = "v0.5.0"
 
 // wordmark is large ASCII art rendered centered in the upper body.
 const wordmark = "" +
@@ -39,6 +39,7 @@ func main() {
 // ── model ─────────────────────────────────────────────────────────────────────
 
 type model struct {
+	theme     theme.Theme
 	inputBox  *input.Model
 	footerBar *bar.Model
 	dialogs   *dialog.Manager
@@ -48,8 +49,10 @@ type model struct {
 }
 
 func newModel() *model {
+	t := theme.CurrentTheme()
 	inp := input.New()
 	inp.SetPlaceholder(`Ask anything… /theme  /dialog`)
+	inp.SetTheme(t)
 	foot := bar.New(
 		bar.FooterAnchored(),
 		bar.Left("~ bentotui:main"),
@@ -58,8 +61,10 @@ func newModel() *model {
 			bar.Card{Command: "ctrl+c", Label: "quit", Variant: bar.CardMuted, Enabled: true, Priority: 2},
 		),
 		bar.CompactCards(),
+		bar.WithTheme(t),
 	)
 	return &model{
+		theme:     t,
 		inputBox:  inp,
 		footerBar: foot,
 		dialogs:   dialog.New(),
@@ -129,7 +134,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.theme
 	canvasColor := t.Background()
 
 	// Always enter alt screen from frame 1 — before WindowSizeMsg arrives.
@@ -167,7 +172,7 @@ func (m *model) View() tea.View {
 	inner := lipgloss.JoinVertical(lipgloss.Left,
 		blankRow,
 		mkRow(t.InputFG(), inputStr),
-		mkRow(t.TextMuted(), "add   panel   list   input   table   dialog"),
+		mkRow(t.TextMuted(), "add   card   list   input   table   dialog"),
 		blankRow,
 	)
 	block := lipgloss.NewStyle().
@@ -177,11 +182,11 @@ func (m *model) View() tea.View {
 		Width(inputBlockW - 1).
 		Render(inner)
 
-	kbdStr := dim.Render("tab ") + bright.Render("components") +
+	kbdStr := dim.Render("tab ") + bright.Render("bricks") +
 		dim.Render("   ⌘K ") + bright.Render("commands")
 
 	dot := lipgloss.NewStyle().Foreground(t.Info()).Render("● Tip")
-	tipStr := dot + dim.Render("  Run bento init to scaffold a new TUI app")
+	tipStr := dot + dim.Render("  Build pages with rooms and compose with bricks")
 
 	body := rooms.RenderFunc(func(width, height int) string {
 		center := func(s string) string {
@@ -222,7 +227,12 @@ func (m *model) View() tea.View {
 
 // onThemeChange keeps the status bar in sync with the active theme.
 func (m *model) onThemeChange(msg theme.ThemeChangedMsg) {
-	_ = msg
+	if msg.Theme == nil {
+		return
+	}
+	m.theme = msg.Theme
+	m.inputBox.SetTheme(m.theme)
+	m.footerBar.SetTheme(m.theme)
 }
 
 // ── commands ──────────────────────────────────────────────────────────────────

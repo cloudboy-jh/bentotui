@@ -16,6 +16,7 @@ import (
 )
 
 type model struct {
+	theme  theme.Theme
 	width  int
 	height int
 	active int
@@ -83,6 +84,7 @@ func newModel() *model {
 	}
 
 	m := &model{
+		theme:      theme.CurrentTheme(),
 		active:     0,
 		themeOrder: themes,
 		themeIdx:   themeIdx,
@@ -108,6 +110,7 @@ func newModel() *model {
 	m.tblCard = card.New(card.Title("Table"), card.Content(m.table))
 	m.fpCard = card.New(card.Title("File Picker"), card.Content(m.filepicker))
 	m.pkgCard = card.New(card.Title("Package Manager"), card.Content(m.pkg))
+	m.applyTheme()
 	m.syncFocus()
 	return m
 }
@@ -180,7 +183,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() tea.View {
-	t := theme.CurrentTheme()
+	t := m.theme
 	canvas := t.Background()
 
 	if m.width <= 0 || m.height <= 0 {
@@ -208,7 +211,7 @@ func (m *model) View() tea.View {
 
 func (m *model) syncFooter() {
 	m.footer.SetLeft("focus: " + m.activeLabel())
-	m.footer.SetRight("theme: " + theme.CurrentThemeName())
+	m.footer.SetRight("theme: " + m.theme.Name())
 
 	if m.filepicker.Status() != "" {
 		m.fpCard.SetMeta(m.filepicker.Status())
@@ -260,11 +263,25 @@ func (m *model) shiftTheme(step int) {
 		return
 	}
 	m.themeIdx = (m.themeIdx + step + len(m.themeOrder)) % len(m.themeOrder)
-	if _, err := theme.SetTheme(m.themeOrder[m.themeIdx]); err != nil {
+	t, err := theme.SetTheme(m.themeOrder[m.themeIdx])
+	if err != nil {
 		// skip invalid theme, advance again
 		m.themeIdx = (m.themeIdx + step + len(m.themeOrder)) % len(m.themeOrder)
-		_, _ = theme.SetTheme(m.themeOrder[m.themeIdx])
+		t, err = theme.SetTheme(m.themeOrder[m.themeIdx])
+		if err != nil {
+			return
+		}
 	}
+	m.theme = t
+	m.applyTheme()
+}
+
+func (m *model) applyTheme() {
+	m.footer.SetTheme(m.theme)
+	m.listCard.SetTheme(m.theme)
+	m.tblCard.SetTheme(m.theme)
+	m.fpCard.SetTheme(m.theme)
+	m.pkgCard.SetTheme(m.theme)
 }
 
 func (m *model) updateActive(msg tea.Msg) tea.Cmd {

@@ -35,18 +35,19 @@ func runInitCLI(args []string) {
 	}
 
 	fmt.Println()
-	fmt.Println("Uses BentoTUI packages (not copied source):")
+	fmt.Println("Starter imports BentoTUI runtime packages:")
 	fmt.Println("  - github.com/cloudboy-jh/bentotui/theme")
 	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/bar")
 	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/dialog")
 	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/input")
 	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/bricks/surface")
+	fmt.Println("  - github.com/cloudboy-jh/bentotui/registry/rooms")
 
 	fmt.Println()
 	fmt.Println("You can do anything from here:")
 	fmt.Printf("  - cd %s && go run .\n", cfg.AppName)
-	fmt.Println("  - edit main.go directly")
-	fmt.Println("  - optionally run bento add <component> to copy-and-own source")
+	fmt.Println("  - edit main.go directly (choose a room per page)")
+	fmt.Println("  - run bento add <component> to copy-and-own source when you want ownership")
 
 	if _, err := os.Stat(filepath.Join(cfg.AppName, "go.sum")); err != nil {
 		fmt.Println()
@@ -139,7 +140,7 @@ Available components:
 	}
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  bento add panel")
+	fmt.Println("  bento add card")
 	fmt.Println("  bento add input bar surface")
 	fmt.Println("  bento add dialog")
 	fmt.Println()

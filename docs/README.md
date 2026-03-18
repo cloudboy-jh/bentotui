@@ -1,15 +1,17 @@
 # BentoTUI Documentation
 
-v0.4.0
+v0.5.0 (in progress)
 
 ---
 
+- [usage-guide.md](./usage-guide.md) — Build apps with bricks + rooms + bentos
+- [architecture/rooms.md](./architecture/rooms.md) — Named room layouts and page composition patterns
+- [architecture/bricks.md](./architecture/bricks.md) — Official brick APIs and conventions
+- [architecture/bentos.md](./architecture/bentos.md) — Template app contract and extension model
 - [architecture/architecture.md](./architecture/architecture.md) — Layer diagram, rendering contract, theme model, component rules
-- [architecture/bricks.md](./architecture/bricks.md) — Every brick's API with usage examples
-- [architecture/rooms.md](./architecture/rooms.md) — Room layout API and render flow
-- [architecture/bentos.md](./architecture/bentos.md) — Full app composition contract
 - [theme-engine.md](./theme-engine.md) — Theme interface, presets, custom themes, live switching
 - [coloring-rules.md](./coloring-rules.md) — Rules for correct color usage in bricks
+- [astro-content.md](./astro-content.md) — Marketing/site copy source for docs and landing pages
 - [next-steps.md](./next-steps.md) — Immediate priorities
 - [roadmap.md](./roadmap.md) — Backlog, non-goals
 
@@ -17,8 +19,11 @@ v0.4.0
 
 ## The short version
 
-BentoTUI is the **shadcn of TUIs** — copy components into your project, own them,
-modify them freely. No framework to fight.
+BentoTUI is the **best way to build full Go TUIs quickly**:
+
+- copy-and-own bricks
+- named rooms for layout
+- bento templates for full-screen apps
 
 **Three stable imports:**
 
@@ -28,7 +33,7 @@ modify them freely. No framework to fight.
 "github.com/cloudboy-jh/bentotui/registry/rooms" // Layout geometry
 ```
 
-**Everything else is copy-and-own** (`bento add card`, `bento add bar`, etc.).
+**Everything else is copy-and-own** (`bento add card`, `bento add list`, etc.).
 
 ---
 
@@ -37,11 +42,11 @@ modify them freely. No framework to fight.
 **Bricks** — UI components. Accept `WithTheme(t)` at construction, `SetTheme(t)` for
 live updates. Fall back to `theme.CurrentTheme()` if no theme was provided.
 
-**Rooms** — pure geometry functions. Zero color. Zero theme. Take `(width, height, cells...)`
-and return a rendered string.
+**Rooms** — named page layouts. Zero color, zero theme. Choose one per page and
+compose your app shape there.
 
-**Bentos** — full apps. Hold `m.theme theme.Theme` as app state. Call `SetTheme` on bricks
-when `theme.ThemeChangedMsg` arrives. Own final frame composition via `surface`.
+**Bentos** — template-grade full apps. Start here, replace data/domain logic,
+ship quickly.
 
 **Surface** — Ultraviolet-backed cell buffer. Every bento uses:
 `surface.New` → `Fill(bg)` → `Draw(layout)` → `DrawCenter(dialog)` → `Render()`.

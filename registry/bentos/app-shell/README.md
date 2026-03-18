@@ -1,9 +1,9 @@
 # app-shell
 
-Reference single-screen app bento for BentoTUI.
+Template-grade workspace bento for BentoTUI.
 
-This bento shows how rooms + bricks can compose into a complete app shell
-without rolling a custom TUI framework.
+This bento shows how rooms + bricks compose into a full app shell you can clone
+and adapt in a day.
 
 ## Run
 
@@ -15,7 +15,7 @@ go run ./registry/bentos/app-shell
 
 - main canvas: services table over queue/progress cards
 - bottom row: single anchored command bar
-- body room: `rooms.Focus(...)` (workspace + footer)
+- room contract: `rooms.AppShell(...)`
 
 ## Controls
 
@@ -38,3 +38,9 @@ go run ./registry/bentos/app-shell
 
 - `state/` root model, workspace deck, and palette actions
 - `ui/` footer copy helpers
+
+## Remix flow
+
+1. Keep the room contract and footer controls.
+2. Replace list/table/progress data with your domain data.
+3. Add pages behind the same shell as your app grows.
