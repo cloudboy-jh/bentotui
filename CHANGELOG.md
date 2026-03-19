@@ -6,6 +6,25 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-03-18
+
+### Fixed
+
+- `bento doctor` now checks copied bricks from `bricks/<name>` and derives the
+  checklist from the live brick registry instead of stale hardcoded entries.
+- CLI/TUI wording is aligned to Bento product language (`bricks` instead of
+  `components`) across help text, menus, install logs, and list output.
+
+### Added
+
+- Added `docs/product-direction.md` to lock scope discipline and define when
+  custom app-owned bricks are expected.
+
+### Changed
+
+- Updated usage and roadmap docs to clarify that Bento is not a maximal
+  component catalog and to document the custom-brick decision path.
+
 ## [0.5.0] - 2026-03-18
 
 ### Added

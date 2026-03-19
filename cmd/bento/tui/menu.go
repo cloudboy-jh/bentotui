@@ -9,7 +9,7 @@ import (
 
 var menuItems = []string{
 	"Initialize New Project",
-	"Add Components",
+	"Add Bricks",
 	"Run Doctor",
 	"Quit",
 }

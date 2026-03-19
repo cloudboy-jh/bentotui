@@ -54,6 +54,8 @@ Build BentoTUI as a full app product system:
 - Keep list/table as flagship polished bricks with stronger snapshots and docs.
 - New bricks only when the same gap appears in at least 2 bentos and cannot be
   composed from existing bricks.
+- Do not expand toward a maximal component catalog; prefer local app-owned bricks
+  for one-off needs.
 - No `spinner` brick — use `charm.land/bubbles/v2/spinner` directly.
 
 ### Testing

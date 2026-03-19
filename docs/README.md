@@ -12,6 +12,7 @@ v0.5.0 (in progress)
 - [theme-engine.md](./theme-engine.md) — Theme interface, presets, custom themes, live switching
 - [coloring-rules.md](./coloring-rules.md) — Rules for correct color usage in bricks
 - [astro-content.md](./astro-content.md) — Marketing/site copy source for docs and landing pages
+- [product-direction.md](./product-direction.md) — Scope and contract to reduce framework churn
 - [next-steps.md](./next-steps.md) — Immediate priorities
 - [roadmap.md](./roadmap.md) — Backlog, non-goals
 

@@ -37,26 +37,9 @@ func RunDoctor() DoctorReport {
 		results = append(results, checkModDep(pkg))
 	}
 
-	// Check for any copied registry components
-	for _, name := range []string{
-		"surface",
-		"panel",
-		"bar",
-		"dialog",
-		"list",
-		"table",
-		"text",
-		"input",
-		"badge",
-		"kbd",
-		"wordmark",
-		"select",
-		"checkbox",
-		"progress",
-		"tabs",
-		"toast",
-		"separator",
-	} {
+	// Check copied bricks from the current registry catalog.
+	for _, brick := range Registry() {
+		name := brick.Name
 		results = append(results, checkCopiedComponent(name))
 	}
 
@@ -141,7 +124,7 @@ func checkModDep(pkg string) CheckResult {
 }
 
 func checkCopiedComponent(name string) CheckResult {
-	dir := filepath.Join("components", name)
+	dir := filepath.Join("bricks", name)
 	entries, err := os.ReadDir(dir)
 	present := err == nil && len(entries) > 0
 	label := fmt.Sprintf("bricks/%s copied", name)

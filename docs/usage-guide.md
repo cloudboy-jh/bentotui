@@ -8,6 +8,9 @@ Use BentoTUI as a product system:
 
 If Bento has a primitive for the job, use Bento first.
 
+Do not treat Bento as a promise to ship every possible primitive as an official brick.
+For uncovered gaps, create local app-owned bricks and keep shipping.
+
 ---
 
 ## Default app flow
@@ -31,6 +34,21 @@ In app composition layers (`registry/bentos/*`, starter apps, generated starter)
 - Do not import raw `bubbles/*` directly when a Bento brick exists.
 - Keep Charm internals behind brick wrappers.
 - Exception: `spinner` is allowed until a Bento spinner strategy exists.
+
+---
+
+## When custom bricks are acceptable
+
+Custom bricks are expected when there is no official brick for your use case.
+
+Use this decision tree:
+
+1. If an official brick exists, use it.
+2. If not, compose from existing bricks + rooms.
+3. If that still does not fit, create a local app-owned brick.
+4. Propose upstream only when the same need repeats across multiple bentos.
+
+This keeps app delivery unblocked while preserving a focused official surface.
 
 ---
 

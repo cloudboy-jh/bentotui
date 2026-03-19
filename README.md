@@ -2,8 +2,8 @@
 
 # BentoTUI
 
-> [!WARNING]
-> Early development — APIs and registry paths will change.
+> [!NOTE]
+> Early development, but the core model is fixed: bricks (copy/own), rooms (imported layout contracts), and bentos (template apps).
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)

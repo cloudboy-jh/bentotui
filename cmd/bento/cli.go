@@ -47,7 +47,7 @@ func runInitCLI(args []string) {
 	fmt.Println("You can do anything from here:")
 	fmt.Printf("  - cd %s && go run .\n", cfg.AppName)
 	fmt.Println("  - edit main.go directly (choose a room per page)")
-	fmt.Println("  - run bento add <component> to copy-and-own source when you want ownership")
+	fmt.Println("  - run bento add <brick> to copy-and-own source when you want ownership")
 
 	if _, err := os.Stat(filepath.Join(cfg.AppName, "go.sum")); err != nil {
 		fmt.Println()
@@ -67,7 +67,7 @@ func runAddCLI(args []string) {
 
 	failures := 0
 	for _, name := range args {
-		fmt.Printf("Installing component: %s\n", name)
+		fmt.Printf("Installing brick: %s\n", name)
 
 		result := logic.InstallComponent(name)
 		if result.Error != nil {
@@ -85,7 +85,7 @@ func runAddCLI(args []string) {
 	}
 
 	if failures > 0 {
-		fatal("%d component(s) failed to install", failures)
+		fatal("%d brick(s) failed to install", failures)
 	}
 	fmt.Println("Done.")
 }
@@ -97,7 +97,7 @@ func runListCLI(args []string) {
 		return
 	}
 
-	fmt.Println("Available components:")
+	fmt.Println("Available bricks:")
 	for _, c := range logic.Registry() {
 		fmt.Printf("  %-10s %s\n", c.Name, c.Desc)
 	}
@@ -129,11 +129,11 @@ func runDoctorCLI(args []string) {
 }
 
 func printAddHelp() {
-	fmt.Print(`Usage: bento add <component> [component...]
+	fmt.Print(`Usage: bento add <brick> [brick...]
 
 Copies source into bricks/<name>/ and are yours to modify.
 
-Available components:
+Available bricks:
 `)
 	for _, c := range logic.Registry() {
 		fmt.Printf("  %-10s %s\n", c.Name, c.Desc)
@@ -149,7 +149,7 @@ Available components:
 func printListHelp() {
 	fmt.Print(`Usage: bento list
 
-Shows available registry components with one-line descriptions.
+Shows available registry bricks with one-line descriptions.
 
 Examples:
   bento list

@@ -30,7 +30,7 @@ func (a *App) handleComponentListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			a.state.SelectedComponents[comp.Name] = true
 		}
 	case "enter":
-		// Install selected components
+		// Install selected bricks
 		return a.installSelectedComponents()
 	}
 	return a, nil
@@ -41,7 +41,7 @@ func (a *App) renderComponentList(height int) string {
 	lines := make([]string, 0, len(registryComponents)+5)
 
 	// Title
-	lines = append(lines, "  Select components to install (space to toggle, enter to install):")
+	lines = append(lines, "  Select bricks to install (space to toggle, enter to install):")
 	lines = append(lines, "")
 
 	// Component list
@@ -90,11 +90,11 @@ func (a *App) renderComponentList(height int) string {
 
 func (a *App) installSelectedComponents() (tea.Model, tea.Cmd) {
 	if len(a.state.SelectedComponents) == 0 {
-		a.state.AddLog("No components selected")
+		a.state.AddLog("No bricks selected")
 		return a, nil
 	}
 
-	a.state.AddLog("Installing components...")
+	a.state.AddLog("Installing bricks...")
 
 	for name := range a.state.SelectedComponents {
 		a.state.AddLog("Installing: " + name)

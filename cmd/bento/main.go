@@ -55,8 +55,8 @@ Usage:
 
 Commands:
   init [name]          Scaffold a new BentoTUI app
-  add <component>      Copy-and-own a component into your project
-  list                 Show available registry components
+	add <brick>          Copy-and-own a brick into your project
+	list                 Show available registry bricks
   doctor               Check your project for common issues
   version              Print the bento version
   help                 Show this help message
