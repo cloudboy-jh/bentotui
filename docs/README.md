@@ -1,12 +1,13 @@
 # BentoTUI Documentation
 
-v0.5.0 (in progress)
+v0.5.2
 
 ---
 
-- [usage-guide.md](./usage-guide.md) — Build apps with bricks + rooms + bentos
+- [usage-guide.md](./usage-guide.md) — Build apps with bricks + recipes + rooms + bentos
 - [architecture/rooms.md](./architecture/rooms.md) — Named room layouts and page composition patterns
 - [architecture/bricks.md](./architecture/bricks.md) — Official brick APIs and conventions
+- [architecture/recipes.md](./architecture/recipes.md) — Composed recipe APIs and flow patterns
 - [architecture/bentos.md](./architecture/bentos.md) — Template app contract and extension model
 - [architecture/architecture.md](./architecture/architecture.md) — Layer diagram, rendering contract, theme model, component rules
 - [theme-engine.md](./theme-engine.md) — Theme interface, presets, custom themes, live switching
@@ -23,6 +24,7 @@ v0.5.0 (in progress)
 BentoTUI is the **best way to build full Go TUIs quickly**:
 
 - copy-and-own bricks
+- copy-and-own recipes for composed flows
 - named rooms for layout
 - bento templates for full-screen apps
 
@@ -34,7 +36,7 @@ BentoTUI is the **best way to build full Go TUIs quickly**:
 "github.com/cloudboy-jh/bentotui/registry/rooms" // Layout geometry
 ```
 
-**Everything else is copy-and-own** (`bento add card`, `bento add list`, etc.).
+**Everything else is copy-and-own** (`bento add card`, `bento add recipe filter-bar`, etc.).
 
 ---
 
@@ -42,6 +44,9 @@ BentoTUI is the **best way to build full Go TUIs quickly**:
 
 **Bricks** — UI components. Accept `WithTheme(t)` at construction, `SetTheme(t)` for
 live updates. Fall back to `theme.CurrentTheme()` if no theme was provided.
+
+**Recipes** — composed app-facing patterns built from bricks. Copy with
+`bento add recipe <name>` and adapt freely.
 
 **Rooms** — named page layouts. Zero color, zero theme. Choose one per page and
 compose your app shape there.

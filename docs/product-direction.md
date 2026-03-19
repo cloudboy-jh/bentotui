@@ -5,10 +5,11 @@ This document is the product contract for BentoTUI's near-term direction.
 ## Product model
 
 - `bricks`: copy-and-own UI building blocks (`bento add <brick>`)
+- `recipes`: copy-and-own composed flow patterns (`bento add recipe <name>`)
 - `rooms`: stable page layout contracts (import-only)
 - `bentos`: full app templates (state + routing + composition)
 
-Low-level UI is bricks. Bentos are app templates, not a giant component catalog.
+Low-level UI is bricks. Recipes are app-flow composition. Bentos are app templates, not a giant component catalog.
 
 ## Scope discipline
 
@@ -27,9 +28,10 @@ If these are not true, build a local app-owned brick in the user project.
 When building app features:
 
 1. Use an official Bento brick if it exists.
-2. If missing, compose from existing bricks and rooms.
-3. If still missing, create a local custom brick in app code.
-4. Upstream as official only after repeated cross-template demand.
+2. If a matching recipe exists, use it before inventing bespoke orchestration.
+3. If missing, compose from existing bricks and rooms.
+4. If still missing, create a local custom recipe in app code.
+5. Upstream as official only after repeated cross-template demand.
 
 This keeps shipping velocity high without forcing framework churn.
 
@@ -41,7 +43,7 @@ The stable shared imports are:
 - `github.com/cloudboy-jh/bentotui/theme/styles`
 - `github.com/cloudboy-jh/bentotui/registry/rooms`
 
-Official bricks are stable by name through `bento add` and `bento list`.
+Official bricks and recipes are stable by name through `bento add` and `bento list`.
 
 ## v1 core surface
 

@@ -17,6 +17,7 @@ Bentos are not toy demos. They are the fastest starting point for real apps.
 
 - Bentos compose layout with `registry/rooms`
 - Bentos render UI with `registry/bricks`
+- Bentos may use `registry/recipes` for reusable app-flow composition
 - Bentos hold `m.theme theme.Theme` as app state
 - Bentos call `SetTheme()` on bricks when `theme.ThemeChangedMsg` arrives
 - Bentos own final frame composition (`surface.Fill` + `surface.Draw`)

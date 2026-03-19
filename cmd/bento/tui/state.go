@@ -4,6 +4,13 @@ package tui
 // View represents the current UI view.
 type View int
 
+type CatalogKind int
+
+const (
+	CatalogBricks CatalogKind = iota
+	CatalogRecipes
+)
+
 const (
 	ViewMenu View = iota
 	ViewInitForm
@@ -28,6 +35,7 @@ type State struct {
 	// Component list state
 	SelectedComponents map[string]bool
 	ComponentCursor    int
+	CatalogKind        CatalogKind
 
 	// Doctor state
 	DoctorRunning bool
@@ -56,6 +64,7 @@ func NewState() *State {
 		FormFocus:          0,
 		SelectedComponents: make(map[string]bool),
 		ComponentCursor:    0,
+		CatalogKind:        CatalogBricks,
 		DoctorRunning:      false,
 		DoctorIndex:        0,
 		DoctorResults:      make([]DoctorCheck, 0),

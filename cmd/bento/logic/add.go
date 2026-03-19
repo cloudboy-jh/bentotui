@@ -9,16 +9,16 @@ import (
 	bentoregistry "github.com/cloudboy-jh/bentotui/registry"
 )
 
-// ComponentInfo describes a registry component.
-type ComponentInfo struct {
+// CatalogEntry describes one installable registry item.
+type CatalogEntry struct {
 	Name  string
 	Desc  string
 	Files []string
 }
 
-// Registry returns the list of available components.
-func Registry() []ComponentInfo {
-	return []ComponentInfo{
+// BrickRegistry returns the list of available bricks.
+func BrickRegistry() []CatalogEntry {
+	return []CatalogEntry{
 		{Name: "surface", Desc: "Full-terminal paint surface with UV cell buffer", Files: []string{"surface.go"}},
 		{Name: "card", Desc: "Content container — raised (default) or flat via Flat() option", Files: []string{"card.go"}},
 		{Name: "bar", Desc: "Header/footer row with keybind cards", Files: []string{"bar.go"}},
@@ -41,58 +41,76 @@ func Registry() []ComponentInfo {
 	}
 }
 
-// InstallResult holds the result of installing a component.
-type InstallResult struct {
-	Component string
-	Files     []string
-	Skipped   []string
-	Error     error
+// RecipeRegistry returns the list of available recipes.
+func RecipeRegistry() []CatalogEntry {
+	return []CatalogEntry{
+		{Name: "filter-bar", Desc: "Input + status + keybind strip composition", Files: []string{"recipe.go"}},
+		{Name: "empty-state-pane", Desc: "Reusable empty-result card content", Files: []string{"recipe.go"}},
+		{Name: "command-palette-flow", Desc: "Open command palette and route actions", Files: []string{"recipe.go"}},
+	}
 }
 
-// InstallComponent copies a component from the registry to the local project.
+// Registry is kept for compatibility and returns bricks.
+func Registry() []CatalogEntry {
+	return BrickRegistry()
+}
+
+// InstallResult holds the result of an install operation.
+type InstallResult struct {
+	Name    string
+	Files   []string
+	Skipped []string
+	Error   error
+}
+
+// InstallComponent copies a brick from the registry to the local project.
 // Returns the result including any files written or skipped.
 func InstallComponent(name string) InstallResult {
-	result := InstallResult{Component: name}
+	return installFromCatalog("brick", name, "bricks", BrickRegistry())
+}
 
-	// Find component in registry
-	var comp *ComponentInfo
-	for _, c := range Registry() {
+// InstallRecipe copies a recipe from the registry to the local project.
+// Returns the result including any files written or skipped.
+func InstallRecipe(name string) InstallResult {
+	return installFromCatalog("recipe", name, "recipes", RecipeRegistry())
+}
+
+func installFromCatalog(kind, name, dir string, catalog []CatalogEntry) InstallResult {
+	result := InstallResult{Name: name}
+
+	var entry *CatalogEntry
+	for _, c := range catalog {
 		if c.Name == name {
-			comp = &c
+			entry = &c
 			break
 		}
 	}
-	if comp == nil {
-		result.Error = fmt.Errorf("unknown component: %s", name)
+	if entry == nil {
+		result.Error = fmt.Errorf("unknown %s: %s", kind, name)
 		return result
 	}
 
-	// Create destination directory
-	destDir := filepath.Join("bricks", comp.Name)
+	destDir := filepath.Join(dir, entry.Name)
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		result.Error = fmt.Errorf("create directory %s: %w", destDir, err)
 		return result
 	}
 
-	// Copy each file
-	for _, f := range comp.Files {
-		srcPath := "bricks/" + comp.Name + "/" + f
+	for _, f := range entry.Files {
+		srcPath := dir + "/" + entry.Name + "/" + f
 		dstPath := filepath.Join(destDir, f)
 
-		// Check if file already exists
 		if _, err := os.Stat(dstPath); err == nil {
 			result.Skipped = append(result.Skipped, dstPath)
 			continue
 		}
 
-		// Read from embedded FS
 		srcFile, err := bentoregistry.BricksFS.Open(srcPath)
 		if err != nil {
-			result.Error = fmt.Errorf("component %q file %q not found: %w", comp.Name, f, err)
+			result.Error = fmt.Errorf("%s %q file %q not found: %w", kind, entry.Name, f, err)
 			return result
 		}
 
-		// Create destination file
 		dstFile, err := os.Create(dstPath)
 		if err != nil {
 			srcFile.Close()
@@ -100,7 +118,6 @@ func InstallComponent(name string) InstallResult {
 			return result
 		}
 
-		// Copy content
 		_, copyErr := io.Copy(dstFile, srcFile)
 		srcFile.Close()
 		dstFile.Close()

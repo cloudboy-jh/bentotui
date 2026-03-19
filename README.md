@@ -3,15 +3,15 @@
 # BentoTUI
 
 > [!NOTE]
-> Early development, but the core model is fixed: bricks (copy/own), rooms (imported layout contracts), and bentos (template apps).
+> Early development, but the core model is fixed: bricks (copy/own), recipes (composed copy/own patterns), rooms (imported layout contracts), and bentos (template apps).
 
 [![Go Version](https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go)](https://go.dev/)
 [![Bubble Tea](https://img.shields.io/badge/Bubble%20Tea-v2-FF5F87?logo=charm&logoColor=white)](https://github.com/charmbracelet/bubbletea)
 [![Status](https://img.shields.io/badge/status-main%20active-6D5EF3)](#status)
 [![Changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-2EA043)](./CHANGELOG.md)
 
-The **best way to build full Go TUIs fast** — opinionated components, named
-layout rooms, and template apps you can remix quickly.
+The **best way to build full Go TUIs fast** — opinionated components, composed
+recipes, named layout rooms, and template apps you can remix quickly.
 
 Run `bento add card` and the source lands in your project. You own it — read it,
 modify it, delete what you do not need.
@@ -19,21 +19,24 @@ modify it, delete what you do not need.
 Build apps with:
 
 - **bricks** for UI components
+- **recipes** for composed UI flows
 - **rooms** for page layout contracts
 - **bentos** for full app templates
 
 ## How it works
 
-Three building blocks:
+Four building blocks:
 
 | Thing | What it is |
 |---|---|
 | **bricks** | UI components — copied into your project via `bento add`. You own them. |
+| **recipes** | Composed patterns built from bricks — copied into your project via `bento add recipe <name>`. |
 | **rooms** | Named layout contracts for pages. Imported, not copied. Zero color, zero theme. |
 | **bentos** | Complete app templates you can clone/remix for production. |
 
 ```
 registry/bricks/    ← copy-and-own via `bento add`
+registry/recipes/   ← copy-and-own via `bento add recipe <name>`
 registry/rooms/     ← import directly from the module
 registry/bentos/    ← runnable full-screen app patterns
 ```
@@ -59,6 +62,9 @@ go run ./registry/bentos/detail-view
 
 # Copy bricks into your project
 bento add card bar input dialog list table surface
+
+# Copy recipes into your project
+bento add recipe filter-bar
 ```
 
 Home-screen demo:
@@ -118,6 +124,17 @@ Complete runnable screen patterns in `registry/bentos/`. Copy and own wholesale.
 
 Use these as template baselines: keep the room contract, replace data and
 interactions with your own domain.
+
+## Recipes
+
+Recipes are copy-and-own composed patterns in `registry/recipes/`.
+Install with `bento add recipe <name>` and adapt to your app flow.
+
+| Recipe | Description |
+|---|---|
+| `filter-bar` | Input + footer keybind strip composition for filtering workflows |
+| `empty-state-pane` | Titled empty-result pane composition |
+| `command-palette-flow` | Command palette open flow helper |
 
 ## Rooms
 
@@ -257,7 +274,8 @@ func (m *model) View() tea.View {
 
 - `bento init` — scaffold a runnable starter project
 - `bento add <brick...>` — copy brick source into `bricks/<name>/`
-- `bento list` — list available bricks with descriptions
+- `bento add recipe <name...>` — copy recipe source into `recipes/<name>/`
+- `bento list` — list available bricks and recipes with descriptions
 - `bento doctor` — environment and project checks
 
 ## Architecture
@@ -272,6 +290,9 @@ registry/bricks/ (copy-and-own)
      │  card  bar  dialog  input  list  table  surface  + more
      │  Each brick: WithTheme(t) + SetTheme(t)
      ▼
+registry/recipes/ (copy-and-own composition helpers)
+     │  filter-bar  empty-state-pane  command-palette-flow
+     ▼
 registry/rooms/ (named geometry — Focus, Rail, HolyGrail, ...)
      ▼
 surface (Ultraviolet cell buffer — Fill → Draw → DrawCenter → Render)
@@ -284,6 +305,7 @@ Bubble Tea v2 (tea.NewView, AltScreen, BackgroundColor)
 - [docs/README.md](./docs/README.md) — index
 - [docs/architecture/architecture.md](./docs/architecture/architecture.md) — rendering contract, theme model, component rules
 - [docs/architecture/bricks.md](./docs/architecture/bricks.md) — brick API reference
+- [docs/architecture/recipes.md](./docs/architecture/recipes.md) — recipe API and composition patterns
 - [docs/architecture/rooms.md](./docs/architecture/rooms.md) — room layout API
 - [docs/architecture/bentos.md](./docs/architecture/bentos.md) — full app composition
 - [docs/theme-engine.md](./docs/theme-engine.md) — theme interface, presets, custom themes

@@ -6,6 +6,29 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-03-18
+
+### Added
+
+- Added a new copy-and-own `recipes` layer at `registry/recipes/` with:
+  `filter-bar`, `empty-state-pane`, and `command-palette-flow`.
+- Added `bento add recipe <name...>` support in both CLI and interactive TUI.
+- Added `docs/architecture/recipes.md` and updated core docs to include the
+  recipes model (`bricks + recipes + rooms + bentos`).
+
+### Changed
+
+- `bento list` now shows two catalog groups: available bricks and available recipes.
+- Installer logic now supports both brick and recipe catalogs through shared
+  install flow internals.
+- Embedded registry now includes `recipes/*/*` so recipe installs are available
+  in shipped binaries.
+
+### Fixed
+
+- Added guardrail coverage to ensure recipes avoid raw `bubbles/*` imports and
+  stay on Bento composition APIs.
+
 ## [0.5.1] - 2026-03-18
 
 ### Fixed

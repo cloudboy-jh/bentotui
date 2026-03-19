@@ -1,19 +1,20 @@
 # BentoTUI Architecture
 
-v0.5.0 direction — productized bricks + rooms + bentos
+v0.5.x direction — productized bricks + recipes + rooms + bentos
 
 ## Overview
 
 BentoTUI is a **product system for full Go TUIs**:
 
 - `bricks`: official copy-and-own UI components
+- `recipes`: official copy-and-own composed flow patterns
 - `rooms`: named page layout patterns
 - `bentos`: full app templates for fast shipping
 
 Run `bento add card` and the source lands in your project. You own it.
 
 The three stable shared imports are `theme`, `theme/styles`, and `registry/rooms`.
-Everything under `registry/bricks/` is copy-and-own.
+Everything under `registry/bricks/` and `registry/recipes/` is copy-and-own.
 
 ---
 
@@ -35,6 +36,9 @@ registry/bricks/ (copy-and-own UI pieces)
      │  Each brick accepts WithTheme(t) and SetTheme(t)
      │  Falls back to theme.CurrentTheme() if no theme provided
      ▼
+registry/recipes/ (copy-and-own flow compositions)
+     │  filter-bar  empty-state-pane  command-palette-flow
+     ▼
 registry/rooms/ (named layout patterns)
      │  Geometry only — no theme, no color, no canvas paint
      │  Focus / Pancake / Rail / HolyGrail / HSplit / VSplit / ...
@@ -51,6 +55,7 @@ Registry shape:
 registry/bentos/  → template apps (state machine + orchestration)
 registry/rooms/   → named page layouts + geometry grammar
 registry/bricks/  → official UI components (copy-and-own)
+registry/recipes/ → official composed patterns (copy-and-own)
 ```
 
 ---

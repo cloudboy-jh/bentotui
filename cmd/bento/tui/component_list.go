@@ -9,8 +9,6 @@ import (
 	"github.com/cloudboy-jh/bentotui/cmd/bento/logic"
 )
 
-var registryComponents = logic.Registry()
-
 func (a *App) handleComponentListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "up", "k":
@@ -18,12 +16,17 @@ func (a *App) handleComponentListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			a.state.ComponentCursor--
 		}
 	case "down", "j":
-		if a.state.ComponentCursor < len(registryComponents)-1 {
+		items := a.activeCatalog()
+		if a.state.ComponentCursor < len(items)-1 {
 			a.state.ComponentCursor++
 		}
 	case " ":
 		// Toggle selection
-		comp := registryComponents[a.state.ComponentCursor]
+		items := a.activeCatalog()
+		if len(items) == 0 {
+			return a, nil
+		}
+		comp := items[a.state.ComponentCursor]
 		if a.state.SelectedComponents[comp.Name] {
 			delete(a.state.SelectedComponents, comp.Name)
 		} else {
@@ -38,10 +41,11 @@ func (a *App) handleComponentListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (a *App) renderComponentList(height int) string {
 	_ = height
-	lines := make([]string, 0, len(registryComponents)+5)
+	items := a.activeCatalog()
+	lines := make([]string, 0, len(items)+5)
 
-	// Title
-	lines = append(lines, "  Select bricks to install (space to toggle, enter to install):")
+	label := a.activeCatalogLabel()
+	lines = append(lines, "  Select "+label+" to install (space to toggle, enter to install):")
 	lines = append(lines, "")
 
 	// Component list
@@ -51,8 +55,8 @@ func (a *App) renderComponentList(height int) string {
 		startIdx = a.state.ComponentCursor - visibleCount + 1
 	}
 
-	for i := startIdx; i < len(registryComponents) && i < startIdx+visibleCount; i++ {
-		comp := registryComponents[i]
+	for i := startIdx; i < len(items) && i < startIdx+visibleCount; i++ {
+		comp := items[i]
 		selected := a.state.SelectedComponents[comp.Name]
 
 		checkbox := "[ ]"
@@ -82,23 +86,27 @@ func (a *App) renderComponentList(height int) string {
 	// Footer
 	lines = append(lines, "")
 	selectedCount := len(a.state.SelectedComponents)
-	footerText := fmt.Sprintf("  %d selected • enter to install • esc to go back", selectedCount)
+	footerText := fmt.Sprintf("  %d selected %s • enter to install • esc to go back", selectedCount, label)
 	lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color(bentoMuted)).Render(footerText))
 
 	return strings.Join(lines, "\n")
 }
 
 func (a *App) installSelectedComponents() (tea.Model, tea.Cmd) {
+	kindLabel := a.activeCatalogLabel()
 	if len(a.state.SelectedComponents) == 0 {
-		a.state.AddLog("No bricks selected")
+		a.state.AddLog("No " + kindLabel + " selected")
 		return a, nil
 	}
 
-	a.state.AddLog("Installing bricks...")
+	a.state.AddLog("Installing " + kindLabel + "...")
 
 	for name := range a.state.SelectedComponents {
 		a.state.AddLog("Installing: " + name)
 		result := logic.InstallComponent(name)
+		if a.state.CatalogKind == CatalogRecipes {
+			result = logic.InstallRecipe(name)
+		}
 
 		if result.Error != nil {
 			a.state.AddLog("  Error: " + result.Error.Error())
@@ -116,4 +124,18 @@ func (a *App) installSelectedComponents() (tea.Model, tea.Cmd) {
 	a.state.SelectedComponents = make(map[string]bool) // Clear selection
 
 	return a, nil
+}
+
+func (a *App) activeCatalog() []logic.CatalogEntry {
+	if a.state.CatalogKind == CatalogRecipes {
+		return logic.RecipeRegistry()
+	}
+	return logic.BrickRegistry()
+}
+
+func (a *App) activeCatalogLabel() string {
+	if a.state.CatalogKind == CatalogRecipes {
+		return "recipes"
+	}
+	return "bricks"
 }

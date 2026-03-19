@@ -65,11 +65,22 @@ func runAddCLI(args []string) {
 		return
 	}
 
-	failures := 0
-	for _, name := range args {
-		fmt.Printf("Installing brick: %s\n", name)
+	kind := "brick"
+	names := args
+	if args[0] == "recipe" {
+		kind = "recipe"
+		names = args[1:]
+	}
 
-		result := logic.InstallComponent(name)
+	if len(names) == 0 {
+		fatal("missing %s name", kind)
+	}
+
+	failures := 0
+	for _, name := range names {
+		fmt.Printf("Installing %s: %s\n", kind, name)
+
+		result := installByKind(kind, name)
 		if result.Error != nil {
 			fmt.Printf("  Error: %v\n", result.Error)
 			failures++
@@ -85,7 +96,7 @@ func runAddCLI(args []string) {
 	}
 
 	if failures > 0 {
-		fatal("%d brick(s) failed to install", failures)
+		fatal("%d %s(s) failed to install", failures, kind)
 	}
 	fmt.Println("Done.")
 }
@@ -98,8 +109,13 @@ func runListCLI(args []string) {
 	}
 
 	fmt.Println("Available bricks:")
-	for _, c := range logic.Registry() {
-		fmt.Printf("  %-10s %s\n", c.Name, c.Desc)
+	for _, c := range logic.BrickRegistry() {
+		fmt.Printf("  %-20s %s\n", c.Name, c.Desc)
+	}
+	fmt.Println()
+	fmt.Println("Available recipes:")
+	for _, c := range logic.RecipeRegistry() {
+		fmt.Printf("  %-20s %s\n", c.Name, c.Desc)
 	}
 }
 
@@ -129,20 +145,29 @@ func runDoctorCLI(args []string) {
 }
 
 func printAddHelp() {
-	fmt.Print(`Usage: bento add <brick> [brick...]
+	fmt.Print(`Usage:
+  bento add <brick> [brick...]
+  bento add recipe <name> [name...]
 
-Copies source into bricks/<name>/ and are yours to modify.
+Copies source into:
+  - bricks/<name>/   for bricks
+  - recipes/<name>/  for recipes
 
 Available bricks:
 `)
-	for _, c := range logic.Registry() {
+	for _, c := range logic.BrickRegistry() {
 		fmt.Printf("  %-10s %s\n", c.Name, c.Desc)
+	}
+	fmt.Println()
+	fmt.Println("Available recipes:")
+	for _, c := range logic.RecipeRegistry() {
+		fmt.Printf("  %-20s %s\n", c.Name, c.Desc)
 	}
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  bento add card")
 	fmt.Println("  bento add input bar surface")
-	fmt.Println("  bento add dialog")
+	fmt.Println("  bento add recipe filter-bar")
 	fmt.Println()
 }
 
@@ -151,8 +176,17 @@ func printListHelp() {
 
 Shows available registry bricks with one-line descriptions.
 
+Output is grouped by bricks and recipes.
+
 Examples:
   bento list
 
 `)
+}
+
+func installByKind(kind, name string) logic.InstallResult {
+	if kind == "recipe" {
+		return logic.InstallRecipe(name)
+	}
+	return logic.InstallComponent(name)
 }

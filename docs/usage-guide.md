@@ -3,6 +3,7 @@
 Use BentoTUI as a product system:
 
 - `bricks` are the official UI components you copy and own
+- `recipes` are composed patterns you copy and own
 - `rooms` are named layout patterns you choose per page
 - `bentos` are full app templates you can remix quickly
 
@@ -17,9 +18,10 @@ For uncovered gaps, create local app-owned bricks and keep shipping.
 
 1. Start from a bento template (`registry/bentos/*`).
 2. Copy the bricks you need with `bento add <brick...>`.
-3. Pick a room per page (`rooms.AppShell`, `rooms.SidebarDetail`, `rooms.DiffWorkspace`, ...).
-4. Keep one root app model that routes pages.
-5. Keep theme in model state and propagate with `SetTheme`.
+3. Copy composed patterns with `bento add recipe <name...>` when they fit.
+4. Pick a room per page (`rooms.AppShell`, `rooms.SidebarDetail`, `rooms.DiffWorkspace`, ...).
+5. Keep one root app model that routes pages.
+6. Keep theme in model state and propagate with `SetTheme`.
 
 ---
 
@@ -49,6 +51,18 @@ Use this decision tree:
 4. Propose upstream only when the same need repeats across multiple bentos.
 
 This keeps app delivery unblocked while preserving a focused official surface.
+
+---
+
+## Recipes contract
+
+Recipes are copy-and-own composed flows in `registry/recipes/*`:
+
+- built from bricks and app orchestration patterns
+- installed with `bento add recipe <name...>`
+- designed for app-level workflows (search/filter/empty state/command lanes)
+
+Prefer recipes before inventing bespoke orchestration in each bento page.
 
 ---
 

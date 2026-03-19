@@ -66,6 +66,12 @@ func TestStarterAndScaffoldAvoidRawBubblesImports(t *testing.T) {
 	assertNoRawBubblesImports(t, root, files, "starter/scaffold should keep bubbles behind Bento APIs")
 }
 
+func TestRecipesAvoidRawBubblesImports(t *testing.T) {
+	root := repoRoot(t)
+	files := mustGoFiles(t, filepath.Join(root, "registry", "recipes"))
+	assertNoRawBubblesImports(t, root, files, "recipes should compose Bento APIs, not raw bubbles")
+}
+
 func assertNoRawBubblesImports(t *testing.T, root string, files []string, prefix string) {
 	t.Helper()
 	for _, file := range files {

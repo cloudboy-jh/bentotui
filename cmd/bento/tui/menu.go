@@ -10,6 +10,7 @@ import (
 var menuItems = []string{
 	"Initialize New Project",
 	"Add Bricks",
+	"Add Recipes",
 	"Run Doctor",
 	"Quit",
 }
@@ -35,15 +36,23 @@ func (a *App) handleMenuKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case 1:
 			a.state.CurrentView = ViewComponentList
 			a.state.ComponentCursor = 0
+			a.state.CatalogKind = CatalogBricks
+			a.state.SelectedComponents = make(map[string]bool)
 			a.state.ClearLog()
 		case 2:
+			a.state.CurrentView = ViewComponentList
+			a.state.ComponentCursor = 0
+			a.state.CatalogKind = CatalogRecipes
+			a.state.SelectedComponents = make(map[string]bool)
+			a.state.ClearLog()
+		case 3:
 			a.state.CurrentView = ViewDoctor
 			a.startDoctor()
 			if len(a.state.DoctorResults) > 0 {
 				a.revealNextDoctorCheck()
 				return a, a.doctorTickCmd()
 			}
-		case 3:
+		case 4:
 			return a, tea.Quit
 		}
 	}

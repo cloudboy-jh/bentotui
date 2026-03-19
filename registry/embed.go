@@ -3,5 +3,5 @@ package registry
 
 import "embed"
 
-//go:embed bricks/*/* bentos/*/*
+//go:embed bricks/*/* recipes/*/* bentos/*/*
 var BricksFS embed.FS
