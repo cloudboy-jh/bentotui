@@ -20,7 +20,7 @@ func (a *App) handleComponentListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if a.state.ComponentCursor < len(items)-1 {
 			a.state.ComponentCursor++
 		}
-	case " ":
+	case " ", "space":
 		// Toggle selection
 		items := a.activeCatalog()
 		if len(items) == 0 {
@@ -69,8 +69,12 @@ func (a *App) renderComponentList(height int) string {
 			cursor = "> "
 		}
 
-		nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(bentoFrameFG))
-		descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(bentoMuted))
+		nameStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(bentoFrameFG)).
+			Background(lipgloss.Color(bentoFrameBG))
+		descStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color(bentoMuted)).
+			Background(lipgloss.Color(bentoFrameBG))
 
 		if i == a.state.ComponentCursor {
 			nameStyle = nameStyle.Bold(true).Foreground(lipgloss.Color(bentoAccent))
@@ -80,14 +84,22 @@ func (a *App) renderComponentList(height int) string {
 		if len(comp.Desc) > 0 {
 			line += " - " + descStyle.Render(comp.Desc)
 		}
-		lines = append(lines, "  "+lipgloss.NewStyle().MaxWidth(80).Render(line))
+
+		lineWidth := clamp(clamp(a.state.Width-2, minFrameWidth, maxFrameWidth)-6, 20, maxFrameWidth-6)
+		lineStyle := lipgloss.NewStyle().
+			MaxWidth(lineWidth).
+			Background(lipgloss.Color(bentoFrameBG))
+		lines = append(lines, "  "+lineStyle.Render(line))
 	}
 
 	// Footer
 	lines = append(lines, "")
 	selectedCount := len(a.state.SelectedComponents)
 	footerText := fmt.Sprintf("  %d selected %s • enter to install • esc to go back", selectedCount, label)
-	lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color(bentoMuted)).Render(footerText))
+	lines = append(lines, lipgloss.NewStyle().
+		Foreground(lipgloss.Color(bentoMuted)).
+		Background(lipgloss.Color(bentoFrameBG)).
+		Render(footerText))
 
 	return strings.Join(lines, "\n")
 }
