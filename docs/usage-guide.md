@@ -58,7 +58,7 @@ This keeps app delivery unblocked while preserving a focused official surface.
 
 Recipes are copy-and-own composed flows in `registry/recipes/*`:
 
-- built from bricks and app orchestration patterns
+- built from app orchestration patterns and at least one official brick
 - installed with `bento add recipe <name...>`
 - designed for app-level workflows (search/filter/empty state/command lanes)
 
@@ -127,6 +127,8 @@ Users should be able to ship full apps without thinking about raw bubbles intern
 
 - rooms import boundaries
 - no cross-brick imports
+- recipes import at least one official brick
+- no raw `bubbles/*` usage in recipes (except spinner)
 - no raw `bubbles/*` usage in bentos (except spinner)
 - no raw `bubbles/*` usage in starter/scaffold composition code
 - no `theme.CurrentTheme()` inside bento `View()` methods

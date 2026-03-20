@@ -5,17 +5,26 @@ v0.5.4
 ---
 
 - [usage-guide.md](./usage-guide.md) — Build apps with bricks + recipes + rooms + bentos
-- [architecture/rooms.md](./architecture/rooms.md) — Named room layouts and page composition patterns
+
+### Architecture (`docs/architecture/`)
+
+- [architecture/architecture.md](./architecture/architecture.md) — Layer diagram, rendering contract, theme model, component rules
 - [architecture/bricks.md](./architecture/bricks.md) — Official brick APIs and conventions
 - [architecture/recipes.md](./architecture/recipes.md) — Composed recipe APIs and flow patterns
+- [architecture/rooms.md](./architecture/rooms.md) — Named room layouts and page composition patterns
 - [architecture/bentos.md](./architecture/bentos.md) — Template app contract and extension model
-- [architecture/architecture.md](./architecture/architecture.md) — Layer diagram, rendering contract, theme model, component rules
-- [theme-engine.md](./theme-engine.md) — Theme interface, presets, custom themes, live switching
-- [coloring-rules.md](./coloring-rules.md) — Rules for correct color usage in bricks
-- [astro-content.md](./astro-content.md) — Marketing/site copy source for docs and landing pages
-- [product-direction.md](./product-direction.md) — Scope and contract to reduce framework churn
-- [next-steps.md](./next-steps.md) — Immediate priorities
-- [roadmap.md](./roadmap.md) — Backlog, non-goals
+- [architecture/astro-content-update.md](./architecture/astro-content-update.md) — Current-state Astro/docs content update source
+
+### Design (`docs/design/`)
+
+- [design/theme-engine.md](./design/theme-engine.md) — Theme interface, presets, custom themes, live switching
+- [design/coloring-rules.md](./design/coloring-rules.md) — Rules for correct color usage in bricks
+
+### Development (`docs/development/`)
+
+- [development/product-direction.md](./development/product-direction.md) — Scope and contract to reduce framework churn
+- [development/next-steps.md](./development/next-steps.md) — Immediate priorities
+- [development/roadmap.md](./development/roadmap.md) — Backlog, non-goals
 
 ---
 

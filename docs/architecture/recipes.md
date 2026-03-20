@@ -22,12 +22,13 @@ Copied files land in `recipes/<name>/` inside your project.
 | `filter-bar` | Input + footer command strip composition for filter workflows |
 | `empty-state-pane` | Empty-result pane composition with card + message body |
 | `command-palette-flow` | Command palette open flow helper for dialog manager wiring |
+| `vimstatus` | Vim-style statusline recipe with mode badge, context, and clock |
 
 ---
 
 ## Layering expectations
 
-- Recipes may compose official bricks.
+- Recipes must compose at least one official brick.
 - Recipes may use room contracts for page shaping.
 - Recipes should avoid raw `bubbles/*` imports directly.
 - Recipes are app-facing and expected to be edited after copy.
@@ -37,7 +38,7 @@ Copied files land in `recipes/<name>/` inside your project.
 ## Brick vs Recipe
 
 - **Brick**: smallest reusable UI piece (button-like, card-like, list-like).
-- **Recipe**: workflow-level composition of one or more bricks.
+- **Recipe**: workflow-level composition that includes one or more bricks.
 
 Default decision path:
 

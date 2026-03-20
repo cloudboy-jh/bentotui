@@ -72,6 +72,28 @@ func TestRecipesAvoidRawBubblesImports(t *testing.T) {
 	assertNoRawBubblesImports(t, root, files, "recipes should compose Bento APIs, not raw bubbles")
 }
 
+func TestRecipesComposeAtLeastOneBrick(t *testing.T) {
+	root := repoRoot(t)
+	files := mustGoFiles(t, filepath.Join(root, "registry", "recipes"))
+
+	for _, file := range files {
+		if strings.HasSuffix(file, "_test.go") {
+			continue
+		}
+		imports := mustImports(t, file)
+		hasBrickImport := false
+		for _, imp := range imports {
+			if strings.HasPrefix(imp, "github.com/cloudboy-jh/bentotui/registry/bricks/") {
+				hasBrickImport = true
+				break
+			}
+		}
+		if !hasBrickImport {
+			t.Fatalf("recipes must import at least one Bento brick, found none in %s", rel(root, file))
+		}
+	}
+}
+
 func assertNoRawBubblesImports(t *testing.T, root string, files []string, prefix string) {
 	t.Helper()
 	for _, file := range files {

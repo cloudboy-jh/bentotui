@@ -1,12 +1,14 @@
 package vimstatus
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/cloudboy-jh/bentotui/registry/bricks/badge"
 	"github.com/cloudboy-jh/bentotui/theme"
 	"github.com/cloudboy-jh/bentotui/theme/styles"
 )
@@ -21,11 +23,12 @@ type Config struct {
 }
 
 type Model struct {
-	theme  theme.Theme
-	width  int
-	height int
-	cfg    Config
-	clock  string
+	theme     theme.Theme
+	width     int
+	height    int
+	cfg       Config
+	clock     string
+	modeBadge *badge.Model
 }
 
 type clockTickMsg struct {
@@ -36,7 +39,12 @@ func New(t theme.Theme) *Model {
 	if t == nil {
 		t = theme.CurrentTheme()
 	}
-	return &Model{theme: t, height: 1}
+	b := badge.New("")
+	b.SetTheme(t)
+	b.SetBold(true)
+	m := &Model{theme: t, height: 1, modeBadge: b}
+	m.syncModeBadge()
+	return m
 }
 
 func (m *Model) SetConfig(cfg Config) {
@@ -44,10 +52,14 @@ func (m *Model) SetConfig(cfg Config) {
 	if m.cfg.ShowClock {
 		m.clock = time.Now().Format("15:04")
 	}
+	m.syncModeBadge()
 }
 
 func (m *Model) SetTheme(t theme.Theme) {
 	m.theme = t
+	if m.modeBadge != nil {
+		m.modeBadge.SetTheme(m.activeTheme())
+	}
 }
 
 func (m *Model) SetSize(width, _ int) {
@@ -94,7 +106,7 @@ func (m *Model) activeTheme() theme.Theme {
 
 func (m *Model) renderLeft(t theme.Theme) string {
 	parts := make([]string, 0, 3)
-	if pill := m.renderModePill(t); pill != "" {
+	if pill := m.renderModeBadge(); pill != "" {
 		parts = append(parts, pill)
 	}
 	if v := strings.TrimSpace(m.cfg.Branch); v != "" {
@@ -125,28 +137,49 @@ func (m *Model) renderRight(t theme.Theme) string {
 	return strings.Join(parts, " ")
 }
 
-func (m *Model) renderModePill(t theme.Theme) string {
+func (m *Model) renderModeBadge() string {
 	mode := strings.ToUpper(strings.TrimSpace(m.cfg.Mode))
 	if mode == "" {
 		return ""
 	}
+	if m.modeBadge == nil {
+		return ""
+	}
+	return viewString(m.modeBadge.View())
+}
 
-	bg := t.SelectionBG()
+func (m *Model) syncModeBadge() {
+	if m.modeBadge == nil {
+		m.modeBadge = badge.New("")
+	}
+	m.modeBadge.SetTheme(m.activeTheme())
+
+	mode := strings.ToUpper(strings.TrimSpace(m.cfg.Mode))
+	m.modeBadge.SetText(mode)
+
+	variant := badge.VariantAccent
 	switch mode {
 	case "INSERT":
-		bg = t.Success()
+		variant = badge.VariantSuccess
 	case "VISUAL":
-		bg = t.Warning()
+		variant = badge.VariantWarning
 	case "COMMAND":
-		bg = t.Info()
+		variant = badge.VariantInfo
 	}
+	m.modeBadge.SetVariant(variant)
+}
 
-	return lipgloss.NewStyle().
-		Bold(true).
-		Padding(0, 1).
-		Foreground(t.TextInverse()).
-		Background(bg).
-		Render(mode)
+func viewString(v tea.View) string {
+	if v.Content == nil {
+		return ""
+	}
+	if r, ok := v.Content.(interface{ Render() string }); ok {
+		return r.Render()
+	}
+	if s, ok := v.Content.(interface{ String() string }); ok {
+		return s.String()
+	}
+	return fmt.Sprint(v.Content)
 }
 
 func tickClock() tea.Cmd {
