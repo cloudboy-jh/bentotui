@@ -65,6 +65,12 @@ bento add card bar input dialog list table surface
 
 # Copy recipes into your project
 bento add recipe filter-bar
+
+# Initialize a full template app
+bento init app-shell
+
+# Browse installable catalog
+bento list
 ```
 
 Home-screen demo:
@@ -135,6 +141,7 @@ Install with `bento add recipe <name>` and adapt to your app flow.
 | `filter-bar` | Input + footer keybind strip composition for filtering workflows |
 | `empty-state-pane` | Titled empty-result pane composition |
 | `command-palette-flow` | Command palette open flow helper |
+| `vimstatus` | Vim-style statusline with mode badge, context, and clock |
 
 ## Rooms
 
@@ -272,6 +279,7 @@ func (m *model) View() tea.View {
 
 ## CLI
 
+- `bento` — launch optional interactive TUI for catalog browsing/install flows
 - `bento init <bento>` — clone a runnable template app into `./<bento>`
 - `bento add <brick...>` — copy brick source into `bricks/<name>/`
 - `bento add recipe <name...>` — copy recipe source into `recipes/<name>/`
@@ -287,11 +295,14 @@ theme/ (interface + 16 preset structs)
 theme/styles/ (Row / RowClip / ClipANSI)
      ▼
 registry/bricks/ (copy-and-own)
-     │  card  bar  dialog  input  list  table  surface  + more
-     │  Each brick: WithTheme(t) + SetTheme(t)
+      │  card  bar  dialog  input  list  table  surface  + more
+      │  Each brick: WithTheme(t) + SetTheme(t)
      ▼
 registry/recipes/ (copy-and-own composition helpers)
-     │  filter-bar  empty-state-pane  command-palette-flow
+     │  filter-bar  empty-state-pane  command-palette-flow  vimstatus
+     ▼
+registry/bentos/ (template app composition layer)
+     │  state machine + focus ownership + keymap + draw order
      ▼
 registry/rooms/ (named geometry — Focus, Rail, HolyGrail, ...)
      ▼
@@ -308,10 +319,10 @@ Bubble Tea v2 (tea.NewView, AltScreen, BackgroundColor)
 - [docs/architecture/recipes.md](./docs/architecture/recipes.md) — recipe API and composition patterns
 - [docs/architecture/rooms.md](./docs/architecture/rooms.md) — room layout API
 - [docs/architecture/bentos.md](./docs/architecture/bentos.md) — full app composition
-- [docs/theme-engine.md](./docs/theme-engine.md) — theme interface, presets, custom themes
-- [docs/coloring-rules.md](./docs/coloring-rules.md) — rules for correct color usage in bricks
+- [docs/design/theme-engine.md](./docs/design/theme-engine.md) — theme interface, presets, custom themes
+- [docs/design/coloring-rules.md](./docs/design/coloring-rules.md) — rules for correct color usage in bricks
 - [docs/usage-guide.md](./docs/usage-guide.md) — use Bento defaults first, layering/import rules
-- [docs/astro-content.md](./docs/astro-content.md) — website/marketing copy source
+- [docs/architecture/astro-content-update.md](./docs/architecture/astro-content-update.md) — website/marketing copy source
 
 ## License
 

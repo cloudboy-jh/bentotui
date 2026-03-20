@@ -35,10 +35,10 @@ Lock BentoTUI as the fastest way to ship full Go TUIs:
 - Document a concrete flow: pick bento, add pages, wire data, ship
 - Ensure the path never requires raw bubbles imports in app composition code
 
-### 5 — CLI remains secondary
+### 5 — CLI-first, TUI optional
 
-- Keep `bento add` and `bento init` healthy
-- Treat CLI as convenience, not the core product surface
+- Keep `bento init <bento>`, `bento add`, and `bento add recipe` fast and scriptable
+- Keep `bento` no-args TUI simple for discoverability and dogfooding
 
 ---
 

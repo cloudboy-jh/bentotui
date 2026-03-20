@@ -17,6 +17,7 @@ For uncovered gaps, create local app-owned bricks and keep shipping.
 ## Default app flow
 
 1. Start from a bento template (`registry/bentos/*`).
+   - CLI path: `bento init <bento>`
 2. Copy the bricks you need with `bento add <brick...>`.
 3. Copy composed patterns with `bento add recipe <name...>` when they fit.
 4. Pick a room per page (`rooms.AppShell`, `rooms.SidebarDetail`, `rooms.DiffWorkspace`, ...).
@@ -31,7 +32,7 @@ For uncovered gaps, create local app-owned bricks and keep shipping.
 - `registry/rooms`: stable layout grammar import.
 - `theme` and `theme/styles`: stable theme contracts.
 
-In app composition layers (`registry/bentos/*`, starter apps, generated starter):
+In app composition layers (`registry/bentos/*`, starter apps, CLI template outputs):
 
 - Do not import raw `bubbles/*` directly when a Bento brick exists.
 - Keep Charm internals behind brick wrappers.
@@ -130,7 +131,7 @@ Users should be able to ship full apps without thinking about raw bubbles intern
 - recipes import at least one official brick
 - no raw `bubbles/*` usage in recipes (except spinner)
 - no raw `bubbles/*` usage in bentos (except spinner)
-- no raw `bubbles/*` usage in starter/scaffold composition code
+- no raw `bubbles/*` usage in starter/CLI template composition code
 - no `theme.CurrentTheme()` inside bento `View()` methods
 
 Run with:

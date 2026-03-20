@@ -43,7 +43,7 @@ The stable shared imports are:
 - `github.com/cloudboy-jh/bentotui/theme/styles`
 - `github.com/cloudboy-jh/bentotui/registry/rooms`
 
-Official bricks and recipes are stable by name through `bento add` and `bento list`.
+Official bentos, bricks, and recipes are stable by name through `bento init`, `bento add`, and `bento list`.
 
 ## v1 core surface
 
