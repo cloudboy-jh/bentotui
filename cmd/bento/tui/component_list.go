@@ -21,6 +21,9 @@ func (a *App) handleComponentListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			a.state.ComponentCursor++
 		}
 	case " ", "space":
+		if a.state.CatalogKind == CatalogBentos {
+			return a, nil
+		}
 		// Toggle selection
 		items := a.activeCatalog()
 		if len(items) == 0 {
@@ -45,7 +48,11 @@ func (a *App) renderComponentList(height int) string {
 	lines := make([]string, 0, len(items)+5)
 
 	label := a.activeCatalogLabel()
-	lines = append(lines, "  Select "+label+" to install (space to toggle, enter to install):")
+	if a.state.CatalogKind == CatalogBentos {
+		lines = append(lines, "  Choose a bento template (enter to initialize):")
+	} else {
+		lines = append(lines, "  Select "+label+" to install (space to toggle, enter to install):")
+	}
 	lines = append(lines, "")
 
 	// Component list
@@ -59,9 +66,12 @@ func (a *App) renderComponentList(height int) string {
 		comp := items[i]
 		selected := a.state.SelectedComponents[comp.Name]
 
-		checkbox := "[ ]"
-		if selected {
-			checkbox = "[✓]"
+		marker := ""
+		if a.state.CatalogKind != CatalogBentos {
+			marker = "[ ] "
+			if selected {
+				marker = "[✓] "
+			}
 		}
 
 		cursor := "  "
@@ -80,7 +90,7 @@ func (a *App) renderComponentList(height int) string {
 			nameStyle = nameStyle.Bold(true).Foreground(lipgloss.Color(bentoAccent))
 		}
 
-		line := cursor + checkbox + " " + nameStyle.Render(comp.Name)
+		line := cursor + marker + nameStyle.Render(comp.Name)
 		if len(comp.Desc) > 0 {
 			line += " - " + descStyle.Render(comp.Desc)
 		}
@@ -94,8 +104,13 @@ func (a *App) renderComponentList(height int) string {
 
 	// Footer
 	lines = append(lines, "")
-	selectedCount := len(a.state.SelectedComponents)
-	footerText := fmt.Sprintf("  %d selected %s • enter to install • esc to go back", selectedCount, label)
+	footerText := ""
+	if a.state.CatalogKind == CatalogBentos {
+		footerText = "  enter initialize • esc go back"
+	} else {
+		selectedCount := len(a.state.SelectedComponents)
+		footerText = fmt.Sprintf("  %d selected %s • enter to install • esc to go back", selectedCount, label)
+	}
 	lines = append(lines, lipgloss.NewStyle().
 		Foreground(lipgloss.Color(bentoMuted)).
 		Background(lipgloss.Color(bentoFrameBG)).
@@ -105,6 +120,31 @@ func (a *App) renderComponentList(height int) string {
 }
 
 func (a *App) installSelectedComponents() (tea.Model, tea.Cmd) {
+	if a.state.CatalogKind == CatalogBentos {
+		items := a.activeCatalog()
+		if len(items) == 0 {
+			a.state.AddLog("No bentos available")
+			return a, nil
+		}
+		if a.state.ComponentCursor < 0 || a.state.ComponentCursor >= len(items) {
+			a.state.AddLog("Invalid bento selection")
+			return a, nil
+		}
+
+		name := items[a.state.ComponentCursor].Name
+		a.state.AddLog("Initializing bento: " + name)
+		result := logic.InstallBento(name)
+		if result.Error != nil {
+			a.state.AddLog("  Error: " + result.Error.Error())
+			return a, nil
+		}
+		for _, f := range result.Files {
+			a.state.AddLog("  Created: " + f)
+		}
+		a.state.AddLog("Done.")
+		return a, nil
+	}
+
 	kindLabel := a.activeCatalogLabel()
 	if len(a.state.SelectedComponents) == 0 {
 		a.state.AddLog("No " + kindLabel + " selected")
@@ -139,6 +179,9 @@ func (a *App) installSelectedComponents() (tea.Model, tea.Cmd) {
 }
 
 func (a *App) activeCatalog() []logic.CatalogEntry {
+	if a.state.CatalogKind == CatalogBentos {
+		return logic.BentoRegistry()
+	}
 	if a.state.CatalogKind == CatalogRecipes {
 		return logic.RecipeRegistry()
 	}
@@ -146,6 +189,9 @@ func (a *App) activeCatalog() []logic.CatalogEntry {
 }
 
 func (a *App) activeCatalogLabel() string {
+	if a.state.CatalogKind == CatalogBentos {
+		return "bentos"
+	}
 	if a.state.CatalogKind == CatalogRecipes {
 		return "recipes"
 	}

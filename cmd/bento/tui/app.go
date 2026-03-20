@@ -8,7 +8,6 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/bar"
 	"github.com/cloudboy-jh/bentotui/registry/bricks/list"
-	"github.com/cloudboy-jh/bentotui/theme"
 )
 
 const (
@@ -31,13 +30,11 @@ type App struct {
 
 // NewApp creates a new TUI app.
 func NewApp() *App {
-	_, _ = theme.PreviewTheme("bento-rose")
-
 	return &App{
 		state: NewState(),
 		header: bar.New(
 			bar.Left("🍱 bento"),
-			bar.Right("v0.2.0"),
+			bar.Right("v0.6.0"),
 		),
 		log: list.New(300),
 	}
@@ -89,8 +86,6 @@ func (a *App) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch a.state.CurrentView {
 	case ViewMenu:
 		return a.handleMenuKey(msg)
-	case ViewInitForm:
-		return a.handleInitFormKey(msg)
 	case ViewComponentList:
 		return a.handleComponentListKey(msg)
 	case ViewDoctor:
@@ -102,7 +97,7 @@ func (a *App) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (a *App) goBack() (tea.Model, tea.Cmd) {
 	switch a.state.CurrentView {
-	case ViewInitForm, ViewComponentList, ViewDoctor:
+	case ViewComponentList, ViewDoctor:
 		a.state.CurrentView = ViewMenu
 		a.state.ClearLog()
 	}
@@ -124,8 +119,6 @@ func (a *App) View() tea.View {
 	switch a.state.CurrentView {
 	case ViewMenu:
 		content = a.renderMenu(contentHeight)
-	case ViewInitForm:
-		content = a.renderInitForm(contentHeight)
 	case ViewComponentList:
 		content = a.renderComponentList(contentHeight)
 	case ViewDoctor:

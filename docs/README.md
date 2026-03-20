@@ -1,6 +1,6 @@
 # BentoTUI Documentation
 
-v0.5.4
+v0.6.0
 
 ---
 
@@ -37,7 +37,7 @@ BentoTUI is the **best way to build full Go TUIs quickly**:
 - named rooms for layout
 - bento templates for full-screen apps
 
-**Three stable imports:**
+**Two shared infrastructure systems via three imports:**
 
 ```go
 "github.com/cloudboy-jh/bentotui/theme"         // Theme interface + presets

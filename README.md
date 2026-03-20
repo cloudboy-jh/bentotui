@@ -272,10 +272,10 @@ func (m *model) View() tea.View {
 
 ## CLI
 
-- `bento init` — scaffold a runnable starter project
+- `bento init <bento>` — clone a runnable template app into `./<bento>`
 - `bento add <brick...>` — copy brick source into `bricks/<name>/`
 - `bento add recipe <name...>` — copy recipe source into `recipes/<name>/`
-- `bento list` — list available bricks and recipes with descriptions
+- `bento list` — list available bentos, bricks, and recipes with descriptions
 - `bento doctor` — environment and project checks
 
 ## Architecture

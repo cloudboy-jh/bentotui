@@ -6,6 +6,30 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-20
+
+### Breaking
+
+- `bento init` now initializes named bento templates and requires an explicit template name: `bento init <bento>`.
+- The old starter scaffold path for `bento init [name]` has been removed in favor of template-first initialization.
+
+### Added
+
+- Added a first-class bento template catalog in CLI logic (`home-screen`, `dashboard`, `app-shell`, `detail-view`, `dashboard-brick-lab`).
+- Added `InstallBento` template install flow that copies full template trees (including nested files) from embedded registry assets.
+
+### Changed
+
+- Updated `bento list` output to include bentos alongside bricks and recipes.
+- Updated interactive `bento` TUI to use a simple template-init picker instead of scaffold form fields.
+- Removed forced theme preview from `cmd/bento` TUI startup so the interactive flow does not override global theme state.
+- Expanded embedded registry patterns so bento template installs include nested directories/files under `registry/bentos`.
+- Updated docs and command help text to reflect the architecture contract and the `bento init <bento>` command model.
+
+### Fixed
+
+- `dashboard-brick-lab` now handles `theme.ThemeChangedMsg` and propagates the updated theme through composed bricks.
+
 ## [0.5.4] - 2026-03-19
 
 ### Fixed

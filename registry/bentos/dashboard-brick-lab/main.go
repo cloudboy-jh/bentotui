@@ -127,6 +127,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.layout()
 		return m, nil
 
+	case theme.ThemeChangedMsg:
+		if msg.Theme != nil {
+			m.theme = msg.Theme
+			m.applyTheme()
+		}
+		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":

@@ -9,11 +9,11 @@ type CatalogKind int
 const (
 	CatalogBricks CatalogKind = iota
 	CatalogRecipes
+	CatalogBentos
 )
 
 const (
 	ViewMenu View = iota
-	ViewInitForm
 	ViewComponentList
 	ViewDoctor
 )
@@ -26,11 +26,6 @@ type State struct {
 
 	// Menu state
 	MenuSelection int
-
-	// Init form state
-	AppName   string
-	Module    string
-	FormFocus int // 0 = app name, 1 = module, 2 = submit
 
 	// Component list state
 	SelectedComponents map[string]bool
@@ -59,9 +54,6 @@ func NewState() *State {
 	return &State{
 		CurrentView:        ViewMenu,
 		MenuSelection:      0,
-		AppName:            "",
-		Module:             "",
-		FormFocus:          0,
 		SelectedComponents: make(map[string]bool),
 		ComponentCursor:    0,
 		CatalogKind:        CatalogBricks,

@@ -51,6 +51,17 @@ func RecipeRegistry() []CatalogEntry {
 	}
 }
 
+// BentoRegistry returns the list of available bento templates.
+func BentoRegistry() []CatalogEntry {
+	return []CatalogEntry{
+		{Name: "home-screen", Desc: "Starter home shell with command input and theme picker"},
+		{Name: "dashboard", Desc: "Metrics-first dashboard layout with footer command lane"},
+		{Name: "app-shell", Desc: "Workspace shell with rail, center deck, and command palette"},
+		{Name: "detail-view", Desc: "Sidebar list + detail pane split-view template"},
+		{Name: "dashboard-brick-lab", Desc: "Brick showcase template for fast composition testing"},
+	}
+}
+
 // Registry is kept for compatibility and returns bricks.
 func Registry() []CatalogEntry {
 	return BrickRegistry()

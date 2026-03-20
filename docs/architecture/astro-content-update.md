@@ -2,7 +2,7 @@
 
 Last verified: 2026-03-20
 Repository: `github.com/cloudboy-jh/bentotui`
-Current docs/app snapshot target: `v0.5.4`
+Current docs/app snapshot target: `v0.6.0`
 
 ---
 
@@ -32,14 +32,14 @@ Positioning guardrails:
 
 ### Current version
 
-- Latest tagged docs state: `v0.5.4`.
-- `CHANGELOG.md` top release: `0.5.4` dated `2026-03-19`.
+- Latest tagged docs state: `v0.6.0`.
+- `CHANGELOG.md` top release: `0.6.0` dated `2026-03-20`.
 
-### What v0.5.4 fixed (high-level)
+### What v0.6.0 changed (high-level)
 
-- Command palette action ordering is deterministic.
-- Dialog lifecycle handling (`dialog.OpenMsg` and `dialog.CloseMsg`) is now explicit in bento update flows.
-- `app-shell` theme propagation now updates footer, center deck, and dialog manager consistently.
+- `bento init` now initializes named bento templates: `bento init <bento>`.
+- CLI and TUI catalogs now include bentos, bricks, and recipes.
+- Template and docs language align to the three product layers + two infrastructure systems contract.
 
 ### Runtime/tooling baseline
 
@@ -64,10 +64,10 @@ go install github.com/cloudboy-jh/bentotui/cmd/bento@latest
 ### CLI surface
 
 - `bento` (no args): launches interactive TUI installer/launcher.
-- `bento init [name]`: scaffold a starter app.
+- `bento init <bento>`: initialize a bento template app in `./<bento>`.
 - `bento add <brick...>`: copy brick source into `bricks/<name>/`.
 - `bento add recipe <name...>`: copy recipe source into `recipes/<name>/`.
-- `bento list`: prints installable bricks and recipes.
+- `bento list`: prints installable bentos, bricks, and recipes.
 - `bento doctor`: checks project health and optional copied bricks.
 - `bento version`: prints CLI version.
 
@@ -252,7 +252,7 @@ BentoTUI gives Go teams a production-oriented TUI system: copy-and-own bricks an
 ## 12) Known docs sync gaps to correct in your Astro app
 
 1. Include `vimstatus` in recipe catalog where installable recipes are listed.
-2. Keep current release references at `v0.5.4`.
+2. Keep current release references at `v0.6.0`.
 3. Mention diff/syntax methods in the theme interface docs.
 4. Keep command palette/theme-picker behavior aligned with latest `app-shell` fixes.
 

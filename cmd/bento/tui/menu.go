@@ -8,7 +8,7 @@ import (
 )
 
 var menuItems = []string{
-	"Initialize New Project",
+	"Init Bento Template",
 	"Add Bricks",
 	"Add Recipes",
 	"Run Doctor",
@@ -28,10 +28,10 @@ func (a *App) handleMenuKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter":
 		switch a.state.MenuSelection {
 		case 0:
-			a.state.CurrentView = ViewInitForm
-			a.state.AppName = ""
-			a.state.Module = ""
-			a.state.FormFocus = 0
+			a.state.CurrentView = ViewComponentList
+			a.state.ComponentCursor = 0
+			a.state.CatalogKind = CatalogBentos
+			a.state.SelectedComponents = make(map[string]bool)
 			a.state.ClearLog()
 		case 1:
 			a.state.CurrentView = ViewComponentList

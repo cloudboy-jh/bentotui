@@ -1,6 +1,6 @@
 # BentoTUI Roadmap
 
-## Current state (v0.5.0 direction)
+## Current state (v0.6.0 direction)
 
 ### What shipped in v0.4.x
 
@@ -66,9 +66,9 @@ Build BentoTUI as a full app product system:
 
 ### CLI (`cmd/bento`) - secondary
 
-- [x] `bento add` — copy component files from embedded registry
-- [x] `bento init` — generate a runnable starter project
-- [x] `bento list` — show available components with descriptions
+- [x] `bento add` — copy brick files from embedded registry
+- [x] `bento init <bento>` — initialize a runnable bento template
+- [x] `bento list` — show available bentos, bricks, and recipes with descriptions
 - [ ] `bento upgrade <component>` — diff local copy vs registry version
 - [ ] `bento add --force` — overwrite existing copied component
 
@@ -92,4 +92,4 @@ Build BentoTUI as a full app product system:
 
 ---
 
-Last updated: 2026-03-18
+Last updated: 2026-03-20
