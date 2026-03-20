@@ -18,6 +18,7 @@ type setThemeMsg struct{ Name string }
 type setSectionMsg struct{ Index int }
 type toggleCompactMsg struct{}
 type pulseProgressMsg struct{}
+type openThemePickerMsg struct{}
 
 type Model struct {
 	theme  theme.Theme
@@ -74,6 +75,7 @@ func NewModel() *Model {
 	)
 	m.footer.SetTheme(m.theme)
 	m.centerDeck.SetTheme(m.theme)
+	m.dialogs.SetTheme(m.theme)
 	m.syncAll()
 	return m
 }
@@ -81,6 +83,20 @@ func NewModel() *Model {
 func (m *Model) Init() tea.Cmd { return nil }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.dialogs.IsOpen() {
+		switch msg.(type) {
+		case dialog.OpenMsg, dialog.CloseMsg:
+			// Handle lifecycle messages in the switch below.
+		default:
+			u, cmd := m.dialogs.Update(msg)
+			m.dialogs = u.(*dialog.Manager)
+			if tc, ok := msg.(theme.ThemeChangedMsg); ok {
+				m.onThemeChange(tc)
+			}
+			return m, cmd
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -94,8 +110,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dialogs = u.(*dialog.Manager)
 		return m, cmd
 
+	case openThemePickerMsg:
+		return m, m.openThemePicker()
+
 	case setThemeMsg:
 		m.applyTheme(msg.Name)
+		return m, nil
+
+	case theme.ThemeChangedMsg:
+		m.onThemeChange(msg)
 		return m, nil
 
 	case setSectionMsg:
@@ -116,12 +139,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		if m.dialogs.IsOpen() {
-			u, cmd := m.dialogs.Update(msg)
-			m.dialogs = u.(*dialog.Manager)
-			return m, cmd
-		}
-
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -243,9 +260,7 @@ func (m *Model) applyTheme(name string) {
 		m.status = "theme error: " + err.Error()
 		return
 	}
-	m.theme = t
-	m.footer.SetTheme(m.theme)
-	m.centerDeck.SetTheme(m.theme)
+	m.onThemeChange(theme.ThemeChangedMsg{Name: name, Theme: t})
 	for i, n := range m.themeOrder {
 		if n == name {
 			m.themeIdx = i
@@ -253,6 +268,25 @@ func (m *Model) applyTheme(name string) {
 		}
 	}
 	m.status = "theme -> " + name
+}
+
+func (m *Model) onThemeChange(msg theme.ThemeChangedMsg) {
+	if msg.Theme == nil {
+		return
+	}
+	m.theme = msg.Theme
+	m.footer.SetTheme(m.theme)
+	m.centerDeck.SetTheme(m.theme)
+	m.dialogs.SetTheme(m.theme)
+	if msg.Name == "" {
+		return
+	}
+	for i, n := range m.themeOrder {
+		if n == msg.Name {
+			m.themeIdx = i
+			break
+		}
+	}
 }
 
 func (m *Model) openPalette() tea.Cmd {
@@ -269,6 +303,7 @@ func (m *Model) openPalette() tea.Cmd {
 	commands = append(commands,
 		dialog.Command{Label: "Toggle compact table", Group: "View", Keybind: "c", Action: func() tea.Msg { return toggleCompactMsg{} }},
 		dialog.Command{Label: "Pulse progress", Group: "View", Keybind: "enter", Action: func() tea.Msg { return pulseProgressMsg{} }},
+		dialog.Command{Label: "Theme picker", Group: "Theme", Keybind: "t", Action: func() tea.Msg { return openThemePickerMsg{} }},
 	)
 	for _, name := range m.themeOrder {
 		themeName := name
@@ -287,6 +322,23 @@ func (m *Model) openPalette() tea.Cmd {
 			DialogTitle: "Command Palette",
 			Content:     palette,
 			Width:       56,
+			Height:      h,
+		})
+	}
+}
+
+func (m *Model) openThemePicker() tea.Cmd {
+	return func() tea.Msg {
+		h := len(m.themeOrder) + 8
+		if m.height > 0 {
+			h = clamp(min(h, m.height-4), 12, 24)
+		} else {
+			h = clamp(h, 12, 24)
+		}
+		return dialog.Open(dialog.Custom{
+			DialogTitle: "Themes",
+			Content:     dialog.NewThemePicker(),
+			Width:       44,
 			Height:      h,
 		})
 	}

@@ -6,6 +6,19 @@ The format follows Keep a Changelog style and this project targets Semantic Vers
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-03-19
+
+### Fixed
+
+- Command palette dialog actions now run in deterministic order, so choosing
+  `Theme picker` reliably closes the palette first and opens the theme picker
+  in app models that use dialog manager routing.
+- Dialog lifecycle handling is now consistent for Bento models that use modal
+  flows: both `dialog.OpenMsg` and `dialog.CloseMsg` are explicitly handled in
+  `Update`, while keeping the `dialogs.IsOpen()` modal-focus path.
+- Theme change propagation in `app-shell` now applies across the full model
+  surface (footer, center deck, and dialog manager) on `ThemeChangedMsg`.
+
 ## [0.5.2] - 2026-03-18
 
 ### Added

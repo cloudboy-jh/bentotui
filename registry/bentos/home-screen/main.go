@@ -22,7 +22,7 @@ import (
 	"github.com/cloudboy-jh/bentotui/theme"
 )
 
-const version = "v0.5.0"
+const version = "v0.5.4"
 
 const wordmark = "" +
 	"██████╗ ███████╗███╗   ██╗████████╗ ██████╗ \n" +
@@ -88,6 +88,11 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case dialog.OpenMsg:
+		u, cmd := m.dialogs.Update(msg)
+		m.dialogs = u.(*dialog.Manager)
+		return m, cmd
+
+	case dialog.CloseMsg:
 		u, cmd := m.dialogs.Update(msg)
 		m.dialogs = u.(*dialog.Manager)
 		return m, cmd

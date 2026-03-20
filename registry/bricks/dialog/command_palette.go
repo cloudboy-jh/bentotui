@@ -8,8 +8,8 @@
 package dialog
 
 import (
-	"image/color"
 	"fmt"
+	"image/color"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -86,9 +86,9 @@ func (p *CommandPalette) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return p, func() tea.Msg { return Close() }
 		}
 		action := cmd.Action
-		return p, tea.Batch(
-			func() tea.Msg { return action() },
+		return p, tea.Sequence(
 			func() tea.Msg { return Close() },
+			func() tea.Msg { return action() },
 		)
 	}
 

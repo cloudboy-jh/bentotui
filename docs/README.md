@@ -1,6 +1,6 @@
 # BentoTUI Documentation
 
-v0.5.2
+v0.5.4
 
 ---
 
