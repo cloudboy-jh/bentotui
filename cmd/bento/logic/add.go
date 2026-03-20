@@ -47,6 +47,7 @@ func RecipeRegistry() []CatalogEntry {
 		{Name: "filter-bar", Desc: "Input + status + keybind strip composition", Files: []string{"recipe.go"}},
 		{Name: "empty-state-pane", Desc: "Reusable empty-result card content", Files: []string{"recipe.go"}},
 		{Name: "command-palette-flow", Desc: "Open command palette and route actions", Files: []string{"recipe.go"}},
+		{Name: "vimstatus", Desc: "Vim-style statusline with mode pill, context, and clock", Files: []string{"VimFooter.go"}},
 	}
 }
 
