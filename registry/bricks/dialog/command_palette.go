@@ -8,7 +8,6 @@
 package dialog
 
 import (
-	"fmt"
 	"image/color"
 	"strings"
 
@@ -246,22 +245,22 @@ func renderPaletteCommandRow(t theme.Theme, label, keybind string, width int, se
 		keybindFG = t.TextMuted()
 	}
 
-	itemStyle := lipgloss.NewStyle().Background(itemBG).Foreground(itemFG)
-	keybindStyle := lipgloss.NewStyle().Background(itemBG).Foreground(keybindFG)
-
 	if keybind == "" {
-		content := " " + paletteClip(label, maxv(1, width-1))
-		return itemStyle.Width(width).Render(content)
+		return lipgloss.NewStyle().Background(itemBG).Foreground(itemFG).Width(width).Render(" " + label)
 	}
 
-	keybindRendered := keybindStyle.Render(keybind)
-	keybindWidth := lipgloss.Width(keybindRendered)
-	sep := 2
-	labelWidth := maxv(1, width-keybindWidth-sep-1)
-	labelRendered := paletteClip(label, labelWidth)
-	gap := maxv(0, width-1-lipgloss.Width(labelRendered)-keybindWidth-sep)
-	line := fmt.Sprintf(" %s%s  %s", labelRendered, strings.Repeat(" ", gap), keybindRendered)
-	return itemStyle.Width(width).Render(line)
+	keybindW := lipgloss.Width(keybind)
+	labelMaxW := maxv(1, width-keybindW-3) // 1 lead + 2 sep
+	labelClipped := label
+	if lipgloss.Width(label) > labelMaxW {
+		labelClipped = paletteClip(label, labelMaxW)
+	}
+
+	actualLabelW := lipgloss.Width(labelClipped)
+	gap := maxv(1, width-1-actualLabelW-2-keybindW)
+	line := " " + labelClipped + strings.Repeat(" ", gap) + "  " +
+		lipgloss.NewStyle().Foreground(keybindFG).Render(keybind)
+	return lipgloss.NewStyle().Background(itemBG).Foreground(itemFG).Width(width).Render(line)
 }
 
 func paletteClip(s string, width int) string {
